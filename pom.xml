@@ -35,12 +35,12 @@
         <testSourceDirectory>${basedir}/test</testSourceDirectory>
         <resources>
             <resource>
-                <directory>${basedir}/ressources</directory> 
+                <directory>${basedir}/resources</directory> 
             </resource>
         </resources>
         <testResources>
 			<testResource>
-                <directory>${basedir}/ressources</directory> 
+                <directory>${basedir}/resources</directory> 
             </testResource>
         </testResources>
         <plugins>
