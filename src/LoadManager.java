@@ -8,15 +8,19 @@ import java.util.regex.Pattern;
 public class LoadManager {
     public static void load_anmeldungen(String path, Pruefung[] pruefungen) throws IOException {
         Map<String, Set<String>> anmeldungen = new HashMap<>();
-        List<String> rows = Files.readAllLines(Paths.get(path));
 
         for (Pruefung p : pruefungen) {
             String s = p.getName();
-            assert !anmeldungen.containsKey(s);
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (anmeldungen.containsKey(s))
+                throw new AssertionError("there are two pruefungen with the same name");
             anmeldungen.put(s, new HashSet<>());
         }
 
-        //TODO: assertions
+        List<String> rows = Files.readAllLines(Paths.get(path));
+
+        if (rows.isEmpty())
+            throw new AssertionError();
 
         List<String> rows_without_title = rows.subList(1, rows.size());
         for (String row : rows_without_title) {
@@ -24,12 +28,16 @@ public class LoadManager {
 
             String matr_nr = columns[0];
             String prue_name = columns[6];
-            assert anmeldungen.containsKey(prue_name); //TODO
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (anmeldungen.containsKey(prue_name))
+                throw new AssertionError("a user anmeldung references a unknown pruefung");
             anmeldungen.get(prue_name).add(matr_nr);
         }
 
         for (Pruefung p : pruefungen) {
-            assert p.getAnmeldungen() == null : "The Anmeldungen of the Prüfung " + p + " was already loaded.";
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (p.getAnmeldungen() != null)
+                throw new AssertionError("The Anmeldungen of the Prüfung " + p + " was already loaded.");
             p.setAnmeldungen(anmeldungen.get(p.getName()));
         }
     }
@@ -39,13 +47,16 @@ public class LoadManager {
         Map<String, Pruefung> pruefungen_by_name = new HashMap<>();
 
         for (Pruefung p : pruefungen) {
-            assert !pruefungen_by_name.containsKey(p.getName()); //TODO
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (pruefungen_by_name.containsKey(p.getName()))
+                throw new AssertionError("there are two pruefungen with the same name");
             pruefungen_by_name.put(p.getName(), p);
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
 
-        //TODO: assertions
+        if (rows.isEmpty())
+            throw new AssertionError();
 
         List<String> rows_without_title = rows.subList(1, rows.size());
         for (String row : rows_without_title) {
@@ -69,7 +80,8 @@ public class LoadManager {
         Set<Long> existingPruefungen = new HashSet<>();
         List<String> rows = Files.readAllLines(Paths.get(path));
 
-        //TODO: assertions
+        if (rows.isEmpty())
+            throw new AssertionError();
 
         int index_days_begin;
         int index_days_end;
@@ -85,7 +97,8 @@ public class LoadManager {
             for (int i = index_days_begin; i <= index_days_end; i++) {
                 Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
                 Matcher matcher = pattern.matcher(columns.get(i));
-                matcher.find(); //TODO assert true
+                if (!matcher.find())
+                    throw new AssertionError("date has unexpected format");
                 int day = Integer.parseInt(matcher.group(1));
                 int month = Integer.parseInt(matcher.group(2));
                 Calendar c = Calendar.getInstance();
@@ -114,10 +127,12 @@ public class LoadManager {
             for (int i = index_days_begin; i <= index_days_end; i++) {
                 if (!columns[i].isBlank()) {
                     begin = (Calendar) days[i - index_days_begin].clone();
+                    break;
                 }
             }
-
-            assert begin != null; //TODO: make sure it happens
+            // assert that the loop actually hits eventually
+            if (begin == null)
+                throw new AssertionError("the pruefung " + nr + " " + name + "doesn't have a date.");
 
             String[] begin_time_split = begin_time.split(":");
             begin.set(Calendar.HOUR_OF_DAY, Integer.parseInt(begin_time_split[0]));
