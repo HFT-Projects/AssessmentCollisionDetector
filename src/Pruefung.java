@@ -33,8 +33,12 @@ public class Pruefung {
         return name;
     }
 
-    public String getQualified_name() {
+    public static String calculateQualifiedName(String stg, String pversion, Long nr, String name) {
         return stg + "-" + pversion + "-" + nr + "-" + name;
+    }
+
+    public String getQualified_name() {
+        return calculateQualifiedName(stg, pversion, nr, name);
     }
 
     public Integer getDuration_min() {

@@ -7,14 +7,14 @@ import java.util.regex.Pattern;
 
 public class LoadManager {
     public static void load_anmeldungen(String path, Pruefung[] pruefungen) throws IOException {
-        Map<String, Set<String>> anmeldungen = new HashMap<>();
+        Map<String, Set<String>> anmeldungen = new HashMap<>(); // Pruefung.qualifiedName -> MatrNr
 
         for (Pruefung p : pruefungen) {
-            String s = p.getName();
+            String qualified_name = p.getQualified_name();
             // the following exception should never occur (-> internal logic error -> bug)
-            if (anmeldungen.containsKey(s))
+            if (anmeldungen.containsKey(qualified_name))
                 throw new AssertionError("there are two pruefungen with the same name");
-            anmeldungen.put(s, new HashSet<>());
+            anmeldungen.put(qualified_name, new HashSet<>());
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
@@ -26,31 +26,36 @@ public class LoadManager {
         for (String row : rows_without_title) {
             String[] columns = row.split(";");
 
+            //TODO: assert
             String matr_nr = columns[0];
-            String prue_name = columns[6];
+            long pruefungs_nr = Long.parseLong(columns[5]);
+            String pruefungs_name = columns[6];
+            String stg = columns[2];
+            String pversion = columns[3];
+            String qualified_name = Pruefung.calculateQualifiedName(stg, pversion, pruefungs_nr, pruefungs_name);
             // the following exception should never occur (-> internal logic error -> bug)
-            if (anmeldungen.containsKey(prue_name))
-                throw new AssertionError("a user anmeldung references a unknown pruefung");
-            anmeldungen.get(prue_name).add(matr_nr);
+            if (!anmeldungen.containsKey(qualified_name))
+                throw new AssertionError("a user anmeldung references a unknown pruefung: " + qualified_name);
+            anmeldungen.get(qualified_name).add(matr_nr);
         }
 
         for (Pruefung p : pruefungen) {
             // the following exception should never occur (-> internal logic error -> bug)
             if (p.getAnmeldungen() != null)
                 throw new AssertionError("The Anmeldungen of the Prüfung " + p + " was already loaded.");
-            p.setAnmeldungen(anmeldungen.get(p.getName()));
+            p.setAnmeldungen(anmeldungen.get(p.getQualified_name()));
         }
     }
 
     public static Pruefung[] load_missing_pruefungen_from_anmeldungen(String path, Pruefung[] pruefungen) throws IOException {
         List<Pruefung> new_pruefungen = new LinkedList<>();
-        Map<String, Pruefung> pruefungen_by_name = new HashMap<>();
+        Map<String, Pruefung> pruefungen_by_qualified_name = new HashMap<>();
 
         for (Pruefung p : pruefungen) {
             // the following exception should never occur (-> internal logic error -> bug)
-            if (pruefungen_by_name.containsKey(p.getName()))
+            if (pruefungen_by_qualified_name.containsKey(p.getQualified_name()))
                 throw new AssertionError("there are two pruefungen with the same name");
-            pruefungen_by_name.put(p.getName(), p);
+            pruefungen_by_qualified_name.put(p.getQualified_name(), p);
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
@@ -63,12 +68,13 @@ public class LoadManager {
             String[] columns = row.split(";");
             long pruefungs_nr = Long.parseLong(columns[5]);
             String name = columns[6];
-            if (!pruefungen_by_name.containsKey(name)) {
+            String stg = columns[2];
+            String pversion = columns[3];
+            String qualified_name = Pruefung.calculateQualifiedName(stg, pversion, pruefungs_nr, name);
+            if (!pruefungen_by_qualified_name.containsKey(qualified_name)) {
                 Pruefung p = new Pruefung(pruefungs_nr, name, columns[2], columns[3], null, null);
                 new_pruefungen.add(p);
-                pruefungen_by_name.put(name, p);
-            } else if (pruefungen_by_name.get(name).getNr() == null) {
-                pruefungen_by_name.get(name)._overrideNr(pruefungs_nr);
+                pruefungen_by_qualified_name.put(qualified_name, p);
             }
         }
 
@@ -77,7 +83,7 @@ public class LoadManager {
 
     public static Pruefung[] load_pruefungen(String path) throws IOException {
         List<Pruefung> pruefungen = new LinkedList<>();
-        Set<Long> existingPruefungen = new HashSet<>();
+        Set<String> existingPruefungen = new HashSet<>(); // check existingPruefungen by qualifiedName
         List<String> rows = Files.readAllLines(Paths.get(path));
 
         if (rows.isEmpty())
@@ -114,12 +120,20 @@ public class LoadManager {
         for (String row : rows_without_title) {
             String[] columns = row.split(";");
 
-            Long nr = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
+            if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() ||*/ columns[5].isBlank() || columns[10].isBlank() || columns[11].isBlank())
+                throw new AssertionError("missing data in pruefungen file"); //TODO: specify whats missing & line
 
-            if (existingPruefungen.contains(nr))
+            Long nr = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
+            String name = columns[5];
+            String stg = columns[1];
+            String pversion = columns[2];
+
+            String qualified_name = Pruefung.calculateQualifiedName(stg, pversion, nr, name);
+
+            if (existingPruefungen.contains(qualified_name))
                 continue;
 
-            String name = columns[5];
+
             String begin_time = columns[10];
             String end_time = columns[11];
 
@@ -149,7 +163,7 @@ public class LoadManager {
 
             Pruefung p = new Pruefung(nr, name, columns[1], columns[2], begin, (int) duration_min);
             pruefungen.add(p);
-            existingPruefungen.add(nr);
+            existingPruefungen.add(qualified_name);
         }
         return pruefungen.toArray(new Pruefung[0]);
     }
