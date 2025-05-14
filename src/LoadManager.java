@@ -138,7 +138,7 @@ public class LoadManager {
         return additionalAssessments.toArray(new Assessment[0]);
     }
 
-    public static void loadRegistrations(String path, Assessment[] assessments) throws IOException {
+    public static Map<String, Set<String>> loadRegistrations(String path, Assessment[] assessments) throws IOException {
         Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
 
         // add all Assessments to registrationsByAssessmentsQualifiedName
@@ -179,13 +179,6 @@ public class LoadManager {
             registrationsByAssessmentsQualifiedName.get(qualifiedName).add(matrNo);
         }
 
-        // save registrations into Assessment objects
-        for (Assessment p : assessments) {
-            // the following exception should never occur (-> internal logic error -> bug)
-            if (p.getRegisteredStudents() != null)
-                throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
-
-            p.setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
-        }
+        return registrationsByAssessmentsQualifiedName;
     }
 }
