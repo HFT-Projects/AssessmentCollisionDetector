@@ -67,7 +67,7 @@ public class Assessment {
     public Map<Assessment, Integer> getCollisionCountByAssessment() {
         if (collisionCountByAssessment == null)
             return null;
-        return new LinkedHashMap<>(collisionCountByAssessment);
+        return new HashMap<>(collisionCountByAssessment);
     }
 
     public void setCollisionCountByAssessment(Map<Assessment, Integer> collisionCountByAssessment) {
@@ -77,7 +77,7 @@ public class Assessment {
     @Override
     public String toString() {
         // create map with qualifiedName as string instead of object to print this instead because printing the actual Assessment object would create an infinite loop.
-        Map<String, Integer> collisions = new TreeMap<>();
+        Map<String, Integer> collisions = new HashMap<>();
         if (this.collisionCountByAssessment != null) {
             for (Assessment p : this.collisionCountByAssessment.keySet()) {
                 collisions.put(p.getQualifiedName(), this.collisionCountByAssessment.get(p));

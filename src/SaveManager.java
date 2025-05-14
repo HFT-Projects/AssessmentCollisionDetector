@@ -15,7 +15,7 @@ public class SaveManager {
     }
 
     public static void saveCollision(String path, Assessment[] assessments) throws IOException {
-        List<String> lines = new ArrayList<>();
+        List<String> lines = new LinkedList<>();
 
         // add header line
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");

@@ -16,7 +16,7 @@ class AssessmentCollisionDetector {
 
         for (Assessment p : assessments) {
             Set<String> collisionsAll = new HashSet<>();
-            Map<Assessment, Integer> collisions = new LinkedHashMap<>();
+            Map<Assessment, Integer> collisions = new HashMap<>();
 
             for (Assessment k : assessments) {
                 if (p == k)
