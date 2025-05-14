@@ -6,34 +6,34 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SaveManager {
-    private static String get_duration_string(Pruefung p) {
+    private static String getDurationString(Pruefung p) {
         if (p.getBegin() == null)
             return "Kein Datum gef";
-        DateTimeFormatter formatter_day = DateTimeFormatter.ofPattern("dd");
-        DateTimeFormatter formatter_time = DateTimeFormatter.ofPattern("H:mm");
-        return p.getBegin().format(formatter_day) + " " + p.getBegin().format(formatter_time) + "-" + p.getEnd().format(formatter_time);
+        DateTimeFormatter formatterDay = DateTimeFormatter.ofPattern("dd");
+        DateTimeFormatter formatterTime = DateTimeFormatter.ofPattern("H:mm");
+        return p.getBegin().format(formatterDay) + " " + p.getBegin().format(formatterTime) + "-" + p.getEnd().format(formatterTime);
     }
 
-    public static void save_collision(String path, Pruefung[] pruefungen) throws IOException {
+    public static void saveCollision(String path, Pruefung[] pruefungen) throws IOException {
         List<String> lines = new ArrayList<>();
 
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
-        Pruefung[] pruefungen_sorted = Arrays.stream(pruefungen).sorted(Comparator.comparing(Pruefung::getQualified_name)).toArray(Pruefung[]::new);
-        for (Pruefung p : pruefungen_sorted) {
-            String duration_string = get_duration_string(p);
-            String s = p.getQualified_name() + ";;;;" + duration_string + ";;;";
-            if (duration_string.equals("Kein Datum gef")) //TODO: remove this workaraound (fixes missing ; in template file)
+        Pruefung[] pruefungenSorted = Arrays.stream(pruefungen).sorted(Comparator.comparing(Pruefung::getQualifiedName)).toArray(Pruefung[]::new);
+        for (Pruefung p : pruefungenSorted) {
+            String durationString = getDurationString(p);
+            String s = p.getQualifiedName() + ";;;;" + durationString + ";;;";
+            if (durationString.equals("Kein Datum gef")) //TODO: remove this workaraound (fixes missing ; in template file)
                 s = s.substring(0, s.length() - 1);
             lines.add(s);
 
             int i = 1;
             Map<Pruefung, Integer> collisions = p.getCollisions();
-            Collection<Pruefung> pruefungen_sorted2 = collisions.keySet();
-            pruefungen_sorted2 = pruefungen_sorted2.stream().sorted(Comparator.comparing(Pruefung::getQualified_name)).toList();
-            for (Pruefung k : pruefungen_sorted2) {
-                String distance_str;
+            Collection<Pruefung> pruefungenSorted2 = collisions.keySet();
+            pruefungenSorted2 = pruefungenSorted2.stream().sorted(Comparator.comparing(Pruefung::getQualifiedName)).toList();
+            for (Pruefung k : pruefungenSorted2) {
+                String distanceStr;
                 if (p.getBegin() == null || k.getBegin() == null) {
-                    distance_str = "";
+                    distanceStr = "";
                 } else {
                     Pruefung first;
                     Pruefung last;
@@ -45,11 +45,11 @@ public class SaveManager {
                         last = p;
                     }
                     long distance = Duration.between(first.getEnd(), last.getBegin()).toHours(); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
-                    distance_str = String.format("%03d", distance);
+                    distanceStr = String.format("%03d", distance);
                     if (distance < 0)
-                        distance_str = "Überschneidung";
+                        distanceStr = "Überschneidung";
                 }
-                String s2 = ";" + i + ";" + p.getQualified_name() + ";" + k.getQualified_name() + ";" + get_duration_string(k) + ";" + collisions.get(k) + ";" + distance_str;
+                String s2 = ";" + i + ";" + p.getQualifiedName() + ";" + k.getQualifiedName() + ";" + getDurationString(k) + ";" + collisions.get(k) + ";" + distanceStr;
                 i++;
                 lines.add(s2);
             }

@@ -10,7 +10,7 @@ public class Pruefung {
     private final LocalDateTime begin;
     private final LocalDateTime end;
     private Set<String> anmeldungen = null; //TODO: set<Long> wg. MatrNr -> Hamann
-    private Integer collisions_all = null;
+    private Integer collisionsAll = null;
     private Map<Pruefung, Integer> collisions = null;
 
     public Pruefung(Long nr, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
@@ -34,7 +34,7 @@ public class Pruefung {
         return stg + "-" + pversion + "-" + nr + "-" + name;
     }
 
-    public String getQualified_name() {
+    public String getQualifiedName() {
         return calculateQualifiedName(stg, pversion, nr, name);
     }
 
@@ -56,12 +56,12 @@ public class Pruefung {
         this.anmeldungen = anmeldungen;
     }
 
-    public Integer getCollisions_all() {
-        return collisions_all;
+    public Integer getCollisionsAll() {
+        return collisionsAll;
     }
 
-    public void setCollisions_all(Integer collisions_all) {
-        this.collisions_all = collisions_all;
+    public void setCollisionsAll(Integer collisionsAll) {
+        this.collisionsAll = collisionsAll;
     }
 
     public Map<Pruefung, Integer> getCollisions() {
@@ -76,11 +76,11 @@ public class Pruefung {
 
     @Override
     public String toString() {
-        Map<String, Integer> collision_with_nr = new TreeMap<>();
+        Map<String, Integer> collisions = new TreeMap<>();
 
-        if (collisions != null) {
-            for (Pruefung p : collisions.keySet()) {
-                collision_with_nr.put(p.getQualified_name(), collisions.get(p));
+        if (this.collisions != null) {
+            for (Pruefung p : this.collisions.keySet()) {
+                collisions.put(p.getQualifiedName(), this.collisions.get(p));
             }
         }
 
@@ -89,11 +89,11 @@ public class Pruefung {
         return "Pruefung{" +
                 "nr=" + nr +
                 ", name='" + name + '\'' +
-                ", qualified_name='" + getQualified_name() + '\'' +
+                ", qualifiedName='" + getQualifiedName() + '\'' +
                 ", begin=" + begin.format(formatter) +
                 ", end=" + end.format(formatter) +
-                ", collisions_all=" + collisions_all +
-                ", collisions=" + collision_with_nr +
+                ", collisionsAll=" + collisionsAll +
+                ", collisions=" + collisions +
                 ", anmeldungen=" + anmeldungen +
                 '}';
     }
