@@ -53,6 +53,8 @@ public class SaveManager {
             }
         }
 
+        lines.add("");  // add blank line at the end to match with template file
+
         Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
     }
 }
