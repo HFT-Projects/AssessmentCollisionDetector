@@ -44,6 +44,8 @@ public class SaveManager {
                     }
                     long distance = (last.getBegin().getTime().getTime()/(1000*60) - (first.getBegin().getTime().getTime()/(1000*60) + first.getDuration_min()))/60; //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
                     distance_str = String.format("%03d", distance);
+                    if (distance < 0)
+                        distance_str = "Überschneidung";
                 }
                 String s2 = ";" + i + ";" + p.getQualified_name() + ";" + k.getQualified_name() + ";" + get_duration_string(k) + ";" + collisions.get(k) + ";" + distance_str;
                 i++;
