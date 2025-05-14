@@ -155,7 +155,7 @@ public class LoadManager {
 
             String[] end_time_split = end_time.split(":");
             Calendar end = (Calendar) begin.clone();
-            end.set(Calendar.HOUR, Integer.parseInt(end_time_split[0]));
+            end.set(Calendar.HOUR_OF_DAY, Integer.parseInt(end_time_split[0]));
             end.set(Calendar.MINUTE, Integer.parseInt(end_time_split[1]));
 
             long duration_min = (end.getTime().getTime() - begin.getTime().getTime()) / (1000 * 60);
