@@ -21,7 +21,10 @@ public class SaveManager {
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
         Pruefung[] pruefungen_sorted = Arrays.stream(pruefungen).sorted(Comparator.comparing(Pruefung::getQualified_name)).toArray(Pruefung[]::new);
         for (Pruefung p : pruefungen_sorted) {
-            String s = p.getQualified_name() + ";;;;" + get_duration_string(p) + ";;;";
+            String duration_string = get_duration_string(p);
+            String s = p.getQualified_name() + ";;;;" + duration_string + ";;;";
+            if (duration_string.equals("Kein Datum gef")) //TODO: remove this workaraound (fixes missing ; in template file)
+                s = s.substring(0, s.length() - 1);
             lines.add(s);
 
             int i = 1;
