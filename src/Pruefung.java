@@ -76,10 +76,12 @@ public class Pruefung {
 
     @Override
     public String toString() {
-        Map<Long, Integer> collision_with_nr = new TreeMap<>();
+        Map<String, Integer> collision_with_nr = new TreeMap<>();
 
-        for (Pruefung p : collisions.keySet()) {
-            collision_with_nr.put(p.getNr(), collisions.get(p));
+        if (collisions != null) {
+            for (Pruefung p : collisions.keySet()) {
+                collision_with_nr.put(p.getQualified_name(), collisions.get(p));
+            }
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
