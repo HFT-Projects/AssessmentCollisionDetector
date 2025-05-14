@@ -10,52 +10,58 @@ public class LoadManager {
     public static Assessment[] loadExams(String path) throws IOException {
         List<Assessment> exams = new LinkedList<>();
         Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
+
         List<String> rows = Files.readAllLines(Paths.get(path));
 
+        // make sure file isn't empty
         if (rows.isEmpty())
-            throw new AssertionError();
+            throw new AssertionError("input file must not be empty");
 
         int indexDaysBegin;
         int indexDaysEnd;
         LocalDateTime[] days;
 
-        {
-            List<String> columns = Arrays.asList(rows.get(0).split(";"));
-            indexDaysBegin = columns.indexOf("Ende") + 1;
-            indexDaysEnd = columns.indexOf("Gruppe") - 1;
+        // parse header line to extract the possible dates of the exams
+        List<String> header_columns = Arrays.asList(rows.get(0).split(";"));
+        indexDaysBegin = header_columns.indexOf("Ende") + 1;
+        indexDaysEnd = header_columns.indexOf("Gruppe") - 1;
+        // create array to map the exam days to the actual date
+        days = new LocalDateTime[indexDaysEnd - indexDaysBegin + 1];
+        for (int i = indexDaysBegin; i <= indexDaysEnd; i++) {
+            // create a matcher to extract the date from the following string: "Mo 01.01."
+            Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
+            Matcher matcher = pattern.matcher(header_columns.get(i));
 
-            days = new LocalDateTime[indexDaysEnd - indexDaysBegin + 1];
+            if (!matcher.find())
+                throw new AssertionError("date has unexpected format");
 
-            for (int i = indexDaysBegin; i <= indexDaysEnd; i++) {
-                Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
-                Matcher matcher = pattern.matcher(columns.get(i));
-                if (!matcher.find())
-                    throw new AssertionError("date has unexpected format");
-                int day = Integer.parseInt(matcher.group(1));
-                int month = Integer.parseInt(matcher.group(2));
-                //TODO: using year 1900 (fix with actual data)
-                LocalDateTime d = LocalDateTime.of(1900, month, day, 0, 0, 0);
-                days[i - indexDaysBegin] = d;
-            }
+            int day = Integer.parseInt(matcher.group(1));
+            int month = Integer.parseInt(matcher.group(2));
+            //TODO: using year 1900 (fix with actual data)
+            LocalDateTime d = LocalDateTime.of(1900, month, day, 0, 0, 0);
+
+            days[i - indexDaysBegin] = d;
         }
 
+        // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
         for (String row : rowsWithoutHeader) {
             String[] columns = row.split(";");
 
+            // TODO: hamann: no & pversion sometimes blank
+            // check that data is complete
             if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() ||*/ columns[5].isBlank() || columns[10].isBlank() || columns[11].isBlank())
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
             Long no = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
             String name = columns[5];
             String stg = columns[1];
-            String pversion = columns[2];
-
+            String pversion = columns[2].isBlank() ? null : columns[2];
             String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, no, name);
 
+            // file contains duplicates because sometimes exams are in multiple rooms (-> ignore)
             if (existingExams.contains(qualifiedName))
                 continue;
-
 
             String beginTime = columns[10];
             String endTime = columns[11];
@@ -76,7 +82,6 @@ public class LoadManager {
             int minutes = Integer.parseInt(beginTimeSplit[1]);
             LocalDateTime begin = day.plusMinutes(hours * 60L + minutes);
 
-
             String[] endTimeSplit = endTime.split(":");
             int hours2 = Integer.parseInt(endTimeSplit[0]);
             int minutes2 = Integer.parseInt(endTimeSplit[1]);
@@ -91,32 +96,42 @@ public class LoadManager {
 
     public static Assessment[] loadMissingAssessments(String path, Assessment[] assessments) throws IOException {
         List<Assessment> additionalAssessments = new LinkedList<>();
-        Map<String, Assessment> assessmentsByQualifiedName = new HashMap<>();
+        Set<String> existingAssessments = new HashSet<>(); // check existingAssessments by qualifiedName
 
+        // add all exams to existingAssessments
         for (Assessment p : assessments) {
             // the following exception should never occur (-> internal logic error -> bug)
-            if (assessmentsByQualifiedName.containsKey(p.getQualifiedName()))
+            if (existingAssessments.contains(p.getQualifiedName()))
                 throw new AssertionError("there are two assessments with the same name");
-            assessmentsByQualifiedName.put(p.getQualifiedName(), p);
+            existingAssessments.add(p.getQualifiedName());
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
 
+        // make sure file isn't empty
         if (rows.isEmpty())
-            throw new AssertionError();
+            throw new AssertionError("input file must not be empty");
 
+        // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
         for (String row : rowsWithoutHeader) {
             String[] columns = row.split(";");
+
+            // check that data is complete
+            if (columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || columns[6].isBlank())
+                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
+
             long assessmentNo = Long.parseLong(columns[5]);
             String name = columns[6];
             String stg = columns[2];
             String pversion = columns[3];
             String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, name);
-            if (!assessmentsByQualifiedName.containsKey(qualifiedName)) {
-                Assessment p = new Assessment(assessmentNo, name, columns[2], columns[3], null, null);
+
+            // ass Assessment if it doesn't already exist
+            if (!existingAssessments.contains(qualifiedName)) {
+                Assessment p = new Assessment(assessmentNo, name, stg, pversion, null, null);
                 additionalAssessments.add(p);
-                assessmentsByQualifiedName.put(qualifiedName, p);
+                existingAssessments.add(qualifiedName);
             }
         }
 
@@ -124,43 +139,53 @@ public class LoadManager {
     }
 
     public static void loadRegistrations(String path, Assessment[] assessments) throws IOException {
-        Map<String, Set<String>> registrations = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
+        Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
 
+        // add all Assessments to registrationsByAssessmentsQualifiedName
         for (Assessment p : assessments) {
             String qualifiedName = p.getQualifiedName();
             // the following exception should never occur (-> internal logic error -> bug)
-            if (registrations.containsKey(qualifiedName))
+            if (registrationsByAssessmentsQualifiedName.containsKey(qualifiedName))
                 throw new AssertionError("there are two assessments with the same name");
-            registrations.put(qualifiedName, new HashSet<>());
+            registrationsByAssessmentsQualifiedName.put(qualifiedName, new HashSet<>());
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
 
+        // make sure file isn't empty
         if (rows.isEmpty())
-            throw new AssertionError();
+            throw new AssertionError("input file must not be empty");
 
+        // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
         for (String row : rowsWithoutHeader) {
             String[] columns = row.split(";");
 
-            //TODO: assert
+            // check that data is complete
+            if (columns[0].isBlank() || columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || columns[6].isBlank())
+                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
+
             String matrNo = columns[0];
             long assessmentNo = Long.parseLong(columns[5]);
             String assessmentName = columns[6];
             String stg = columns[2];
             String pversion = columns[3];
             String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, assessmentName);
+
             // the following exception should never occur (-> internal logic error -> bug)
-            if (!registrations.containsKey(qualifiedName))
+            if (!registrationsByAssessmentsQualifiedName.containsKey(qualifiedName))
                 throw new AssertionError("a user registration references a unknown assessment: " + qualifiedName);
-            registrations.get(qualifiedName).add(matrNo);
+
+            registrationsByAssessmentsQualifiedName.get(qualifiedName).add(matrNo);
         }
 
+        // save registrations into Assessment objects
         for (Assessment p : assessments) {
             // the following exception should never occur (-> internal logic error -> bug)
             if (p.getRegisteredStudents() != null)
                 throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
-            p.setRegisteredStudents(registrations.get(p.getQualifiedName()));
+
+            p.setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
         }
     }
 }
