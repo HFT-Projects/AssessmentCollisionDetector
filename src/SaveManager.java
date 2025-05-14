@@ -17,24 +17,31 @@ public class SaveManager {
     public static void saveCollision(String path, Assessment[] assessments) throws IOException {
         List<String> lines = new ArrayList<>();
 
+        // add header line
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
+
         Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
         for (Assessment p : assessmentsSorted) {
+            // generate title line
             String durationString = getDurationString(p);
-            String s = p.getQualifiedName() + ";;;;" + durationString + ";;;";
+            String header_line = p.getQualifiedName() + ";;;;" + durationString + ";;;";
             if (durationString.equals("Kein Datum gef")) //TODO: remove this workaround (fixes missing ; in template file)
-                s = s.substring(0, s.length() - 1);
-            lines.add(s);
+                header_line = header_line.substring(0, header_line.length() - 1);
+            lines.add(header_line);
+
+            // get all assessments colling with p and sort them by qualifiedName
+            Map<Assessment, Integer> collisionCountByAssessment = p.getCollisionCountByAssessment();
+            Collection<Assessment> collidingAssessmentsSorted = collisionCountByAssessment.keySet();
+            collidingAssessmentsSorted = collidingAssessmentsSorted.stream().sorted(Comparator.comparing(Assessment::getQualifiedName)).toList();
 
             int i = 1;
-            Map<Assessment, Integer> collisions = p.getCollisionCountByAssessment();
-            Collection<Assessment> assessmentsSorted2 = collisions.keySet();
-            assessmentsSorted2 = assessmentsSorted2.stream().sorted(Comparator.comparing(Assessment::getQualifiedName)).toList();
-            for (Assessment k : assessmentsSorted2) {
+            for (Assessment k : collidingAssessmentsSorted) {
                 String distanceStr;
+                // calculate time distance; replace with empty string if one assessment has no date
                 if (p.getBegin() == null || k.getBegin() == null) {
                     distanceStr = "";
                 } else {
+                    // calculate time distance between colliding assessments (end to begin)
                     Assessment first;
                     Assessment last;
                     if (p.getBegin().isBefore(k.getBegin())) {
@@ -46,16 +53,22 @@ public class SaveManager {
                     }
                     long distance = Duration.between(first.getEnd(), last.getBegin()).toHours(); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
                     distanceStr = String.format("%03d", distance);
+
+                    // replace distance with string "Überschneidung" if assessments overlap
                     if (distance < 0)
                         distanceStr = "Überschneidung";
                 }
-                String s2 = ";" + i + ";" + p.getQualifiedName() + ";" + k.getQualifiedName() + ";" + getDurationString(k) + ";" + collisions.get(k) + ";" + distanceStr;
+
+                // generate entry line
+                String entry_line = ";" + i + ";" + p.getQualifiedName() + ";" + k.getQualifiedName() + ";" + getDurationString(k) + ";" + collisionCountByAssessment.get(k) + ";" + distanceStr;
+
                 i++;
-                lines.add(s2);
+                lines.add(entry_line);
             }
         }
 
-        lines.add("");  // add blank line at the end to match with template file
+        // add blank line at the end to match with template file
+        lines.add("");
 
         Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
     }
