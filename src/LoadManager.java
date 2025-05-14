@@ -4,6 +4,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.LocalDateTime;
 
 public class LoadManager {
     public static Pruefung[] load_pruefungen(String path) throws IOException {
@@ -16,14 +17,14 @@ public class LoadManager {
 
         int index_days_begin;
         int index_days_end;
-        Calendar[] days;
+        LocalDateTime[] days;
 
         {
             List<String> columns = Arrays.asList(rows.get(0).split(";"));
             index_days_begin = columns.indexOf("Ende") + 1;
             index_days_end = columns.indexOf("Gruppe") - 1;
 
-            days = new Calendar[index_days_end - index_days_begin + 1];
+            days = new LocalDateTime[index_days_end - index_days_begin + 1];
 
             for (int i = index_days_begin; i <= index_days_end; i++) {
                 Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
@@ -32,12 +33,9 @@ public class LoadManager {
                     throw new AssertionError("date has unexpected format");
                 int day = Integer.parseInt(matcher.group(1));
                 int month = Integer.parseInt(matcher.group(2));
-                Calendar c = Calendar.getInstance();
-                //TODO: assuming current year (fix with actual data)
-                c.set(Calendar.MONTH, month - 1);
-                c.set(Calendar.DAY_OF_MONTH, day);
-                c.set(Calendar.SECOND, 0);
-                days[i - index_days_begin] = c;
+                //TODO: using year 1900 (fix with actual data)
+                LocalDateTime d = LocalDateTime.of(1900, month, day, 0, 0, 0);
+                days[i - index_days_begin] = d;
             }
         }
 
@@ -62,31 +60,29 @@ public class LoadManager {
             String begin_time = columns[10];
             String end_time = columns[11];
 
-            Calendar begin = null;
+            LocalDateTime day = null;
             for (int i = index_days_begin; i <= index_days_end; i++) {
                 if (!columns[i].isBlank()) {
-                    begin = (Calendar) days[i - index_days_begin].clone();
+                    day = days[i - index_days_begin];
                     break;
                 }
             }
             // assert that the loop actually hits eventually
-            if (begin == null)
+            if (day == null)
                 throw new AssertionError("the pruefung " + nr + " " + name + "doesn't have a date.");
 
             String[] begin_time_split = begin_time.split(":");
-            begin.set(Calendar.HOUR_OF_DAY, Integer.parseInt(begin_time_split[0]));
-            begin.set(Calendar.MINUTE, Integer.parseInt(begin_time_split[1]));
+            int hours = Integer.parseInt(begin_time_split[0]);
+            int minutes = Integer.parseInt(begin_time_split[1]);
+            LocalDateTime begin = day.plusMinutes(hours * 60L + minutes);
 
 
             String[] end_time_split = end_time.split(":");
-            Calendar end = (Calendar) begin.clone();
-            end.set(Calendar.HOUR_OF_DAY, Integer.parseInt(end_time_split[0]));
-            end.set(Calendar.MINUTE, Integer.parseInt(end_time_split[1]));
+            int hours2 = Integer.parseInt(end_time_split[0]);
+            int minutes2 = Integer.parseInt(end_time_split[1]);
+            LocalDateTime end = day.plusMinutes(hours2 * 60L + minutes2);
 
-            long duration_min = (end.getTime().getTime() - begin.getTime().getTime()) / (1000 * 60);
-
-
-            Pruefung p = new Pruefung(nr, name, columns[1], columns[2], begin, (int) duration_min);
+            Pruefung p = new Pruefung(nr, name, columns[1], columns[2], begin, end);
             pruefungen.add(p);
             existingPruefungen.add(qualified_name);
         }

@@ -1,18 +1,17 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SaveManager {
     private static String get_duration_string(Pruefung p) {
         if (p.getBegin() == null)
             return "Kein Datum gef";
-        SimpleDateFormat sdf = new SimpleDateFormat("dd H:mm");
-        SimpleDateFormat sdf2 = new SimpleDateFormat("H:mm");
-        Calendar end = p.getBegin();
-        end.add(Calendar.MINUTE, p.getDuration_min());
-        return sdf.format(p.getBegin().getTime()) + "-" + sdf2.format(end.getTime());
+        DateTimeFormatter formatter_day = DateTimeFormatter.ofPattern("dd");
+        DateTimeFormatter formatter_time = DateTimeFormatter.ofPattern("H:mm");
+        return p.getBegin().format(formatter_day) + " " + p.getBegin().format(formatter_time) + "-" + p.getEnd().format(formatter_time);
     }
 
     public static void save_collision(String path, Pruefung[] pruefungen) throws IOException {
@@ -38,14 +37,14 @@ public class SaveManager {
                 } else {
                     Pruefung first;
                     Pruefung last;
-                    if (p.getBegin().getTime().getTime() < k.getBegin().getTime().getTime()) {
+                    if (p.getBegin().isBefore(k.getBegin())) {
                         first = p;
                         last = k;
                     } else {
                         first = k;
                         last = p;
                     }
-                    long distance = (last.getBegin().getTime().getTime()/(1000*60) - (first.getBegin().getTime().getTime()/(1000*60) + first.getDuration_min()))/60; //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
+                    long distance = Duration.between(first.getEnd(), last.getBegin()).toHours(); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
                     distance_str = String.format("%03d", distance);
                     if (distance < 0)
                         distance_str = "Überschneidung";

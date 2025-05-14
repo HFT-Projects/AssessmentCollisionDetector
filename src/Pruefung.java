@@ -1,4 +1,5 @@
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Pruefung {
@@ -6,19 +7,19 @@ public class Pruefung {
     private final String name;
     private final String stg;
     private final String pversion;
-    private final Calendar begin;
-    private final Integer duration_min;
+    private final LocalDateTime begin;
+    private final LocalDateTime end;
     private Set<String> anmeldungen = null; //TODO: set<Long> wg. MatrNr -> Hamann
     private Integer collisions_all = null;
     private Map<Pruefung, Integer> collisions = null;
 
-    public Pruefung(Long nr, String name, String stg, String pversion, Calendar begin, Integer duration_min) {
+    public Pruefung(Long nr, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
         this.nr = nr;
         this.name = name;
         this.stg = stg;
         this.pversion = pversion;
         this.begin = begin;
-        this.duration_min = duration_min;
+        this.end = end;
     }
 
     public Long getNr() {
@@ -37,14 +38,12 @@ public class Pruefung {
         return calculateQualifiedName(stg, pversion, nr, name);
     }
 
-    public Integer getDuration_min() {
-        return duration_min;
+    public LocalDateTime getBegin() {
+        return begin;
     }
 
-    public Calendar getBegin() {
-        if (begin == null)
-            return null;
-        return (Calendar) begin.clone();
+    public LocalDateTime getEnd() {
+        return end;
     }
 
     public Set<String> getAnmeldungen() {
@@ -83,13 +82,14 @@ public class Pruefung {
             collision_with_nr.put(p.getNr(), collisions.get(p));
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+
         return "Pruefung{" +
                 "nr=" + nr +
                 ", name='" + name + '\'' +
                 ", qualified_name='" + getQualified_name() + '\'' +
-                ", begin=" + sdf.format(begin.getTime()) +
-                ", duration_min=" + duration_min +
+                ", begin=" + begin.format(formatter) +
+                ", end=" + end.format(formatter) +
                 ", collisions_all=" + collisions_all +
                 ", collisions=" + collision_with_nr +
                 ", anmeldungen=" + anmeldungen +
