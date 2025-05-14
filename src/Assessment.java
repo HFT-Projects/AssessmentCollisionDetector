@@ -2,19 +2,19 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public class Pruefung {
-    private final Long nr;
+public class Assessment {
+    private final Long number;
     private final String name;
     private final String stg;
     private final String pversion;
     private final LocalDateTime begin;
     private final LocalDateTime end;
-    private Set<String> anmeldungen = null; //TODO: set<Long> wg. MatrNr -> Hamann
+    private Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
     private Integer collisionsAll = null;
-    private Map<Pruefung, Integer> collisions = null;
+    private Map<Assessment, Integer> collisions = null;
 
-    public Pruefung(Long nr, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
-        this.nr = nr;
+    public Assessment(Long number, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
+        this.number = number;
         this.name = name;
         this.stg = stg;
         this.pversion = pversion;
@@ -22,20 +22,20 @@ public class Pruefung {
         this.end = end;
     }
 
-    public Long getNr() {
-        return nr;
+    public Long getNumber() {
+        return number;
     }
 
     public String getName() {
         return name;
     }
 
-    public static String calculateQualifiedName(String stg, String pversion, Long nr, String name) {
-        return stg + "-" + pversion + "-" + nr + "-" + name;
+    public static String calculateQualifiedName(String stg, String pversion, Long no, String name) {
+        return stg + "-" + pversion + "-" + no + "-" + name;
     }
 
     public String getQualifiedName() {
-        return calculateQualifiedName(stg, pversion, nr, name);
+        return calculateQualifiedName(stg, pversion, number, name);
     }
 
     public LocalDateTime getBegin() {
@@ -46,14 +46,14 @@ public class Pruefung {
         return end;
     }
 
-    public Set<String> getAnmeldungen() {
-        if (anmeldungen == null)
+    public Set<String> getRegisteredStudents() {
+        if (registeredStudents == null)
             return null;
-        return new HashSet<>(anmeldungen);
+        return new HashSet<>(registeredStudents);
     }
 
-    public void setAnmeldungen(Set<String> anmeldungen) {
-        this.anmeldungen = anmeldungen;
+    public void setRegisteredStudents(Set<String> registeredStudents) {
+        this.registeredStudents = registeredStudents;
     }
 
     public Integer getCollisionsAll() {
@@ -64,13 +64,13 @@ public class Pruefung {
         this.collisionsAll = collisionsAll;
     }
 
-    public Map<Pruefung, Integer> getCollisions() {
+    public Map<Assessment, Integer> getCollisions() {
         if (collisions == null)
             return null;
         return new LinkedHashMap<>(collisions);
     }
 
-    public void setCollisions(Map<Pruefung, Integer> collisions) {
+    public void setCollisions(Map<Assessment, Integer> collisions) {
         this.collisions = collisions;
     }
 
@@ -79,22 +79,22 @@ public class Pruefung {
         Map<String, Integer> collisions = new TreeMap<>();
 
         if (this.collisions != null) {
-            for (Pruefung p : this.collisions.keySet()) {
+            for (Assessment p : this.collisions.keySet()) {
                 collisions.put(p.getQualifiedName(), this.collisions.get(p));
             }
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
-        return "Pruefung{" +
-                "nr=" + nr +
+        return "Assessment{" +
+                "number=" + number +
                 ", name='" + name + '\'' +
                 ", qualifiedName='" + getQualifiedName() + '\'' +
                 ", begin=" + begin.format(formatter) +
                 ", end=" + end.format(formatter) +
                 ", collisionsAll=" + collisionsAll +
                 ", collisions=" + collisions +
-                ", anmeldungen=" + anmeldungen +
+                ", registeredStudents=" + registeredStudents +
                 '}';
     }
 }

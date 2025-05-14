@@ -4,9 +4,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.hft_stuttgart.ip1</groupId>
-    <artifactId>PruefungsKollisionsDetektor</artifactId>
+    <artifactId>AssessmentCollisionDetector</artifactId>
     <version>1.0</version>
-    <name>PruefungsKollisionsDetektor</name>
+    <name>AssessmentCollisionDetector</name>
     <url>http://maven.apache.org</url>
     
     <properties>

@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SaveManager {
-    private static String getDurationString(Pruefung p) {
+    private static String getDurationString(Assessment p) {
         if (p.getBegin() == null)
             return "Kein Datum gef";
         DateTimeFormatter formatterDay = DateTimeFormatter.ofPattern("dd");
@@ -14,29 +14,29 @@ public class SaveManager {
         return p.getBegin().format(formatterDay) + " " + p.getBegin().format(formatterTime) + "-" + p.getEnd().format(formatterTime);
     }
 
-    public static void saveCollision(String path, Pruefung[] pruefungen) throws IOException {
+    public static void saveCollision(String path, Assessment[] assessments) throws IOException {
         List<String> lines = new ArrayList<>();
 
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
-        Pruefung[] pruefungenSorted = Arrays.stream(pruefungen).sorted(Comparator.comparing(Pruefung::getQualifiedName)).toArray(Pruefung[]::new);
-        for (Pruefung p : pruefungenSorted) {
+        Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
+        for (Assessment p : assessmentsSorted) {
             String durationString = getDurationString(p);
             String s = p.getQualifiedName() + ";;;;" + durationString + ";;;";
-            if (durationString.equals("Kein Datum gef")) //TODO: remove this workaraound (fixes missing ; in template file)
+            if (durationString.equals("Kein Datum gef")) //TODO: remove this workaround (fixes missing ; in template file)
                 s = s.substring(0, s.length() - 1);
             lines.add(s);
 
             int i = 1;
-            Map<Pruefung, Integer> collisions = p.getCollisions();
-            Collection<Pruefung> pruefungenSorted2 = collisions.keySet();
-            pruefungenSorted2 = pruefungenSorted2.stream().sorted(Comparator.comparing(Pruefung::getQualifiedName)).toList();
-            for (Pruefung k : pruefungenSorted2) {
+            Map<Assessment, Integer> collisions = p.getCollisions();
+            Collection<Assessment> assessmentsSorted2 = collisions.keySet();
+            assessmentsSorted2 = assessmentsSorted2.stream().sorted(Comparator.comparing(Assessment::getQualifiedName)).toList();
+            for (Assessment k : assessmentsSorted2) {
                 String distanceStr;
                 if (p.getBegin() == null || k.getBegin() == null) {
                     distanceStr = "";
                 } else {
-                    Pruefung first;
-                    Pruefung last;
+                    Assessment first;
+                    Assessment last;
                     if (p.getBegin().isBefore(k.getBegin())) {
                         first = p;
                         last = k;

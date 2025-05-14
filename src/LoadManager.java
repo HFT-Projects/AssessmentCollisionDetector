@@ -7,9 +7,9 @@ import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 
 public class LoadManager {
-    public static Pruefung[] loadPruefungen(String path) throws IOException {
-        List<Pruefung> pruefungen = new LinkedList<>();
-        Set<String> existingPruefungen = new HashSet<>(); // check existingPruefungen by qualifiedName
+    public static Assessment[] loadExams(String path) throws IOException {
+        List<Assessment> exams = new LinkedList<>();
+        Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
         List<String> rows = Files.readAllLines(Paths.get(path));
 
         if (rows.isEmpty())
@@ -44,16 +44,16 @@ public class LoadManager {
             String[] columns = row.split(";");
 
             if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() ||*/ columns[5].isBlank() || columns[10].isBlank() || columns[11].isBlank())
-                throw new AssertionError("missing data in pruefungen file"); //TODO: specify whats missing & line
+                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
-            Long nr = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
+            Long no = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
             String name = columns[5];
             String stg = columns[1];
             String pversion = columns[2];
 
-            String qualifiedName = Pruefung.calculateQualifiedName(stg, pversion, nr, name);
+            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, no, name);
 
-            if (existingPruefungen.contains(qualifiedName))
+            if (existingExams.contains(qualifiedName))
                 continue;
 
 
@@ -69,7 +69,7 @@ public class LoadManager {
             }
             // assert that the loop actually hits eventually
             if (day == null)
-                throw new AssertionError("the pruefung " + nr + " " + name + "doesn't have a date.");
+                throw new AssertionError("the exam " + no + " " + name + "doesn't have a date.");
 
             String[] beginTimeSplit = beginTime.split(":");
             int hours = Integer.parseInt(beginTimeSplit[0]);
@@ -82,22 +82,22 @@ public class LoadManager {
             int minutes2 = Integer.parseInt(endTimeSplit[1]);
             LocalDateTime end = day.plusMinutes(hours2 * 60L + minutes2);
 
-            Pruefung p = new Pruefung(nr, name, columns[1], columns[2], begin, end);
-            pruefungen.add(p);
-            existingPruefungen.add(qualifiedName);
+            Assessment p = new Assessment(no, name, columns[1], columns[2], begin, end);
+            exams.add(p);
+            existingExams.add(qualifiedName);
         }
-        return pruefungen.toArray(new Pruefung[0]);
+        return exams.toArray(new Assessment[0]);
     }
 
-    public static Pruefung[] loadMissingPruefungenFromAnmeldungen(String path, Pruefung[] pruefungen) throws IOException {
-        List<Pruefung> additionalPruefungen = new LinkedList<>();
-        Map<String, Pruefung> pruefungenByQualifiedName = new HashMap<>();
+    public static Assessment[] loadMissingAssessments(String path, Assessment[] assessments) throws IOException {
+        List<Assessment> additionalAssessments = new LinkedList<>();
+        Map<String, Assessment> assessmentsByQualifiedName = new HashMap<>();
 
-        for (Pruefung p : pruefungen) {
+        for (Assessment p : assessments) {
             // the following exception should never occur (-> internal logic error -> bug)
-            if (pruefungenByQualifiedName.containsKey(p.getQualifiedName()))
-                throw new AssertionError("there are two pruefungen with the same name");
-            pruefungenByQualifiedName.put(p.getQualifiedName(), p);
+            if (assessmentsByQualifiedName.containsKey(p.getQualifiedName()))
+                throw new AssertionError("there are two assessments with the same name");
+            assessmentsByQualifiedName.put(p.getQualifiedName(), p);
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
@@ -108,30 +108,30 @@ public class LoadManager {
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
         for (String row : rowsWithoutHeader) {
             String[] columns = row.split(";");
-            long pruefungsNr = Long.parseLong(columns[5]);
+            long assessmentNo = Long.parseLong(columns[5]);
             String name = columns[6];
             String stg = columns[2];
             String pversion = columns[3];
-            String qualifiedName = Pruefung.calculateQualifiedName(stg, pversion, pruefungsNr, name);
-            if (!pruefungenByQualifiedName.containsKey(qualifiedName)) {
-                Pruefung p = new Pruefung(pruefungsNr, name, columns[2], columns[3], null, null);
-                additionalPruefungen.add(p);
-                pruefungenByQualifiedName.put(qualifiedName, p);
+            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, name);
+            if (!assessmentsByQualifiedName.containsKey(qualifiedName)) {
+                Assessment p = new Assessment(assessmentNo, name, columns[2], columns[3], null, null);
+                additionalAssessments.add(p);
+                assessmentsByQualifiedName.put(qualifiedName, p);
             }
         }
 
-        return additionalPruefungen.toArray(new Pruefung[0]);
+        return additionalAssessments.toArray(new Assessment[0]);
     }
 
-    public static void loadAnmeldungen(String path, Pruefung[] pruefungen) throws IOException {
-        Map<String, Set<String>> anmeldungen = new HashMap<>(); // Pruefung.qualifiedName -> MatrNr
+    public static void loadRegistrations(String path, Assessment[] assessments) throws IOException {
+        Map<String, Set<String>> registrations = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
 
-        for (Pruefung p : pruefungen) {
+        for (Assessment p : assessments) {
             String qualifiedName = p.getQualifiedName();
             // the following exception should never occur (-> internal logic error -> bug)
-            if (anmeldungen.containsKey(qualifiedName))
-                throw new AssertionError("there are two pruefungen with the same name");
-            anmeldungen.put(qualifiedName, new HashSet<>());
+            if (registrations.containsKey(qualifiedName))
+                throw new AssertionError("there are two assessments with the same name");
+            registrations.put(qualifiedName, new HashSet<>());
         }
 
         List<String> rows = Files.readAllLines(Paths.get(path));
@@ -144,23 +144,23 @@ public class LoadManager {
             String[] columns = row.split(";");
 
             //TODO: assert
-            String matrNr = columns[0];
-            long pruefungsNr = Long.parseLong(columns[5]);
-            String pruefungsName = columns[6];
+            String matrNo = columns[0];
+            long assessmentNo = Long.parseLong(columns[5]);
+            String assessmentName = columns[6];
             String stg = columns[2];
             String pversion = columns[3];
-            String qualifiedName = Pruefung.calculateQualifiedName(stg, pversion, pruefungsNr, pruefungsName);
+            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, assessmentName);
             // the following exception should never occur (-> internal logic error -> bug)
-            if (!anmeldungen.containsKey(qualifiedName))
-                throw new AssertionError("a user anmeldung references a unknown pruefung: " + qualifiedName);
-            anmeldungen.get(qualifiedName).add(matrNr);
+            if (!registrations.containsKey(qualifiedName))
+                throw new AssertionError("a user registration references a unknown assessment: " + qualifiedName);
+            registrations.get(qualifiedName).add(matrNo);
         }
 
-        for (Pruefung p : pruefungen) {
+        for (Assessment p : assessments) {
             // the following exception should never occur (-> internal logic error -> bug)
-            if (p.getAnmeldungen() != null)
-                throw new AssertionError("The Anmeldungen of the Prüfung " + p + " was already loaded.");
-            p.setAnmeldungen(anmeldungen.get(p.getQualifiedName()));
+            if (p.getRegisteredStudents() != null)
+                throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
+            p.setRegisteredStudents(registrations.get(p.getQualifiedName()));
         }
     }
 }
