@@ -2,7 +2,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Pruefung {
-    private Long nr;
+    private final Long nr;
     private final String name;
     private final String stg;
     private final String pversion;
@@ -23,10 +23,6 @@ public class Pruefung {
 
     public Long getNr() {
         return nr;
-    }
-
-    public void _overrideNr(Long nr) {
-        this.nr = nr;
     }
 
     public String getName() {
