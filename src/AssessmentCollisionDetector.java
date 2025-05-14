@@ -44,8 +44,8 @@ class AssessmentCollisionDetector {
                     collisions.put(k, collisionsLocal);
             }
 
-            p.setCollisionsAll(collisionsAll.size());
-            p.setCollisions(collisions);
+            p.setCollisionSum(collisionsAll.size());
+            p.setCollisionCountByAssessment(collisions);
         }
 
 

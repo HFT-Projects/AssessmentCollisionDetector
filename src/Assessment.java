@@ -10,8 +10,8 @@ public class Assessment {
     private final LocalDateTime begin;
     private final LocalDateTime end;
     private Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
-    private Integer collisionsAll = null;
-    private Map<Assessment, Integer> collisions = null;
+    private Integer collisionSum = null;
+    private Map<Assessment, Integer> collisionCountByAssessment = null;
 
     public Assessment(Long number, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
         this.number = number;
@@ -56,31 +56,31 @@ public class Assessment {
         this.registeredStudents = registeredStudents;
     }
 
-    public Integer getCollisionsAll() {
-        return collisionsAll;
+    public Integer getCollisionSum() {
+        return collisionSum;
     }
 
-    public void setCollisionsAll(Integer collisionsAll) {
-        this.collisionsAll = collisionsAll;
+    public void setCollisionSum(Integer collisionSum) {
+        this.collisionSum = collisionSum;
     }
 
-    public Map<Assessment, Integer> getCollisions() {
-        if (collisions == null)
+    public Map<Assessment, Integer> getCollisionCountByAssessment() {
+        if (collisionCountByAssessment == null)
             return null;
-        return new LinkedHashMap<>(collisions);
+        return new LinkedHashMap<>(collisionCountByAssessment);
     }
 
-    public void setCollisions(Map<Assessment, Integer> collisions) {
-        this.collisions = collisions;
+    public void setCollisionCountByAssessment(Map<Assessment, Integer> collisionCountByAssessment) {
+        this.collisionCountByAssessment = collisionCountByAssessment;
     }
 
     @Override
     public String toString() {
+        // create map with qualifiedName as string instead of object to print this instead because printing the actual Assessment object would create an infinite loop.
         Map<String, Integer> collisions = new TreeMap<>();
-
-        if (this.collisions != null) {
-            for (Assessment p : this.collisions.keySet()) {
-                collisions.put(p.getQualifiedName(), this.collisions.get(p));
+        if (this.collisionCountByAssessment != null) {
+            for (Assessment p : this.collisionCountByAssessment.keySet()) {
+                collisions.put(p.getQualifiedName(), this.collisionCountByAssessment.get(p));
             }
         }
 
@@ -92,8 +92,8 @@ public class Assessment {
                 ", qualifiedName='" + getQualifiedName() + '\'' +
                 ", begin=" + begin.format(formatter) +
                 ", end=" + end.format(formatter) +
-                ", collisionsAll=" + collisionsAll +
-                ", collisions=" + collisions +
+                ", collisionSum=" + collisionSum +
+                ", collisionCountByAssessment=" + collisions +
                 ", registeredStudents=" + registeredStudents +
                 '}';
     }

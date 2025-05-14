@@ -27,7 +27,7 @@ public class SaveManager {
             lines.add(s);
 
             int i = 1;
-            Map<Assessment, Integer> collisions = p.getCollisions();
+            Map<Assessment, Integer> collisions = p.getCollisionCountByAssessment();
             Collection<Assessment> assessmentsSorted2 = collisions.keySet();
             assessmentsSorted2 = assessmentsSorted2.stream().sorted(Comparator.comparing(Assessment::getQualifiedName)).toList();
             for (Assessment k : assessmentsSorted2) {
