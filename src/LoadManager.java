@@ -37,8 +37,8 @@ public class LoadManager {
 
             int day = Integer.parseInt(matcher.group(1));
             int month = Integer.parseInt(matcher.group(2));
-            //TODO: using year 1900 (fix with actual data)
-            LocalDateTime d = LocalDateTime.of(1900, month, day, 0, 0, 0);
+            //TODO: using year 1970 (fix with actual data)
+            LocalDateTime d = LocalDateTime.of(1970, month, day, 0, 0, 0);
 
             days[i - indexDaysBegin] = d;
         }
