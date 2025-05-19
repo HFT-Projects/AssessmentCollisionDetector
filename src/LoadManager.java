@@ -50,7 +50,7 @@ public class LoadManager {
 
             // TODO: hamann: no & pversion sometimes blank
             // check that data is complete
-            if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() ||*/ columns[5].isBlank() || columns[10].isBlank() || columns[11].isBlank())
+            if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() || !columns[4].strip().matches("[0-9]*") ||*/ columns[5].isBlank() || columns[10].isBlank() || !columns[10].strip().matches("[0-9]{1,2}:[0-9]{2}") || columns[11].isBlank() || !columns[11].strip().matches("[0-9]{1,2}:[0-9]{2}"))
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
             Long no = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
@@ -118,7 +118,7 @@ public class LoadManager {
             String[] columns = row.split(";");
 
             // check that data is complete
-            if (columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || columns[6].isBlank())
+            if (columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
             long assessmentNo = Long.parseLong(columns[5]);
@@ -162,7 +162,7 @@ public class LoadManager {
             String[] columns = row.split(";");
 
             // check that data is complete
-            if (columns[0].isBlank() || columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || columns[6].isBlank())
+            if (columns[0].isBlank() || columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
             String matrNo = columns[0];
