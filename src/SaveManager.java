@@ -23,10 +23,7 @@ public class SaveManager {
         Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
         for (Assessment p : assessmentsSorted) {
             // generate title line
-            String durationString = getDurationString(p);
-            String header_line = p.getQualifiedName() + ";;;;" + durationString + ";;;";
-            if (durationString.equals("Kein Datum gef")) //TODO: remove this workaround (fixes missing ; in template file)
-                header_line = header_line.substring(0, header_line.length() - 1);
+            String header_line = p.getQualifiedName() + ";;;;" + getDurationString(p) + ";;;";
             lines.add(header_line);
 
             // get all assessments colling with p and sort them by qualifiedName
