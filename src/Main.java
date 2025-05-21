@@ -3,9 +3,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 class Main {
-    final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
-    final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
-    final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
+    private final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
+    private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
+    public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
 
     public static void main(String[] args) throws IOException { //TODO: error handling
         Assessment[] assessments1 = LoadManager.loadExams(PATH_INPUT_ASSESSMENTS);
