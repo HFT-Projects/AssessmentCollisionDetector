@@ -22,10 +22,6 @@ public class SaveManager {
 
         Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
         for (Assessment p : assessmentsSorted) {
-            // workaround: all assessments without a single registration are ignored.
-            if (p.getRegisteredStudents().isEmpty())
-                continue;
-
             // generate title line
             String durationString = getDurationString(p);
             String header_line = p.getQualifiedName() + ";;;;" + durationString + ";;;";
