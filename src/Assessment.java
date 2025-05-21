@@ -31,7 +31,7 @@ public class Assessment {
     }
 
     public static String calculateQualifiedName(String stg, String pversion, Long no, String name) {
-        return stg + "-" + pversion + "-" + no + "-" + name;
+        return name + ".--." + (no == null ? "" : no) + ".--." + (pversion == null ? "" : pversion) + ".--." + (stg == null ? "" : stg);
     }
 
     public String getQualifiedName() {
