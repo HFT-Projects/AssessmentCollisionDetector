@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class SaveManager {
-    private static String getDurationString(Assessment p) {
+    protected static String getDurationString(Assessment p) {
         if (p.getBegin() == null)
             return "Kein Datum gef";
         DateTimeFormatter formatterDay = DateTimeFormatter.ofPattern("dd");
@@ -15,12 +15,24 @@ public class SaveManager {
     }
 
     public static void saveCollision(String path, Assessment[] assessments) throws IOException {
+        List<String> lines = formatCollision(assessments, true, true);
+
+        Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
+    }
+
+    public static List<String> formatCollision(Assessment[] assessments, boolean HeaderLiner, boolean standardSort){
         List<String> lines = new LinkedList<>();
+        Assessment[] assessmentsSorted = assessments;
 
         // add header line
-        lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
+        if(HeaderLiner){
+            lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
+        }
 
-        Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
+        if(standardSort){
+            assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
+        }
+
         for (Assessment p : assessmentsSorted) {
             // generate title line
             String header_line = p.getQualifiedName() + ";;;;" + getDurationString(p) + ";;;";
@@ -66,7 +78,6 @@ public class SaveManager {
 
         // add blank line at the end to match with template file
         lines.add("");
-
-        Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
+        return lines;
     }
 }
