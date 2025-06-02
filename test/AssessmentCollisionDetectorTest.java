@@ -18,8 +18,8 @@ class AssessmentCollisionDetectorTest {
 
     @Test
     void testMainOutputMatchesSample() throws Exception {
-        Main.main(new String[]{});
-        assertTrue(compareFiles(PATH_INPUT_COLLISIONS_SAMPLE, Main.PATH_OUTPUT_COLLISIONS),
+        ExamGUI.startProcess();
+        assertTrue(compareFiles(PATH_INPUT_COLLISIONS_SAMPLE, ExamGUI.PATH_OUTPUT_COLLISIONS),
                 "The output file doesn't match the sample file!");
     }
 }

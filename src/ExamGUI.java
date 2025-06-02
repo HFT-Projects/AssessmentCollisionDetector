@@ -15,6 +15,7 @@ import java.util.*;
 public class ExamGUI extends JFrame {
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
+    protected JButton ReadButton;
     private final ButtonGroup SortGroup = new ButtonGroup();
     private JTextField SearchField;
     private static JRadioButton StandardRadio;
@@ -26,6 +27,9 @@ public class ExamGUI extends JFrame {
     public static DefaultTableModel tableList;
     private JTable  table;
     private JComboBox comboBox;
+    private final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
+    private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
+    public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
 
 
 
@@ -76,20 +80,8 @@ public class ExamGUI extends JFrame {
             gbc_EinlesenLabel.gridy = 0;
             contentPane.add(EinlesenLabel, gbc_EinlesenLabel);
 
-            JButton ReadButton = new JButton("Einlesen");
-            ReadButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        Assessments_Current = Main.runProcessing();
-                        Assessment_BackUP = Assessments_Current;
-                        search_Assessments = Assessments_Current;
-                        table_Assessments(Assessments_Current, true);
-                        fill_DropDown();
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(null, "Das Programm konnte nicht ausgeführt werden");
-                    }
-                }
-            });
+            ReadButton = new JButton("Einlesen");
+            ReadButton.addActionListener(actionEvent -> startProcess());
             ReadButton.setFont(new Font("Times New Roman", Font.BOLD, 12));
             GridBagConstraints gbc_ReadButton = new GridBagConstraints();
             gbc_ReadButton.insets = new Insets(0, 0, 5, 5);
@@ -111,7 +103,6 @@ public class ExamGUI extends JFrame {
             JButton SearchButton = new JButton("Suchen");
             SearchButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    comboBox.setSelectedIndex(0);
                     String searchText = SearchField.getText();
                     if(isNumber(searchText)){
                         searchAssessment(null, Long.valueOf(searchText));
@@ -129,40 +120,6 @@ public class ExamGUI extends JFrame {
             gbc_SearchButton.gridy = 0;
             contentPane.add(SearchButton, gbc_SearchButton);
 
-            JLabel DropDownLabel = new JLabel("Auswählen:");
-            DropDownLabel.setHorizontalAlignment(SwingConstants.LEFT);
-            DropDownLabel.setFont(new Font("Times New Roman", Font.BOLD, 15));
-            GridBagConstraints gbc_DropDownLabel = new GridBagConstraints();
-            gbc_DropDownLabel.fill = GridBagConstraints.BOTH;
-            gbc_DropDownLabel.gridwidth = 2;
-            gbc_DropDownLabel.insets = new Insets(0, 0, 5, 5);
-            gbc_DropDownLabel.gridx = 0;
-            gbc_DropDownLabel.gridy = 1;
-            contentPane.add(DropDownLabel, gbc_DropDownLabel);
-
-            comboBox = new JComboBox();
-            comboBox.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if(!comboBox.getSelectedItem().equals("")){
-                        String selected = (String) comboBox.getSelectedItem();
-                        String [] comboBox_Text = selected.split(" ");
-                        /*
-                        Long NumberComboBox = comboBox_Text[0] == null ? 0 :  Long.valueOf(comboBox_Text[0]);
-                        searchAssessment(comboBox_Text[1],NumberComboBox);
-                        */
-                        searchAssessment(comboBox_Text[1],null);
-                    } else{
-                        searchAssessment("", null);
-                    }
-                }
-            });
-            GridBagConstraints gbc_comboBox = new GridBagConstraints();
-            gbc_comboBox.gridwidth = 3;
-            gbc_comboBox.insets = new Insets(0, 0, 5, 5);
-            gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
-            gbc_comboBox.gridx = 3;
-            gbc_comboBox.gridy = 1;
-            contentPane.add(comboBox, gbc_comboBox);
 
             JLabel SortLabel = new JLabel("Sortieren nach:");
             SortLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -189,18 +146,6 @@ public class ExamGUI extends JFrame {
             gbc_StandardRadio.gridy = 2;
             contentPane.add(StandardRadio, gbc_StandardRadio);
 
-            JButton ShuffleButton = new JButton("Shuffle");
-            ShuffleButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                }
-            });
-            ShuffleButton.setFont(new Font("Times New Roman", Font.BOLD, 12));
-            GridBagConstraints gbc_ShuffleButton = new GridBagConstraints();
-            gbc_ShuffleButton.insets = new Insets(0, 0, 5, 0);
-            gbc_ShuffleButton.fill = GridBagConstraints.BOTH;
-            gbc_ShuffleButton.gridx = 6;
-            gbc_ShuffleButton.gridy = 2;
-            contentPane.add(ShuffleButton, gbc_ShuffleButton);
 
             ExamNumberRadio = new JRadioButton("Prüf.Nr");
             ExamNumberRadio.addActionListener(e -> SortRadio());
@@ -258,6 +203,7 @@ public class ExamGUI extends JFrame {
             contentPane.add(scrollPane, gbc_scrollPane);
         }
 
+
         //To sort the list
         public static void SortRadio(){
             Assessments_Current = search_Assessments;
@@ -279,11 +225,8 @@ public class ExamGUI extends JFrame {
                         return Long.compare(xNum, yNum);
                     });
                     table_Assessments(Assessments_Current, false);
-
                 }
-
             }
-
         }
 
         public static void table_Assessments(Assessment [] a, boolean standardSort){
@@ -291,12 +234,17 @@ public class ExamGUI extends JFrame {
 
             List<String> lines = SaveManager.formatCollision(a, false, standardSort);
 
-            // Paste die lines into tableList
+            // Paste lines into tableList
             for (String line : lines) {
                 String[] values = line.split(";", -1); // for empty lines
                 tableList.addRow(values);
             }
             System.out.println("Rows: " + tableList.getRowCount());
+
+        }
+
+        public static void save_ToFile() throws IOException {
+            SaveManager.saveCollision(PATH_OUTPUT_COLLISIONS, Assessment_BackUP);
 
         }
 
@@ -360,15 +308,15 @@ public class ExamGUI extends JFrame {
             SortRadio();
         }
 
-    public void fill_DropDown(){
-            Assessment [] sortedAssesments = Assessments_Current;
-            comboBox.addItem("");
-            Arrays.sort(sortedAssesments,(x,y) -> x.getName().compareTo(y.getName()) );
-            for(Assessment p: sortedAssesments){
-                String entry = p.getNumber() + " " + p.getName();
-                comboBox.addItem(entry);
-
-            }
+    public static void startProcess(){
+        try {
+            Assessments_Current = Main.runProcessing(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS, PATH_OUTPUT_COLLISIONS);
+            Assessment_BackUP = Assessments_Current;
+            search_Assessments = Assessments_Current;
+            SortRadio();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null, "Das Programm konnte nicht ausgeführt werden");
+        }
     }
 
     public static boolean isNumber(String input) {
@@ -383,6 +331,6 @@ public class ExamGUI extends JFrame {
 
 
 
-    }
+}
 
 
