@@ -1,0 +1,78 @@
+Claude 3.7 Sonnet:
+
+1. Prompt:
+Erstelle eine GUI zur Darstellungen der Kollisionen mit den folgenden Eigenschaften:
+- Auswahl der Dateipfade (pruefungen.csv, anmeldungen.csv & collisons.csv; via file selector gui)
+    - Message Box when error (invalid path, file invalid, write protected, etc.)
+  - Knopf zum Einlesen und Bestimmen der Kollisionen
+  - Knopf zum Schreiben der Kollisionen in collisions.csv
+  - Auflistung aller Konflikte in einer Tabelle
+  - Filtern nach Prüfungs1- und Prüfungs2name (jeweils seperat)
+  - Sortierung der Konflikte (äußere und innere Ebene (jeweils seperat); Sortierungsoptionen als Dropdown Menu)
+
+
+
+2. Prompt:
+Verschiebe die Input-Sachen in eine eigne Seite (mit Seitenauswahl oben) und die Tabelle in eine eigene Seite.
+Beim Öffnen ist die Input-Seite geöffnet, beim parsen wird auf die Tabellenseite gewechselt.
+Erstelle die folgenden Spalten: Exam 1, Exam 2, Collision Count, Begin, End, Distance.
+Mach eine Titelzeile mit einem Assessment (Exam 2 ist leer) und liste darunter alle Kollisionen auf (Exam 1 bleibt gleich, Exam 2 ist die Kollision)
+
+ab hier Claude 3.5 Sonnet:
+
+
+
+3. Prompt:
+Füge vor den Felder für die Dateipfade und vor die Such- und Sortierfelder eine Beschriftung (kurzer Name) hinzu und entferne die Beschriftung darunter.
+CollisionCount der Titelzeile (Summe) ignoriert aktuell alle Prüfungen ohne Datum. Fix das
+Füge Kommentare (in Englisch) hinzu und erkläre dadurch den Code.
+
+
+
+4. Prompt:
+** (java:3749275): WARNING **: 16:49:11.635: atk-bridge: GetRegisteredEvents returned message with unknown signature
+Exception in Application stop method
+java.lang.reflect.InvocationTargetException
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.LauncherImpl.launchApplicationWithArgs(LauncherImpl.java:465)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.LauncherImpl.launchApplication(LauncherImpl.java:365)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/sun.launcher.LauncherHelper$FXHelper.main(LauncherHelper.java:1147)
+Caused by: java.lang.RuntimeException: Exception in Application start method
+	at javafx.graphics@24.0.1/com.sun.javafx.application.LauncherImpl.launchApplication1(LauncherImpl.java:894)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.LauncherImpl.lambda$launchApplication$0(LauncherImpl.java:197)
+	at java.base/java.lang.Thread.run(Thread.java:1570)
+Caused by: java.lang.ClassCastException: class javafx.scene.layout.HBox cannot be cast to class javafx.scene.layout.GridPane (javafx.scene.layout.HBox and javafx.scene.layout.GridPane are in module javafx.graphics@24.0.1 of loader 'app')
+	at ExamGUI.setupEventHandlers(ExamGUI.java:564)
+	at ExamGUI.start(ExamGUI.java:137)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.LauncherImpl.lambda$launchApplication1$7(LauncherImpl.java:840)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.PlatformImpl.lambda$runAndWait$5(PlatformImpl.java:444)
+	at javafx.graphics@24.0.1/com.sun.javafx.application.PlatformImpl.lambda$runLater$4(PlatformImpl.java:419)
+	at javafx.graphics@24.0.1/com.sun.glass.ui.InvokeLaterDispatcher$Future.run(InvokeLaterDispatcher.java:95)
+	at javafx.graphics@24.0.1/com.sun.glass.ui.gtk.GtkApplication._runLoop(Native Method)
+	at javafx.graphics@24.0.1/com.sun.glass.ui.gtk.GtkApplication.lambda$runLoop$1(GtkApplication.java:240)
+	... 1 more
+Exception running application ExamGUI
+
+
+
+Prompt 4:
+Die Label sind unsichtbar (weiß auf weiß) -> Fix das
+
+CollisionCount der Titelzeile (Summe) ignoriert aktuell alle Prüfungen ohne Datum -> Fix das
+
+Füge Kommentare (in Englisch) hinzu und erkläre dadurch den Code.
+
+
+
+Prompt 5:
+change secondary sort to sort Exam 2 and primary sort to sort Exam 1 row.
+
+Only show day and month in the dates (not year)
+
+
+
+Prompt 6:
+change also the behavior and the variable names to change secondary sort to sort Exam 2 and primary sort to sort Exam 1 row.
