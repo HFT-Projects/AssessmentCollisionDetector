@@ -24,8 +24,8 @@ public class SaveManager {
         Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
         for (Assessment p : assessmentsSorted) {
             // generate title line
-            String header_line = p.getQualifiedName() + ";;;;" + getDurationString(p) + ";;;";
-            lines.add(header_line);
+            String headerLine = p.getQualifiedName() + ";;;;" + getDurationString(p) + ";;;";
+            lines.add(headerLine);
 
             // get all assessments colling with p and sort them by qualifiedName
             Map<Assessment, Integer> collisionCountByAssessment = p.getCollisionCountByAssessment();
@@ -58,10 +58,10 @@ public class SaveManager {
                 }
 
                 // generate entry line
-                String entry_line = ";" + i + ";" + p.getQualifiedName() + ";" + k.getQualifiedName() + ";" + getDurationString(k) + ";" + collisionCountByAssessment.get(k) + ";" + distanceStr;
+                String entryLine = ";" + i + ";" + p.getQualifiedName() + ";" + k.getQualifiedName() + ";" + getDurationString(k) + ";" + collisionCountByAssessment.get(k) + ";" + distanceStr;
 
                 i++;
-                lines.add(entry_line);
+                lines.add(entryLine);
             }
         }
 

@@ -28,15 +28,15 @@ public class LoadManager {
         LocalDateTime[] days;
 
         // parse header line to extract the possible dates of the exams
-        List<String> header_columns = Arrays.asList(rows.get(0).split(";"));
-        indexDaysBegin = header_columns.indexOf("Ende") + 1;
-        indexDaysEnd = header_columns.indexOf("Gruppe") - 1;
+        List<String> headerColumns = Arrays.asList(rows.get(0).split(";"));
+        indexDaysBegin = headerColumns.indexOf("Ende") + 1;
+        indexDaysEnd = headerColumns.indexOf("Gruppe") - 1;
         // create array to map the exam days to the actual date
         days = new LocalDateTime[indexDaysEnd - indexDaysBegin + 1];
         for (int i = indexDaysBegin; i <= indexDaysEnd; i++) {
             // create a matcher to extract the date from the following string: "Mo 01.01."
             Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
-            Matcher matcher = pattern.matcher(header_columns.get(i));
+            Matcher matcher = pattern.matcher(headerColumns.get(i));
 
             if (!matcher.find())
                 throw new AssertionError("date has unexpected format");
