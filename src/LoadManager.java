@@ -119,7 +119,7 @@ public class LoadManager {
 
             // check that data is complete
             if (columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
-                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
+                throw new AssertionError("missing data in registrations file"); //TODO: specify whats missing & line
 
             long assessmentNo = Long.parseLong(columns[5]);
             String name = columns[6];
