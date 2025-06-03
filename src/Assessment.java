@@ -90,8 +90,8 @@ public class Assessment {
                 "number=" + number +
                 ", name='" + name + '\'' +
                 ", qualifiedName='" + getQualifiedName() + '\'' +
-                ", begin=" + begin.format(formatter) +
-                ", end=" + end.format(formatter) +
+                ", begin=" + (begin != null ? begin.format(formatter) : null) +
+                ", end=" + (end != null ? end.format(formatter) : null) +
                 ", collisionSum=" + collisionSum +
                 ", collisionCountByAssessment=" + collisions +
                 ", registeredStudents=" + registeredStudents +
