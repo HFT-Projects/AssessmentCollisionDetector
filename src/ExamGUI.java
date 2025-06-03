@@ -447,8 +447,8 @@ public class ExamGUI extends Application {
             this.collisionCountValue = collisionCount;
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
-            this.beginTime = assessment.getBegin() != null ? assessment.getBegin().format(formatter) : "";
-            this.endTime = assessment.getEnd() != null ? assessment.getEnd().format(formatter) : "";
+            this.beginTime = collidingAssessment.getBegin() != null ? collidingAssessment.getBegin().format(formatter) : "";
+            this.endTime = collidingAssessment.getEnd() != null ? collidingAssessment.getEnd().format(formatter) : "";
 
             // Calculate distance if possible
             if (assessment.getBegin() != null && collidingAssessment.getBegin() != null) {
