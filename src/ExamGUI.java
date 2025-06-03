@@ -15,6 +15,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import java.util.stream.Stream;
+
 import javafx.scene.effect.DropShadow;
 
 public class ExamGUI extends Application {
@@ -262,13 +264,13 @@ public class ExamGUI extends Application {
         sortExam1Box = createStyledComboBox();
         sortExam1Box.setPromptText("Select Exam 1 sort...");
         sortExam1Box.setItems(FXCollections.observableArrayList(
-            "Exam Name", "Date", "Time", "Room", "Collision Count"
+                "Exam Name", "Date", "Time", "Room", "Collision Count"
         ));
 
         sortExam2Box = createStyledComboBox();
         sortExam2Box.setPromptText("Select Exam 2 sort...");
         sortExam2Box.setItems(FXCollections.observableArrayList(
-            "Exam Name", "Date", "Time", "Room", "Collision Count"
+                "Exam Name", "Date", "Time", "Room", "Collision Count"
         ));
 
         // Create and style field labels
@@ -333,47 +335,47 @@ public class ExamGUI extends Application {
 
         // Apply table styles
         collisionTreeTable.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-border-color: #e0e0e0;" +
-            "-fx-border-width: 1px;" +
-            "-fx-border-radius: 4px;"
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #e0e0e0;" +
+                        "-fx-border-width: 1px;" +
+                        "-fx-border-radius: 4px;"
         );
 
         // Table columns
         TreeTableColumn<CollisionEntry, String> exam1Col =
-            new TreeTableColumn<>("Exam 1");
+                new TreeTableColumn<>("Exam 1");
         exam1Col.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().exam1QualifiedName)
+                param -> new SimpleStringProperty(param.getValue().getValue().exam1QualifiedName)
         );
 
         TreeTableColumn<CollisionEntry, String> exam2Col =
-            new TreeTableColumn<>("Exam 2");
+                new TreeTableColumn<>("Exam 2");
         exam2Col.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().exam2QualifiedName)
+                param -> new SimpleStringProperty(param.getValue().getValue().exam2QualifiedName)
         );
 
         TreeTableColumn<CollisionEntry, String> collisionCountCol =
-            new TreeTableColumn<>("Collision Count");
+                new TreeTableColumn<>("Collision Count");
         collisionCountCol.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().collisionCount)
+                param -> new SimpleStringProperty(param.getValue().getValue().collisionCount)
         );
 
         TreeTableColumn<CollisionEntry, String> beginCol =
-            new TreeTableColumn<>("Begin");
+                new TreeTableColumn<>("Begin");
         beginCol.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().beginTime)
+                param -> new SimpleStringProperty(param.getValue().getValue().beginTime)
         );
 
         TreeTableColumn<CollisionEntry, String> endCol =
-            new TreeTableColumn<>("End");
+                new TreeTableColumn<>("End");
         endCol.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().endTime)
+                param -> new SimpleStringProperty(param.getValue().getValue().endTime)
         );
 
         TreeTableColumn<CollisionEntry, String> distanceCol =
-            new TreeTableColumn<>("Distance");
+                new TreeTableColumn<>("Distance");
         distanceCol.setCellValueFactory(
-            param -> new SimpleStringProperty(param.getValue().getValue().distance)
+                param -> new SimpleStringProperty(param.getValue().getValue().distance)
         );
 
         // Style the columns
@@ -416,12 +418,12 @@ public class ExamGUI extends Application {
 
             // Calculate total collisions including exams without dates
             Map<Assessment, Integer> collisions = assessment != null ?
-                assessment.getCollisionCountByAssessment() :
-                Map.of();
+                    assessment.getCollisionCountByAssessment() :
+                    Map.of();
 
             int totalCount = collisions.values().stream()
-                .mapToInt(Integer::intValue)
-                .sum();
+                    .mapToInt(Integer::intValue)
+                    .sum();
 
             this.collisionCount = String.valueOf(totalCount);
             this.collisionCountValue = totalCount;
@@ -498,12 +500,12 @@ public class ExamGUI extends Application {
     private TextField createStyledTextField(String initialText) {
         TextField textField = new TextField(initialText);
         textField.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-border-color: #e0e0e0;" +
-            "-fx-border-width: 1px;" +
-            "-fx-border-radius: 4px;" +
-            "-fx-padding: 8px;" +
-            "-fx-font-size: 12px;"
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #e0e0e0;" +
+                        "-fx-border-width: 1px;" +
+                        "-fx-border-radius: 4px;" +
+                        "-fx-padding: 8px;" +
+                        "-fx-font-size: 12px;"
         );
         textField.setPromptText("Enter path..."); // Add placeholder text
         return textField;
@@ -512,12 +514,12 @@ public class ExamGUI extends Application {
     private ComboBox<String> createStyledComboBox() {
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-border-color: #e0e0e0;" +
-            "-fx-border-width: 1px;" +
-            "-fx-border-radius: 4px;" +
-            "-fx-padding: 8px;" +
-            "-fx-font-size: 12px;"
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #e0e0e0;" +
+                        "-fx-border-width: 1px;" +
+                        "-fx-border-radius: 4px;" +
+                        "-fx-padding: 8px;" +
+                        "-fx-font-size: 12px;"
         );
         return comboBox;
     }
@@ -525,35 +527,35 @@ public class ExamGUI extends Application {
     private Button createStyledButton(String text, String bgColor) {
         Button button = new Button(text);
         button.setStyle(
-            "-fx-background-color: " + bgColor + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 8px 15px;" +
-            "-fx-cursor: hand;" +
-            "-fx-border-radius: 4px;"
+                "-fx-background-color: " + bgColor + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8px 15px;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-border-radius: 4px;"
         );
 
         // Hover effect
         button.setOnMouseEntered(e ->
-            button.setStyle(
-                "-fx-background-color: derive(" + bgColor + ", -20%);" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-padding: 8px 15px;" +
-                "-fx-cursor: hand;" +
-                "-fx-border-radius: 4px;"
-            )
+                button.setStyle(
+                        "-fx-background-color: derive(" + bgColor + ", -20%);" +
+                                "-fx-text-fill: white;" +
+                                "-fx-font-weight: bold;" +
+                                "-fx-padding: 8px 15px;" +
+                                "-fx-cursor: hand;" +
+                                "-fx-border-radius: 4px;"
+                )
         );
 
         button.setOnMouseExited(e ->
-            button.setStyle(
-                "-fx-background-color: " + bgColor + ";" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-padding: 8px 15px;" +
-                "-fx-cursor: hand;" +
-                "-fx-border-radius: 4px;"
-            )
+                button.setStyle(
+                        "-fx-background-color: " + bgColor + ";" +
+                                "-fx-text-fill: white;" +
+                                "-fx-font-weight: bold;" +
+                                "-fx-padding: 8px 15px;" +
+                                "-fx-cursor: hand;" +
+                                "-fx-border-radius: 4px;"
+                )
         );
 
         return button;
@@ -562,7 +564,7 @@ public class ExamGUI extends Application {
     private void setupEventHandlers(Stage primaryStage) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
         );
         fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
 
@@ -576,19 +578,19 @@ public class ExamGUI extends Application {
 
         // Get the browse buttons from the grid
         Button examBrowse = (Button) fileGrid.getChildren().stream()
-            .filter(node -> node instanceof Button)
-            .findFirst()
-            .orElseThrow();
+                .filter(node -> node instanceof Button)
+                .findFirst()
+                .orElseThrow();
         Button registrationBrowse = (Button) fileGrid.getChildren().stream()
-            .filter(node -> node instanceof Button)
-            .skip(1)
-            .findFirst()
-            .orElseThrow();
+                .filter(node -> node instanceof Button)
+                .skip(1)
+                .findFirst()
+                .orElseThrow();
         Button collisionBrowse = (Button) fileGrid.getChildren().stream()
-            .filter(node -> node instanceof Button)
-            .skip(2)
-            .findFirst()
-            .orElseThrow();
+                .filter(node -> node instanceof Button)
+                .skip(2)
+                .findFirst()
+                .orElseThrow();
 
         // Set button actions
         examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, primaryStage, false));
@@ -614,7 +616,7 @@ public class ExamGUI extends Application {
         collisionTreeTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 TreeItem<CollisionEntry> selected =
-                    collisionTreeTable.getSelectionModel().getSelectedItem();
+                        collisionTreeTable.getSelectionModel().getSelectedItem();
                 if (selected != null && !selected.getValue().isTitle()) {
                     showCollisionDetails(selected.getValue());
                 }
@@ -637,93 +639,84 @@ public class ExamGUI extends Application {
     }
 
     private void detectCollisions() {
-        try {
-            String examsPath = examPathField.getText();
-            String registrationsPath = registrationPathField.getText();
+        String examsPath = examPathField.getText();
+        String registrationsPath = registrationPathField.getText();
 
-            if (!new File(examsPath).exists()) {
-                showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
-                return;
-            }
+        if (!new File(examsPath).exists()) {
+            showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
+            return;
+        }
 
-            if (!new File(registrationsPath).exists()) {
-                showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
-                return;
-            }
+        if (!new File(registrationsPath).exists()) {
+            showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
+            return;
+        }
 
-            // save paths to preferences
-            prefs.put("examsPath", examsPath);
-            prefs.put("registrationsPath", registrationsPath);
+        // save paths to preferences
+        prefs.put("examsPath", examsPath);
+        prefs.put("registrationsPath", registrationsPath);
 
-            Assessment[] assessments1 = LoadManager.loadExams(examPathField.getText(), null);
-            Assessment[] assessments2 = LoadManager.loadMissingAssessments(registrationPathField.getText(), assessments1);
-            Assessment[] assessments = Stream.of(assessments1, assessments2).flatMap(Arrays::stream).toArray(Assessment[]::new);
+        Assessment[] assessments1 = LoadManager.loadExams(examPathField.getText(), null);
+        Assessment[] assessments2 = LoadManager.loadMissingAssessments(registrationPathField.getText(), assessments1);
+        Assessment[] assessments = Stream.of(assessments1, assessments2).flatMap(Arrays::stream).toArray(Assessment[]::new);
 
-            Map<String, Set<String>> registrationsByAssessmentsQualifiedName = LoadManager.loadRegistrations(registrationPathField.getText(), assessments);
-            // save registrations into Assessment objects
-            for (Assessment p : assessments) {
-                // the following exception should never occur (-> internal logic error -> bug)
-                if (p.getRegisteredStudents() != null)
-                    throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
+        Map<String, Set<String>> registrationsByAssessmentsQualifiedName = LoadManager.loadRegistrations(registrationPathField.getText(), assessments);
+        // save registrations into Assessment objects
+        for (Assessment p : assessments) {
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (p.getRegisteredStudents() != null)
+                throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
 
-                ((AssessmentEditable)p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
-            }
+            ((AssessmentEditable)p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
+        }
 
-            Map<Assessment, CollisionDetector.ReturnTuple> collisions = CollisionDetector.detectCollisions(assessments);
-            // save collisions into Assessment objects
-            for (Assessment p : assessments) {
-                // the following exception should never occur (-> internal logic error -> bug)
-                if (p.getCollisionSum() != null || p.getCollisionCountByAssessment() != null)
-                    throw new AssertionError("The collisions of the assessment " + p + " was already loaded.");
+        Map<Assessment, CollisionDetector.ReturnTuple> collisions = CollisionDetector.detectCollisions(assessments);
+        // save collisions into Assessment objects
+        for (Assessment p : assessments) {
+            // the following exception should never occur (-> internal logic error -> bug)
+            if (p.getCollisionSum() != null || p.getCollisionCountByAssessment() != null)
+                throw new AssertionError("The collisions of the assessment " + p + " was already loaded.");
 
-                CollisionDetector.ReturnTuple collision = collisions.get(p);
-                ((AssessmentEditable)p).setCollisionSum(collision.collisionSum());
-                ((AssessmentEditable)p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
-            }
+            CollisionDetector.ReturnTuple collision = collisions.get(p);
+            ((AssessmentEditable)p).setCollisionSum(collision.collisionSum());
+            ((AssessmentEditable)p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
+        }
 
-            Map<Assessment, CollisionDetector.ReturnTuple> collisionMap =
+        Map<Assessment, CollisionDetector.ReturnTuple> collisionMap =
                 CollisionDetector.detectCollisions(assessments);
 
-            this.collisions = FXCollections.observableArrayList(collisionMap.entrySet());
-            updateCollisionTreeTable();
-            updateSort();
+        this.collisions = FXCollections.observableArrayList(collisionMap.entrySet());
+        updateCollisionTreeTable();
+        updateSort();
 
-            showAlert("Collisions detected successfully!", Alert.AlertType.INFORMATION);
+        showAlert("Collisions detected successfully!", Alert.AlertType.INFORMATION);
 
-            // Switch to results tab
-            tabPane.getSelectionModel().select(RESULTS_PAGE);
-
-        } catch (Exception e) {
-            showAlert("Error detecting collisions: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
+        // Switch to results tab
+        tabPane.getSelectionModel().select(RESULTS_PAGE);
     }
 
     private void saveCollisions() {
-        try {
-            String collisionsPath = collisionPathField.getText();
+        String collisionsPath = collisionPathField.getText();
 
-            if (!( new File(collisionsPath).getParentFile().exists() && new File(collisionsPath).getParentFile() != null && new File(collisionsPath).getParentFile().canWrite() && ( !new File(collisionsPath).exists() || new File(collisionsPath).canWrite() ) )) {
-                showAlert("Invalid collisions file path.", Alert.AlertType.ERROR);
-                return;
-            }
+        if (!(new File(collisionsPath).getParentFile().exists() && new File(collisionsPath).getParentFile() != null && new File(collisionsPath).getParentFile().canWrite() && (!new File(collisionsPath).exists() || new File(collisionsPath).canWrite()))) {
+            showAlert("Invalid collisions file path.", Alert.AlertType.ERROR);
+            return;
+        }
 
-            // save paths to preferences
-            prefs.put("collisionsPath", collisionsPath);
+        // save paths to preferences
+        prefs.put("collisionsPath", collisionsPath);
 
-            if (collisions == null || collisions.isEmpty()) {
-                showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
-                return;
-            }
+        if (collisions == null || collisions.isEmpty()) {
+            showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
+            return;
+        }
 
-            Assessment[] assessmentsArray = collisions.stream()
+        Assessment[] assessmentsArray = collisions.stream()
                 .map(Map.Entry::getKey)
                 .toArray(Assessment[]::new);
 
-            SaveManager.saveCollisions(collisionsPath, assessmentsArray);
-            showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
-        } catch (Exception e) {
-            showAlert("Error saving collisions: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
+        SaveManager.saveCollisions(collisionsPath, assessmentsArray);
+        showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
     }
 
     private void updateCollisionTable() {
@@ -749,7 +742,7 @@ public class ExamGUI extends Application {
 
             // Check if this assessment matches exam1 filter (only for title rows)
             boolean matchesExam1 = exam1Filter.isEmpty() ||
-                assessment.getQualifiedName().toLowerCase().contains(exam1Filter);
+                    assessment.getQualifiedName().toLowerCase().contains(exam1Filter);
 
             if (!matchesExam1) {
                 continue; // Skip this assessment if it doesn't match exam1 filter
@@ -757,7 +750,7 @@ public class ExamGUI extends Application {
 
             // Create a title item for this assessment
             TreeItem<CollisionEntry> titleItem = new TreeItem<>(
-                new CollisionEntry(assessment)
+                    new CollisionEntry(assessment)
             );
             titleItem.setExpanded(true);
 
@@ -770,11 +763,11 @@ public class ExamGUI extends Application {
 
                 // Check if colliding assessment matches exam2 filter
                 boolean matchesExam2 = exam2Filter.isEmpty() ||
-                    collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
+                        collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
 
                 if (matchesExam2) {
                     TreeItem<CollisionEntry> childItem = new TreeItem<>(
-                        new CollisionEntry(assessment, collidingAssessment, collisionCount)
+                            new CollisionEntry(assessment, collidingAssessment, collisionCount)
                     );
                     titleItem.getChildren().add(childItem);
                     hasMatchingChild = true;
@@ -802,12 +795,12 @@ public class ExamGUI extends Application {
 
         // Sort the title rows (Exam 1) using primary sort
         root.getChildren().sort((item1, item2) ->
-            compareCollisionEntries(item1.getValue(), item2.getValue(), exam1Sort));
+                compareCollisionEntries(item1.getValue(), item2.getValue(), exam1Sort));
 
         // Sort children of each title row (Exam 2) using secondary sort
         for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
             titleItem.getChildren().sort((item1, item2) ->
-                compareCollisionEntries(item1.getValue(), item2.getValue(), exam2Sort));
+                    compareCollisionEntries(item1.getValue(), item2.getValue(), exam2Sort));
         }
     }
 
@@ -859,8 +852,8 @@ public class ExamGUI extends Application {
                 yield compareA1.getQualifiedName().compareTo(compareA2.getQualifiedName());
             }
             case "Collision Count" -> Integer.compare(
-                entry2.getCollisionCountValue(),  // Descending order
-                entry1.getCollisionCountValue()
+                    entry2.getCollisionCountValue(),  // Descending order
+                    entry1.getCollisionCountValue()
             );
             default -> 0;
         };
@@ -886,16 +879,16 @@ public class ExamGUI extends Application {
             HBox timeInfo = new HBox(10);
             timeInfo.setAlignment(Pos.CENTER_LEFT);
             timeInfo.setStyle(
-                "-fx-background-color: " + LIGHT_COLOR + ";" +
-                "-fx-padding: 10px;" +
-                "-fx-border-radius: 5px;" +
-                "-fx-background-radius: 5px;"
+                    "-fx-background-color: " + LIGHT_COLOR + ";" +
+                            "-fx-padding: 10px;" +
+                            "-fx-border-radius: 5px;" +
+                            "-fx-background-radius: 5px;"
             );
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
             Label timeLabel = new Label("Scheduled: " +
-                exam.getBegin().format(formatter) + " to " +
-                exam.getEnd().format(formatter));
+                    exam.getBegin().format(formatter) + " to " +
+                    exam.getEnd().format(formatter));
             timeLabel.setStyle("-fx-font-weight: bold;");
 
             timeInfo.getChildren().add(timeLabel);
@@ -908,10 +901,10 @@ public class ExamGUI extends Application {
             HBox collisionInfo = new HBox(10);
             collisionInfo.setAlignment(Pos.CENTER_LEFT);
             collisionInfo.setStyle(
-                "-fx-background-color: " + LIGHT_COLOR + ";" +
-                "-fx-padding: 10px;" +
-                "-fx-border-radius: 5px;" +
-                "-fx-background-radius: 5px;"
+                    "-fx-background-color: " + LIGHT_COLOR + ";" +
+                            "-fx-padding: 10px;" +
+                            "-fx-border-radius: 5px;" +
+                            "-fx-background-radius: 5px;"
             );
 
             VBox examInfo = new VBox(5);
@@ -924,8 +917,8 @@ public class ExamGUI extends Application {
             if (collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
                 Label timeLabel = new Label("Scheduled: " +
-                    collidingAssessment.getBegin().format(formatter) + " to " +
-                    collidingAssessment.getEnd().format(formatter));
+                        collidingAssessment.getBegin().format(formatter) + " to " +
+                        collidingAssessment.getEnd().format(formatter));
                 timeLabel.setStyle("-fx-font-size: 12px;");
                 examInfo.getChildren().add(timeLabel);
             }
@@ -941,8 +934,8 @@ public class ExamGUI extends Application {
 
         // Add distance information if available
         if (collision.getCollidingAssessment() != null &&
-            exam.getBegin() != null &&
-            collision.getCollidingAssessment().getBegin() != null) {
+                exam.getBegin() != null &&
+                collision.getCollidingAssessment().getBegin() != null) {
 
             Duration duration = Duration.between(exam.getBegin(), collision.getCollidingAssessment().getBegin());
             long hours = Math.abs(duration.toHours());
