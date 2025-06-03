@@ -27,4 +27,33 @@ public class AssessmentOptimizer {
 
         return mergedAssessments.values().toArray(new MergedAssessment[0]);
     }
+
+    private static void getAssessmentGroupsRecursive(MergedAssessment assessment, List<MergedAssessment> assessmentGroup) {
+        assessmentGroup.add(assessment);
+        for (Assessment a : assessment.getCollisionCountByAssessment().keySet()) {
+            MergedAssessment ma = MergedAssessment.getAssessmentToMergedAssessmentMap().get(a);
+            if (assessmentGroup.contains(ma))
+                continue;
+            getAssessmentGroupsRecursive(ma, assessmentGroup);
+        }
+    }
+
+    public static MergedAssessment[][] getAssessmentGroups(MergedAssessment[] mergedAssessments) {
+        Set<MergedAssessment> alreadyProcessed = new HashSet<>();
+        List<List<MergedAssessment>> assessmentGroups = new LinkedList<>();
+
+        for (MergedAssessment ma : mergedAssessments) {
+            if (alreadyProcessed.contains(ma))
+                continue;
+            List<MergedAssessment> assessmentGroup = new LinkedList<>();
+
+            getAssessmentGroupsRecursive(ma, assessmentGroup);
+
+            alreadyProcessed.addAll(assessmentGroup);
+            assessmentGroups.add(assessmentGroup);
+        }
+
+        return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
+    }
 }
+
