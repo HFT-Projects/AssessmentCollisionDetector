@@ -7,7 +7,7 @@ class Main {
     private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
     public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
 
-    public static void main(String[] args) throws IOException { //TODO: error handling
+    public static void main(String[] args) { //TODO: error handling
         Assessment[] assessments1 = LoadManager.loadExams(PATH_INPUT_ASSESSMENTS);
         Assessment[] assessments2 = LoadManager.loadMissingAssessments(PATH_INPUT_REGISTRATIONS, assessments1);
         Assessment[] assessments = Stream.of(assessments1, assessments2).flatMap(Arrays::stream).toArray(Assessment[]::new);

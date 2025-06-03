@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -14,7 +15,7 @@ public class SaveManager {
         return p.getBegin().format(formatterDay) + " " + p.getBegin().format(formatterTime) + "-" + p.getEnd().format(formatterTime);
     }
 
-    public static void saveCollision(String path, Assessment[] assessments) throws IOException {
+    public static void saveCollision(String path, Assessment[] assessments) throws UncheckedIOException {
         List<String> lines = new LinkedList<>();
 
         // add header line
@@ -67,6 +68,10 @@ public class SaveManager {
         // add blank line at the end to match with template file
         lines.add("");
 
-        Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
+        try {
+            Files.writeString(Paths.get(path), lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

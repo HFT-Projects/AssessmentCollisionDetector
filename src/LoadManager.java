@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -7,11 +8,16 @@ import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 
 public class LoadManager {
-    public static Assessment[] loadExams(String path) throws IOException {
+    public static Assessment[] loadExams(String path) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
         Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
 
-        List<String> rows = Files.readAllLines(Paths.get(path));
+        List<String> rows = null;
+        try {
+            rows = Files.readAllLines(Paths.get(path));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         // make sure file isn't empty
         if (rows.isEmpty())
@@ -94,7 +100,7 @@ public class LoadManager {
         return exams.toArray(new Assessment[0]);
     }
 
-    public static Assessment[] loadMissingAssessments(String path, Assessment[] assessments) throws IOException {
+    public static Assessment[] loadMissingAssessments(String path, Assessment[] assessments) throws UncheckedIOException {
         List<Assessment> additionalAssessments = new LinkedList<>();
         Set<String> existingAssessments = new HashSet<>(); // check existingAssessments by qualifiedName
 
@@ -106,7 +112,12 @@ public class LoadManager {
             existingAssessments.add(p.getQualifiedName());
         }
 
-        List<String> rows = Files.readAllLines(Paths.get(path));
+        List<String> rows = null;
+        try {
+            rows = Files.readAllLines(Paths.get(path));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         // make sure file isn't empty
         if (rows.isEmpty())
@@ -138,7 +149,7 @@ public class LoadManager {
         return additionalAssessments.toArray(new Assessment[0]);
     }
 
-    public static Map<String, Set<String>> loadRegistrations(String path, Assessment[] assessments) throws IOException {
+    public static Map<String, Set<String>> loadRegistrations(String path, Assessment[] assessments) throws UncheckedIOException {
         Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
 
         // add all Assessments to registrationsByAssessmentsQualifiedName
@@ -150,7 +161,12 @@ public class LoadManager {
             registrationsByAssessmentsQualifiedName.put(qualifiedName, new HashSet<>());
         }
 
-        List<String> rows = Files.readAllLines(Paths.get(path));
+        List<String> rows = null;
+        try {
+            rows = Files.readAllLines(Paths.get(path));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         // make sure file isn't empty
         if (rows.isEmpty())
