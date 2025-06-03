@@ -55,5 +55,16 @@ public class AssessmentOptimizer {
 
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
+
+    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups) {
+        for (MergedAssessment[] assessments : assessmentGroups) {
+            optimizeAssessments(assessments);
+        }
+        return Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
+    }
+
+    public static void optimizeAssessments(MergedAssessment[] assessments) {
+        throw new RuntimeException("not implemented");
+    }
 }
 
