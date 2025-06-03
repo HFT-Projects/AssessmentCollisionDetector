@@ -173,9 +173,9 @@ public class ExamGUI extends Application {
         fileGrid.setVgap(15);
 
         // Initialize text fields with saved preferences
-        examPathField = createStyledTextField(prefs.get("examPath", ""));
-        registrationPathField = createStyledTextField(prefs.get("registrationPath", ""));
-        collisionPathField = createStyledTextField(prefs.get("collisionPath", ""));
+        examPathField = createStyledTextField(prefs.get("examsPath", ""));
+        registrationPathField = createStyledTextField(prefs.get("registrationsPath", ""));
+        collisionPathField = createStyledTextField(prefs.get("collisionsPath", ""));
 
         // Create browse buttons
         Button examBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
@@ -625,7 +625,6 @@ public class ExamGUI extends Application {
         File file = fileChooser.showOpenDialog(stage);
         if (file != null) {
             field.setText(file.getAbsolutePath());
-            prefs.put(prefKey, file.getAbsolutePath());
         }
     }
 
@@ -635,6 +634,13 @@ public class ExamGUI extends Application {
                 showAlert("Invalid file paths! Please ensure both Exam and Registration files exist.", Alert.AlertType.ERROR);
                 return;
             }
+
+            String examsPath = examPathField.getText();
+            String registrationsPath = registrationPathField.getText();
+
+            // save paths to preferences
+            prefs.put("examsPath", examsPath);
+            prefs.put("registrationsPath", registrationsPath);
 
             Assessment[] assessments1 = LoadManager.loadExams(examPathField.getText(), null);
             Assessment[] assessments2 = LoadManager.loadMissingAssessments(registrationPathField.getText(), assessments1);
@@ -681,6 +687,11 @@ public class ExamGUI extends Application {
 
     private void saveCollisions() {
         try {
+            String collisionsPath = collisionPathField.getText();
+
+            // save paths to preferences
+            prefs.put("collisionsPath", collisionsPath);
+
             if (collisions == null || collisions.isEmpty()) {
                 showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
                 return;
@@ -690,8 +701,8 @@ public class ExamGUI extends Application {
                 .map(Map.Entry::getKey)
                 .toArray(Assessment[]::new);
 
-            SaveManager.saveCollisions(collisionPathField.getText(), assessmentsArray);
-            showAlert("Collisions saved successfully to " + collisionPathField.getText(), Alert.AlertType.INFORMATION);
+            SaveManager.saveCollisions(collisionsPath, assessmentsArray);
+            showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
         } catch (Exception e) {
             showAlert("Error saving collisions: " + e.getMessage(), Alert.AlertType.ERROR);
         }
