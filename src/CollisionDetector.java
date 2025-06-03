@@ -14,6 +14,7 @@ public class CollisionDetector {
         for (Assessment p : assessments) {
             Set<String> collisionsAll = new HashSet<>();
             Map<Assessment, Integer> collisionCountByAssessment = new HashMap<>();
+            int collisionSum = 0;
 
             for (Assessment k : assessments) {
                 // Assessment can't collide with itself
@@ -42,9 +43,10 @@ public class CollisionDetector {
 
                 if (collisionsLocal > 0)
                     collisionCountByAssessment.put(k, collisionsLocal);
+                collisionSum += collisionsLocal;
             }
 
-            collisions.put(p, new ReturnTuple(collisionsAll.size(), collisionCountByAssessment));
+            collisions.put(p, new ReturnTuple(collisionSum, collisionCountByAssessment));
         }
 
         return collisions;
