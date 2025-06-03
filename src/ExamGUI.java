@@ -638,13 +638,18 @@ public class ExamGUI extends Application {
 
     private void detectCollisions() {
         try {
-            if (!validatePaths()) {
-                showAlert("Invalid file paths! Please ensure both Exam and Registration files exist.", Alert.AlertType.ERROR);
+            String examsPath = examPathField.getText();
+            String registrationsPath = registrationPathField.getText();
+
+            if (!new File(examsPath).exists()) {
+                showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
                 return;
             }
 
-            String examsPath = examPathField.getText();
-            String registrationsPath = registrationPathField.getText();
+            if (!new File(registrationsPath).exists()) {
+                showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
+                return;
+            }
 
             // save paths to preferences
             prefs.put("examsPath", examsPath);
@@ -697,6 +702,11 @@ public class ExamGUI extends Application {
         try {
             String collisionsPath = collisionPathField.getText();
 
+            if (!( new File(collisionsPath).getParentFile().exists() && new File(collisionsPath).getParentFile() != null && new File(collisionsPath).getParentFile().canWrite() && ( !new File(collisionsPath).exists() || new File(collisionsPath).canWrite() ) )) {
+                showAlert("Invalid collisions file path.", Alert.AlertType.ERROR);
+                return;
+            }
+
             // save paths to preferences
             prefs.put("collisionsPath", collisionsPath);
 
@@ -714,13 +724,6 @@ public class ExamGUI extends Application {
         } catch (Exception e) {
             showAlert("Error saving collisions: " + e.getMessage(), Alert.AlertType.ERROR);
         }
-    }
-
-    private boolean validatePaths() {
-        return new File(examPathField.getText()).exists() &&
-               new File(registrationPathField.getText()).exists() &&
-               (!new File(collisionPathField.getText()).exists() ||
-                new File(collisionPathField.getText()).canWrite());
     }
 
     private void updateCollisionTable() {
