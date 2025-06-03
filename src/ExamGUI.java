@@ -564,6 +564,7 @@ public class ExamGUI extends Application {
         fileChooser.getExtensionFilters().add(
             new FileChooser.ExtensionFilter("CSV Files", "*.csv")
         );
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
 
         // Get the file section from the input tab
         ScrollPane inputScrollPane = (ScrollPane) inputTab.getContent();
@@ -590,9 +591,9 @@ public class ExamGUI extends Application {
             .orElseThrow();
 
         // Set button actions
-        examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, "examPath", primaryStage));
-        registrationBrowse.setOnAction(e -> selectFile(fileChooser, registrationPathField, "registrationPath", primaryStage));
-        collisionBrowse.setOnAction(e -> selectFile(fileChooser, collisionPathField, "collisionPath", primaryStage));
+        examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, primaryStage, false));
+        registrationBrowse.setOnAction(e -> selectFile(fileChooser, registrationPathField, primaryStage, false));
+        collisionBrowse.setOnAction(e -> selectFile(fileChooser, collisionPathField, primaryStage, true));
 
         // Get the action buttons from the file section (fourth child)
         HBox actionBox = (HBox) fileSection.getChildren().get(3);
@@ -621,10 +622,17 @@ public class ExamGUI extends Application {
         });
     }
 
-    private void selectFile(FileChooser fileChooser, TextField field, String prefKey, Stage stage) {
-        File file = fileChooser.showOpenDialog(stage);
+    private void selectFile(FileChooser fileChooser, TextField field, Stage stage, boolean save) {
+        File file;
+        if (!save)
+            file = fileChooser.showOpenDialog(stage);
+        else
+            file = fileChooser.showSaveDialog(stage);
+
         if (file != null) {
             field.setText(file.getAbsolutePath());
+            if (file.getParentFile() != null)
+                fileChooser.setInitialDirectory(file.getParentFile());
         }
     }
 
