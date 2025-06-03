@@ -452,9 +452,19 @@ public class ExamGUI extends Application {
 
             // Calculate distance if possible
             if (assessment.getBegin() != null && collidingAssessment.getBegin() != null) {
-                Duration duration = Duration.between(assessment.getBegin(), collidingAssessment.getBegin());
-                long hours = Math.abs(duration.toHours());
-                long minutes = Math.abs(duration.toMinutesPart());
+                Assessment first;
+                Assessment last;
+                if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                    first = assessment;
+                    last = collidingAssessment;
+                } else {
+                    first = collidingAssessment;
+                    last = assessment;
+                }
+
+                Duration distance = Duration.between(first.getEnd(), last.getBegin());
+                long hours = distance.toHours();
+                long minutes = distance.toMinutesPart();
                 this.distance = String.format("%dh %dm", hours, minutes);
             } else {
                 this.distance = "";
@@ -900,11 +910,7 @@ public class ExamGUI extends Application {
                 exam.getBegin() != null &&
                 collision.getCollidingAssessment().getBegin() != null) {
 
-            Duration duration = Duration.between(exam.getBegin(), collision.getCollidingAssessment().getBegin());
-            long hours = Math.abs(duration.toHours());
-            long minutes = Math.abs(duration.toMinutesPart());
-
-            Label distanceLabel = new Label(String.format("Time Distance: %d hours %d minutes", hours, minutes));
+            Label distanceLabel = new Label(String.format("Time Distance: " + collision.distance));
             distanceLabel.setStyle("-fx-font-size: 14px; -fx-padding: 5px 0;");
             content.getChildren().add(distanceLabel);
         }
