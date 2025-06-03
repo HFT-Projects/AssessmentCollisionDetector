@@ -1,8 +1,9 @@
 import java.util.*;
 
 public class AssessmentOptimizer {
-    public static MergedAssessment[] mergeAssessments(Assessment[] assessments) {
+    public static Map<Assessment, MergedAssessment> mergeAssessments(Assessment[] assessments) {
         Map<String, List<MergedAssessment>> nameToMergedAssessment = new HashMap<>();
+        Map<Assessment, MergedAssessment> assessmentToMergedAssessment = new HashMap<>();
 
         for (Assessment a : assessments) {
             if (!nameToMergedAssessment.containsKey(a.getName())) {
@@ -30,6 +31,8 @@ public class AssessmentOptimizer {
 
                 ma.setCollisionSum(ma.getCollisionSum() + a.getCollisionSum());
 
+                assessmentToMergedAssessment.put(a, ma);
+
                 found = true;
                 break;
             }
@@ -40,10 +43,11 @@ public class AssessmentOptimizer {
                 ma.setCollisionCountByAssessment(a.getCollisionCountByAssessment());
                 ma.setCollisionSum(a.getCollisionSum());
                 nameToMergedAssessment.get(a.getName()).add(ma);
+                assessmentToMergedAssessment.put(a, ma);
             }
 
         }
 
-        return nameToMergedAssessment.values().stream().flatMap(List::stream).toArray(MergedAssessment[]::new);
+        return assessmentToMergedAssessment;
     }
 }
