@@ -46,7 +46,7 @@ public class ExamGUI extends Application {
     private TextField filterExam1Field;
     private TextField filterExam2Field;
     private ObservableList<Map.Entry<Assessment, CollisionDetector.ReturnTuple>> collisions;
-    private final Preferences prefs = Preferences.userNodeForPackage(ExamGUI.class);
+    private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
     // Page management
     private TabPane tabPane;
