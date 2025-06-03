@@ -4,7 +4,6 @@ import data.AssessmentEditable;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -19,11 +18,8 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 import java.util.prefs.Preferences;
-import java.util.stream.Stream;
 
 import javafx.scene.effect.DropShadow;
 
@@ -47,7 +43,7 @@ public class ExamGUI extends Application {
     private ComboBox<String> sortExam2Box;
     private TextField filterExam1Field;
     private TextField filterExam2Field;
-    private ObservableList<Map.Entry<Assessment, CollisionDetector.ReturnTuple>> collisions;
+    private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
     // Page management
@@ -656,36 +652,10 @@ public class ExamGUI extends Application {
         prefs.put("examsPath", examsPath);
         prefs.put("registrationsPath", registrationsPath);
 
-        Assessment[] assessments1 = LoadManager.loadExams(examPathField.getText(), null);
-        Assessment[] assessments2 = LoadManager.loadMissingAssessments(registrationPathField.getText(), assessments1);
-        Assessment[] assessments = Stream.of(assessments1, assessments2).flatMap(Arrays::stream).toArray(Assessment[]::new);
+        assessments = AssessmentsManager.loadAllAssessments(examsPath, registrationsPath, null);
+        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, registrationsPath);
+        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
 
-        Map<String, Set<String>> registrationsByAssessmentsQualifiedName = LoadManager.loadRegistrations(registrationPathField.getText(), assessments);
-        // save registrations into Assessment objects
-        for (Assessment p : assessments) {
-            // the following exception should never occur (-> internal logic error -> bug)
-            if (p.getRegisteredStudents() != null)
-                throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
-
-            ((AssessmentEditable)p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
-        }
-
-        Map<Assessment, CollisionDetector.ReturnTuple> collisions = CollisionDetector.detectCollisions(assessments);
-        // save collisions into Assessment objects
-        for (Assessment p : assessments) {
-            // the following exception should never occur (-> internal logic error -> bug)
-            if (p.getCollisionSum() != null || p.getCollisionCountByAssessment() != null)
-                throw new AssertionError("The collisions of the assessment " + p + " was already loaded.");
-
-            CollisionDetector.ReturnTuple collision = collisions.get(p);
-            ((AssessmentEditable)p).setCollisionSum(collision.collisionSum());
-            ((AssessmentEditable)p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
-        }
-
-        Map<Assessment, CollisionDetector.ReturnTuple> collisionMap =
-                CollisionDetector.detectCollisions(assessments);
-
-        this.collisions = FXCollections.observableArrayList(collisionMap.entrySet());
         updateCollisionTreeTable();
         updateSort();
 
@@ -706,27 +676,23 @@ public class ExamGUI extends Application {
         // save paths to preferences
         prefs.put("collisionsPath", collisionsPath);
 
-        if (collisions == null || collisions.isEmpty()) {
+        if (assessments == null || assessments.length == 0) {
             showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
             return;
         }
 
-        Assessment[] assessmentsArray = collisions.stream()
-                .map(Map.Entry::getKey)
-                .toArray(Assessment[]::new);
-
-        SaveManager.saveCollisions(collisionsPath, assessmentsArray);
+        SaveManager.saveCollisions(collisionsPath, assessments);
         showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
     }
 
     private void updateCollisionTable() {
-        if (collisions == null) return;
+        if (assessments == null) return;
 
         updateCollisionTreeTable();
     }
 
     private void updateCollisionTreeTable() {
-        if (collisions == null) return;
+        if (assessments == null) return;
 
         // Create a root item to hold all entries
         TreeItem<CollisionEntry> root = new TreeItem<>(new CollisionEntry(null));
@@ -736,10 +702,7 @@ public class ExamGUI extends Application {
         String exam2Filter = filterExam2Field.getText().toLowerCase();
 
         // Process and filter the collision data
-        for (Map.Entry<Assessment, CollisionDetector.ReturnTuple> entry : collisions) {
-            Assessment assessment = entry.getKey();
-            CollisionDetector.ReturnTuple tuple = entry.getValue();
-
+        for (Assessment assessment : assessments) {
             // Check if this assessment matches exam1 filter (only for title rows)
             boolean matchesExam1 = exam1Filter.isEmpty() ||
                     assessment.getQualifiedName().toLowerCase().contains(exam1Filter);
@@ -757,7 +720,7 @@ public class ExamGUI extends Application {
             boolean hasMatchingChild = false;
 
             // Add child items for each colliding assessment
-            for (Map.Entry<Assessment, Integer> detail : tuple.collisionCountByAssessment().entrySet()) {
+            for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
                 Assessment collidingAssessment = detail.getKey();
                 int collisionCount = detail.getValue();
 
@@ -985,7 +948,7 @@ public class ExamGUI extends Application {
         savePreferences();
     }
 
-    public static void main(String[] args) {
-        launch(args);
+    public static void run() {
+        launch();
     }
 }

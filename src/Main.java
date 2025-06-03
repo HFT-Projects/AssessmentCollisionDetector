@@ -1,16 +1,5 @@
-import data.Assessment;
-
 class Main {
-    private final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
-    private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
-    public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
-
-    public static void main(String[] args) {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS, null);
-        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
-        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
-        SaveManager.saveCollisions(PATH_OUTPUT_COLLISIONS, assessments);
-
-        System.out.println("completed");
+    public static void main(String[] args) { //TODO: error handling
+        ExamGUI.run();
     }
 }
