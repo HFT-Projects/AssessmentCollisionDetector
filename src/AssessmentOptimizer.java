@@ -13,21 +13,25 @@ public class AssessmentOptimizer {
             boolean found = false;
 
             for (MergedAssessment ma : nameToMergedAssessment.get(a.getName())) {
-                if ((ma.getBegin() == null && a.getBegin() == null || ma.getBegin() != null && a.getBegin() != null && ma.getBegin().equals(a.getBegin()))
-                        && (ma.getEnd() == null && a.getEnd() == null || ma.getEnd() != null && a.getEnd() != null && ma.getEnd().equals(a.getEnd()))) {
-                    Set<String> registeredStudents = ma.getRegisteredStudents();
-                    registeredStudents.addAll(a.getRegisteredStudents());
-                    ma.setRegisteredStudents(registeredStudents);
+                if (ma.getBegin() == null || a.getBegin() == null || !ma.getBegin().equals(a.getBegin()))
+                    if (!(ma.getBegin() == null && a.getBegin() == null))
+                        continue;
+                if (ma.getEnd() == null || a.getEnd() == null || !ma.getEnd().equals(a.getEnd()))
+                    if (!(ma.getEnd() == null && a.getEnd() == null))
+                        continue;
 
-                    Map<Assessment, Integer> ccba = ma.getCollisionCountByAssessment();
-                    ccba.putAll(a.getCollisionCountByAssessment());
-                    ma.setCollisionCountByAssessment(ccba);
+                Set<String> registeredStudents = ma.getRegisteredStudents();
+                registeredStudents.addAll(a.getRegisteredStudents());
+                ma.setRegisteredStudents(registeredStudents);
 
-                    ma.setCollisionSum(ma.getCollisionSum() + a.getCollisionSum());
+                Map<Assessment, Integer> ccba = ma.getCollisionCountByAssessment();
+                ccba.putAll(a.getCollisionCountByAssessment());
+                ma.setCollisionCountByAssessment(ccba);
 
-                    found = true;
-                    break;
-                }
+                ma.setCollisionSum(ma.getCollisionSum() + a.getCollisionSum());
+
+                found = true;
+                break;
             }
 
             if (!found) {
