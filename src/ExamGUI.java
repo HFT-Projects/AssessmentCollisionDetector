@@ -130,13 +130,13 @@ public class ExamGUI extends Application {
         Scene scene = new Scene(root, 1000, 700);
         primaryStage.setScene(scene);
 
+        // Load saved preferences
+        loadPreferences();
+
         // Setup file choosers and event handlers
         setupEventHandlers(primaryStage);
 
         primaryStage.show();
-
-        // Load saved preferences
-        loadPreferences();
     }
 
     private HBox createHeader() {
