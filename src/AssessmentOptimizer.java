@@ -8,7 +8,6 @@ public class AssessmentOptimizer {
             if (!nameToMergedAssessment.containsKey(a.getName())) {
                 List<MergedAssessment> ass = new LinkedList<>();
                 nameToMergedAssessment.put(a.getName(), ass);
-                continue;
             }
 
             boolean found = false;
