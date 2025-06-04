@@ -3,10 +3,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.LocalDateTime;
 
 public class LoadManager {
     private record DateInfo(String weekday, int dayOfMonth, int month) {
@@ -82,7 +82,7 @@ public class LoadManager {
             if (LocalDateTime.of(cur_year, dateInfos[0].month, dateInfos[0].dayOfMonth, 0, 0).getDayOfWeek().getValue() - 1 == WEEKDAY_MAP.get(dateInfos[0].weekday)) {
                 // check if the leap year constellation is correct.
                 Integer leap_year = leap_year_index == null ? null : cur_year + leap_year_index;
-                if (leap_year == null || leap_year % 4 == 0 && ( leap_year % 100 != 0 || leap_year % 400 == 0 )) {
+                if (leap_year == null || leap_year % 4 == 0 && (leap_year % 100 != 0 || leap_year % 400 == 0)) {
                     year = cur_year;
                     break;
                 }
@@ -107,7 +107,7 @@ public class LoadManager {
         List<Assessment> exams = new LinkedList<>();
         Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
 
-        List<String> rows = null;
+        List<String> rows;
         try {
             rows = Files.readAllLines(Paths.get(path));
         } catch (IOException e) {
@@ -206,7 +206,7 @@ public class LoadManager {
             existingAssessments.add(p.getQualifiedName());
         }
 
-        List<String> rows = null;
+        List<String> rows;
         try {
             rows = Files.readAllLines(Paths.get(path));
         } catch (IOException e) {
@@ -255,7 +255,7 @@ public class LoadManager {
             registrationsByAssessmentsQualifiedName.put(qualifiedName, new HashSet<>());
         }
 
-        List<String> rows = null;
+        List<String> rows;
         try {
             rows = Files.readAllLines(Paths.get(path));
         } catch (IOException e) {

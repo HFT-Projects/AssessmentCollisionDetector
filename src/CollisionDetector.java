@@ -1,5 +1,4 @@
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,7 +11,6 @@ public class CollisionDetector {
         Map<Assessment, ReturnTuple> collisions = new HashMap<>();
 
         for (Assessment p : assessments) {
-            Set<String> collisionsAll = new HashSet<>();
             Map<Assessment, Integer> collisionCountByAssessment = new HashMap<>();
             int collisionSum = 0;
 
@@ -37,7 +35,6 @@ public class CollisionDetector {
                 for (String s : registrationsLoop) {
                     if (registrationsCompare.contains(s)) {
                         collisionsLocal++;
-                        collisionsAll.add(s);
                     }
                 }
 
