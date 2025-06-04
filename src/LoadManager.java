@@ -2,12 +2,107 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.LocalDateTime;
 
 public class LoadManager {
+    private record DateInfo(String weekday, int dayOfMonth, int month) {
+    }
+
+    private static final Map<String, Integer> WEEKDAY_MAP = Map.of("Mo", 0, "Di", 1, "Mi", 2, "Do", 3, "Fr", 4, "Sa", 5, "So", 6);
+
+    private static Integer checkForLeapYears(DateInfo[] dateInfos) {
+        Integer leap_year = null;
+
+        // loop through all dates to check if they are leap years
+        int current_year = 0;
+        for (int i = 1; i < dateInfos.length; i++) {
+            int startMonth = dateInfos[i - 1].month;
+            int endMonth = dateInfos[i].month;
+
+            // check if there is a year change between the two dates and increment current year
+            if (startMonth > endMonth)
+                current_year++;
+
+            // check if there was the change from feb. to march in between the last two dates
+            if (startMonth <= 2 && endMonth >= 3
+                    || (startMonth > endMonth && (startMonth <= 2 || endMonth >= 3))) {
+
+                // check if there is a year change between the two dates
+                int year_change_correction = (startMonth > endMonth) ? 1 : 0;
+
+                // calculate the weekday of the second date if it were a leap year
+                // by calculating the days in between the two dates if it were a leap year
+                // and then adding it to the first date
+                LocalDateTime start_if_leap = LocalDateTime.of(2000 - year_change_correction, startMonth, dateInfos[i - 1].dayOfMonth, 0, 0, 0);
+                LocalDateTime end_if_leap = LocalDateTime.of(2000, endMonth, dateInfos[i].dayOfMonth, 0, 0, 0);
+                long days_if_leap = Duration.between(start_if_leap, end_if_leap).toDays();
+                int weekday_if_leap = (int) ((WEEKDAY_MAP.get(dateInfos[i - 1].weekday) + days_if_leap) % 7);
+
+                // calculate the weekday of the second date if it were NOT a leap year
+                // details see above
+                LocalDateTime start_if_not_leap = LocalDateTime.of(1900 - year_change_correction, startMonth, dateInfos[i - 1].dayOfMonth, 0, 0, 0);
+                LocalDateTime end_if_not_leap = LocalDateTime.of(1900, endMonth, dateInfos[i].dayOfMonth, 0, 0, 0);
+                long days_if_not_leap = Duration.between(start_if_not_leap, end_if_not_leap).toDays();
+                int weekday_if_not_leap = (int) ((WEEKDAY_MAP.get(dateInfos[i - 1].weekday) + days_if_not_leap) % 7);
+
+                // get the actual weekday
+                int actual_weekday = WEEKDAY_MAP.get(dateInfos[i].weekday);
+
+                // check if it is a leap year or not (or invalid)
+                if (actual_weekday == weekday_if_leap) {
+                    System.out.println("LEAP");
+                    leap_year = current_year;
+                    break;
+                } else if (actual_weekday != weekday_if_not_leap) {
+                    throw new AssertionError("weekday is invalid");
+                }
+            }
+        }
+
+        return leap_year;
+    }
+
+    private static LocalDateTime[] completeDates(DateInfo[] dateInfos) {
+        // check what year is a leap year (year of first date in dateInfos is 0)
+        Integer leap_year_index = checkForLeapYears(dateInfos);
+
+        // use linear alternating probing (with the current year as base) to approximate the year
+        // by finding a year with matching weekdays and leap year constellation.
+        int year = LocalDateTime.now().getYear();
+        for (int i = 0; ; i++) {
+            // linear alternating probing
+            int cur_year = year + (int) Math.pow(-1, i) * (int) Math.ceil((float) i / 2);
+
+            // check if the weekdays match with the first dateInfos entry
+            // getDayOfWeek().getValue() -> Range 1-7; WEEKDAY_MAP -> Range 0-6
+            if (LocalDateTime.of(cur_year, dateInfos[0].month, dateInfos[0].dayOfMonth, 0, 0).getDayOfWeek().getValue() - 1 == WEEKDAY_MAP.get(dateInfos[0].weekday)) {
+                // check if the leap year constellation is correct.
+                Integer leap_year = leap_year_index == null ? null : cur_year + leap_year_index;
+                if (leap_year == null || leap_year % 4 == 0 && ( leap_year % 100 != 0 || leap_year % 400 == 0 )) {
+                    year = cur_year;
+                    break;
+                }
+            }
+        }
+
+        // convert DateInfo objects into LocalDateTime object with the calculated year.
+        LocalDateTime[] dates = new LocalDateTime[dateInfos.length];
+        for (int i = 0; i < dateInfos.length; i++) {
+            DateInfo di = dateInfos[i];
+            dates[i] = LocalDateTime.of(year, di.month, di.dayOfMonth, 0, 0, 0);
+
+            // make sure that the calculated year matches all entries.
+            if (dates[i].getDayOfWeek().getValue() - 1 != WEEKDAY_MAP.get(di.weekday))
+                throw new AssertionError("date has unexpected weekday!");
+        }
+
+        return dates;
+    }
+
     public static Assessment[] loadExams(String path) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
         Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
@@ -31,23 +126,22 @@ public class LoadManager {
         List<String> headerColumns = Arrays.asList(rows.get(0).split(";"));
         indexDaysBegin = headerColumns.indexOf("Ende") + 1;
         indexDaysEnd = headerColumns.indexOf("Gruppe") - 1;
+        DateInfo[] dates = new DateInfo[indexDaysEnd - indexDaysBegin + 1];
         // create array to map the exam days to the actual date
-        days = new LocalDateTime[indexDaysEnd - indexDaysBegin + 1];
         for (int i = indexDaysBegin; i <= indexDaysEnd; i++) {
             // create a matcher to extract the date from the following string: "Mo 01.01."
-            Pattern pattern = Pattern.compile("(\\d{2})\\.(\\d{2})\\.");
+            Pattern pattern = Pattern.compile("([A-Z][a-z]) (\\d{2})\\.(\\d{2})\\.");
             Matcher matcher = pattern.matcher(headerColumns.get(i));
 
             if (!matcher.find())
                 throw new AssertionError("date has unexpected format");
 
-            int day = Integer.parseInt(matcher.group(1));
-            int month = Integer.parseInt(matcher.group(2));
-            //TODO: using year 1970 (fix with actual data)
-            LocalDateTime d = LocalDateTime.of(1970, month, day, 0, 0, 0);
+            int day = Integer.parseInt(matcher.group(2));
+            int month = Integer.parseInt(matcher.group(3));
 
-            days[i - indexDaysBegin] = d;
+            dates[i - indexDaysBegin] = new DateInfo(matcher.group(1), day, month);
         }
+        days = completeDates(dates);
 
         // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
