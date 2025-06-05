@@ -66,25 +66,32 @@ public class LoadManager {
         return leap_year;
     }
 
-    private static LocalDateTime[] completeDates(DateInfo[] dateInfos) {
+    private static LocalDateTime[] completeDates(DateInfo[] dateInfos, Integer year_input) {
         // check what year is a leap year (year of first date in dateInfos is 0)
         Integer leap_year_index = checkForLeapYears(dateInfos);
 
-        // use linear alternating probing (with the current year as base) to approximate the year
-        // by finding a year with matching weekdays and leap year constellation.
-        int year = LocalDateTime.now().getYear();
-        for (int i = 0; ; i++) {
-            // linear alternating probing
-            int cur_year = year + (int) Math.pow(-1, i) * (int) Math.ceil((float) i / 2);
+        int year;
 
-            // check if the weekdays match with the first dateInfos entry
-            // getDayOfWeek().getValue() -> Range 1-7; WEEKDAY_MAP -> Range 0-6
-            if (LocalDateTime.of(cur_year, dateInfos[0].month, dateInfos[0].dayOfMonth, 0, 0).getDayOfWeek().getValue() - 1 == WEEKDAY_MAP.get(dateInfos[0].weekday)) {
-                // check if the leap year constellation is correct.
-                Integer leap_year = leap_year_index == null ? null : cur_year + leap_year_index;
-                if (leap_year == null || leap_year % 4 == 0 && (leap_year % 100 != 0 || leap_year % 400 == 0)) {
-                    year = cur_year;
-                    break;
+        // use given year, approximate year if no year is given.
+        if (year_input != null) {
+            year = year_input;
+        } else {
+            // use linear alternating probing (with the current year as base) to approximate the year
+            // by finding a year with matching weekdays and leap year constellation.
+            year = LocalDateTime.now().getYear();
+            for (int i = 0; ; i++) {
+                // linear alternating probing
+                int cur_year = year + (int) Math.pow(-1, i) * (int) Math.ceil((float) i / 2);
+
+                // check if the weekdays match with the first dateInfos entry
+                // getDayOfWeek().getValue() -> Range 1-7; WEEKDAY_MAP -> Range 0-6
+                if (LocalDateTime.of(cur_year, dateInfos[0].month, dateInfos[0].dayOfMonth, 0, 0).getDayOfWeek().getValue() - 1 == WEEKDAY_MAP.get(dateInfos[0].weekday)) {
+                    // check if the leap year constellation is correct.
+                    Integer leap_year = leap_year_index == null ? null : cur_year + leap_year_index;
+                    if (leap_year == null || leap_year % 4 == 0 && (leap_year % 100 != 0 || leap_year % 400 == 0)) {
+                        year = cur_year;
+                        break;
+                    }
                 }
             }
         }
@@ -104,6 +111,10 @@ public class LoadManager {
     }
 
     public static Assessment[] loadExams(String path) throws UncheckedIOException {
+        return loadExams(path, null);
+    }
+
+    public static Assessment[] loadExams(String path, Integer year) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
         Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
 
@@ -141,7 +152,9 @@ public class LoadManager {
 
             dates[i - indexDaysBegin] = new DateInfo(matcher.group(1), day, month);
         }
-        days = completeDates(dates);
+
+        // complete Date with year
+        days = completeDates(dates, year);
 
         // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
