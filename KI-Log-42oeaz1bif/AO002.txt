@@ -1,0 +1,32 @@
+Claude 3.5 Sonnet:
+
+1.Prompt:
+Add a CheckBox that, when selected, hides all rows in the TreeTableView where both the "begin" and "end" fields of Assesment or Collision are null. When the CheckBox is unchecked, show all rows again.
+
+2.Prompt:
+When the CheckBox is unselected, show all rows again (remove the filter).
+The columns of Collion table should  automatically resize to fill the window width.
+Use TreeTableView.CONSTRAINED_RESIZE_POLICY so columns expand evenly and fill available space.
+Add a CheckBox above the table that filters out rows where both "begin" and "end" fields are null.
+
+3.Prompt:
+Add a double-click event handler to the TreeTableView rows. When a user double-clicks on a collision entry, navigate to the corresponding assessment in the UI.
+The assessment can be identified by CalculateQualifiedName or ID stored inside the CollisionEntry object.
+
+4.Prompt:
+Add extra columns to the TreeTableView, such as "Avg. Distance" and "Max. Distance".#
+These columns should display calculated values only for assessment rows, not for their collision child rows.
+Ensure the columns are sortable and resize properly with the table.
+For collision rows, these columns should remain empty
+
+5.Prompt
+Enable sorting on the TreeTableView by allowing users to click on the column headers ("Exam 1", "Exam 2").
+Clicking a header should sort the table rows ascending or descending based on the values in that column.
+Ensure that sorting applies to all columns, including custom ones like "Avg. Distance" and "Max. Distance".
+Sorting should work correctly for both assessment and collision rows where applicable.
+
+6.Prompt:
+Add new tabs to the application's main interface:
+One tab for statistics initially marked as "in progress" with placeholder content.
+One tab for room occupancy plans , also marked as "in progress" with placeholder content.
+Additionally, add an "About"  tab or dialog that displays basic information.

@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+import java.util.*;
 import java.util.prefs.Preferences;
 
 import javafx.scene.effect.DropShadow;
@@ -31,9 +31,22 @@ public class ExamGUI extends Application {
     private static final String LIGHT_COLOR = "#ecf0f1";
     private static final String DARK_COLOR = "#34495e";
 
+    // Application constants
+    private static final String APP_NAME = "Exam Collision Detector";
+    private static final String APP_VERSION = "1.0.0";
+    private static final String[] APP_AUTHORS = {
+        "Author 1",
+        "Author 2",
+        "Author 3",
+        "Author 4"
+    };
+    private static final String COPYRIGHT_YEAR = "2025";
+
     // Page constants
     private static final int INPUT_PAGE = 0;
     private static final int RESULTS_PAGE = 1;
+    private static final int STATISTICS_PAGE = 2;
+    private static final int ROOM_PLANS_PAGE = 3;
 
     private TextField examPathField;
     private TextField registrationPathField;
@@ -43,6 +56,7 @@ public class ExamGUI extends Application {
     private ComboBox<String> sortExam2Box;
     private TextField filterExam1Field;
     private TextField filterExam2Field;
+    private CheckBox hideNullTimesCheckbox;  // Add this field
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
@@ -113,7 +127,7 @@ public class ExamGUI extends Application {
         resultsTab.setContent(resultsScrollPane);
 
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab, resultsTab);
+        tabPane.getTabs().addAll(inputTab, resultsTab, createStatisticsTab(), createRoomPlansTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -139,15 +153,38 @@ public class ExamGUI extends Application {
 
     private HBox createHeader() {
         HBox header = new HBox();
-        header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(20, 15, 20, 15));
         header.setStyle("-fx-background-color: " + PRIMARY_COLOR + ";");
 
-        Label title = new Label("Exam Collision Detector");
+        // Create left section for title
+        HBox titleSection = new HBox();
+        titleSection.setAlignment(Pos.CENTER_LEFT);
+        titleSection.setHgrow(titleSection, Priority.ALWAYS);
+
+        Label title = new Label(APP_NAME);
         title.setFont(Font.font("System", FontWeight.BOLD, 24));
         title.setTextFill(Color.WHITE);
+        titleSection.getChildren().add(title);
 
-        header.getChildren().add(title);
+        // Create right section for About button
+        HBox buttonSection = new HBox();
+        buttonSection.setAlignment(Pos.CENTER_RIGHT);
+
+        Button aboutButton = new Button("About");
+        aboutButton.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-border-color: white;" +
+                "-fx-border-radius: 3px;"
+        );
+        aboutButton.setOnAction(e -> showAboutDialog());
+        buttonSection.getChildren().add(aboutButton);
+
+        // Add both sections to header
+        header.getChildren().addAll(titleSection, buttonSection);
+        HBox.setHgrow(titleSection, Priority.ALWAYS);
+
         return header;
     }
 
@@ -260,13 +297,13 @@ public class ExamGUI extends Application {
         sortExam1Box = createStyledComboBox();
         sortExam1Box.setPromptText("Select Exam 1 sort...");
         sortExam1Box.setItems(FXCollections.observableArrayList(
-                "Exam Name", "Date", "Time", "Room", "Collision Count"
+                "Exam Name", "Date", "Time", "Room", "Collision Count", "Avg. Distance", "Max. Distance"
         ));
 
         sortExam2Box = createStyledComboBox();
         sortExam2Box.setPromptText("Select Exam 2 sort...");
         sortExam2Box.setItems(FXCollections.observableArrayList(
-                "Exam Name", "Date", "Time", "Room", "Collision Count"
+                "Exam Name", "Date", "Time", "Room", "Collision Count", "Avg. Distance", "Max. Distance"
         ));
 
         // Create and style field labels
@@ -318,6 +355,10 @@ public class ExamGUI extends Application {
         Label sectionDescription = new Label("Detected exam collisions based on student registrations.");
         sectionDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
 
+        // Add checkbox for filtering
+        hideNullTimesCheckbox = new CheckBox("Hide entries with no times");
+        hideNullTimesCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+
         // Separator
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
@@ -325,9 +366,14 @@ public class ExamGUI extends Application {
         // Create tree table view instead of regular table
         TreeTableView<CollisionEntry> collisionTreeTable = new TreeTableView<>();
         collisionTreeTable.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
-        collisionTreeTable.setPrefHeight(300);
         collisionTreeTable.setShowRoot(false);
         VBox.setVgrow(collisionTreeTable, Priority.ALWAYS);
+
+        // Set up the filtering
+        hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            // When checkbox is unchecked, rebuild the table to show all entries
+            updateCollisionTreeTable();
+        });
 
         // Apply table styles
         collisionTreeTable.setStyle(
@@ -338,41 +384,100 @@ public class ExamGUI extends Application {
         );
 
         // Table columns
-        TreeTableColumn<CollisionEntry, String> exam1Col =
-                new TreeTableColumn<>("Exam 1");
+        TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
         exam1Col.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().exam1QualifiedName)
         );
+        exam1Col.setSortable(true);
 
-        TreeTableColumn<CollisionEntry, String> exam2Col =
-                new TreeTableColumn<>("Exam 2");
+        TreeTableColumn<CollisionEntry, String> exam2Col = new TreeTableColumn<>("Exam 2");
         exam2Col.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().exam2QualifiedName)
         );
+        exam2Col.setSortable(true);
 
-        TreeTableColumn<CollisionEntry, String> collisionCountCol =
-                new TreeTableColumn<>("Collision Count");
+        TreeTableColumn<CollisionEntry, String> collisionCountCol = new TreeTableColumn<>("Collision Count");
         collisionCountCol.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().collisionCount)
         );
+        collisionCountCol.setSortable(true);
+        collisionCountCol.setComparator((s1, s2) -> {
+            try {
+                return Integer.compare(Integer.parseInt(s1), Integer.parseInt(s2));
+            } catch (NumberFormatException e) {
+                return s1.compareTo(s2);
+            }
+        });
 
-        TreeTableColumn<CollisionEntry, String> beginCol =
-                new TreeTableColumn<>("Begin");
+        TreeTableColumn<CollisionEntry, String> beginCol = new TreeTableColumn<>("Begin");
         beginCol.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().beginTime)
         );
+        beginCol.setSortable(true);
 
-        TreeTableColumn<CollisionEntry, String> endCol =
-                new TreeTableColumn<>("End");
+        TreeTableColumn<CollisionEntry, String> endCol = new TreeTableColumn<>("End");
         endCol.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().endTime)
         );
+        endCol.setSortable(true);
 
-        TreeTableColumn<CollisionEntry, String> distanceCol =
-                new TreeTableColumn<>("Distance");
+        TreeTableColumn<CollisionEntry, String> distanceCol = new TreeTableColumn<>("Distance");
         distanceCol.setCellValueFactory(
                 param -> new SimpleStringProperty(param.getValue().getValue().distance)
         );
+        distanceCol.setSortable(true);
+        distanceCol.setComparator((s1, s2) -> {
+            try {
+                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
+            } catch (NumberFormatException e) {
+                return s1.compareTo(s2);
+            }
+        });
+
+        // Add new columns for average and maximum distance
+        TreeTableColumn<CollisionEntry, String> avgDistanceCol = new TreeTableColumn<>("Avg. Distance");
+        avgDistanceCol.setCellValueFactory(param -> {
+            CollisionEntry entry = param.getValue().getValue();
+            if (entry.isTitle()) {
+                return new SimpleStringProperty(entry.getAverageDistance());
+            }
+            return new SimpleStringProperty("");
+        });
+        avgDistanceCol.setSortable(true);
+        avgDistanceCol.setComparator((s1, s2) -> {
+            try {
+                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
+            } catch (NumberFormatException e) {
+                return s1.compareTo(s2);
+            }
+        });
+
+        TreeTableColumn<CollisionEntry, String> maxDistanceCol = new TreeTableColumn<>("Max. Distance");
+        maxDistanceCol.setCellValueFactory(param -> {
+            CollisionEntry entry = param.getValue().getValue();
+            if (entry.isTitle()) {
+                return new SimpleStringProperty(entry.getMaxDistance());
+            }
+            return new SimpleStringProperty("");
+        });
+        maxDistanceCol.setSortable(true);
+        maxDistanceCol.setComparator((s1, s2) -> {
+            try {
+                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
+            } catch (NumberFormatException e) {
+                return s1.compareTo(s2);
+            }
+        });
+
+        // Set equal width constraints for all columns
+        exam1Col.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.18));
+        exam2Col.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.18));
+        collisionCountCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.12));
+        beginCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.13));
+        endCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.13));
+        distanceCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.13));
+        avgDistanceCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.13));
+        maxDistanceCol.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.13));
 
         // Style the columns
         String columnStyle = "-fx-alignment: CENTER-LEFT; -fx-padding: 8px;";
@@ -382,14 +487,43 @@ public class ExamGUI extends Application {
         beginCol.setStyle(columnStyle);
         endCol.setStyle(columnStyle);
         distanceCol.setStyle(columnStyle);
+        avgDistanceCol.setStyle(columnStyle);
+        maxDistanceCol.setStyle(columnStyle);
 
-        collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol, beginCol, endCol, distanceCol);
+        collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
+            beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
 
         // Store reference to tree table
         this.collisionTreeTable = collisionTreeTable;
 
-        section.getChildren().addAll(sectionTitle, sectionDescription, separator, collisionTreeTable);
+        section.getChildren().addAll(
+            sectionTitle,
+            sectionDescription,
+            hideNullTimesCheckbox,
+            separator,
+            collisionTreeTable
+        );
         return section;
+    }
+
+    private void filterTreeItems(TreeItem<CollisionEntry> item, boolean hideNullTimes) {
+        if (item == null) return;
+
+        // Process children first (iterate over a copy to avoid concurrent modification)
+        List<TreeItem<CollisionEntry>> children = new ArrayList<>(item.getChildren());
+        for (TreeItem<CollisionEntry> child : children) {
+            filterTreeItems(child, hideNullTimes);
+        }
+
+        // If it's not the root and should be hidden, remove it
+        if (item.getValue() != null && item.getParent() != null) {
+            boolean hasNullTimes = item.getValue().beginTime.isEmpty() && item.getValue().endTime.isEmpty();
+            if (hideNullTimes && hasNullTimes) {
+                item.getParent().getChildren().remove(item);
+            } else {
+                item.setExpanded(true);
+            }
+        }
     }
 
     // Inner class to hold collision entry data for the tree table
@@ -404,6 +538,10 @@ public class ExamGUI extends Application {
         private final Assessment assessment;
         private final Assessment collidingAssessment;
         private final int collisionCountValue;
+
+        private Duration maxDuration;
+        private Duration totalDuration;
+        private int validDurationsCount;
 
         // Constructor for title rows - includes all collisions in sum
         public CollisionEntry(Assessment assessment) {
@@ -435,6 +573,36 @@ public class ExamGUI extends Application {
             }
             this.distance = "";
             this.isTitle = true;
+
+            // Initialize duration calculations
+            this.maxDuration = null;
+            this.totalDuration = Duration.ZERO;
+            this.validDurationsCount = 0;
+
+            // Calculate distances for all collisions if this is a title row
+            if (assessment != null) {
+                for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
+                    Assessment collidingAssessment = detail.getKey();
+                    if (assessment.getBegin() != null && assessment.getEnd() != null &&
+                        collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
+
+                        Duration distance;
+                        if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                            distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
+                        } else {
+                            distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
+                        }
+
+                        if (!distance.isNegative()) {
+                            if (maxDuration == null || distance.compareTo(maxDuration) > 0) {
+                                maxDuration = distance;
+                            }
+                            totalDuration = totalDuration.plus(distance);
+                            validDurationsCount++;
+                        }
+                    }
+                }
+            }
         }
 
         // Constructor for collision detail rows
@@ -487,6 +655,24 @@ public class ExamGUI extends Application {
 
         public int getCollisionCountValue() {
             return collisionCountValue;
+        }
+
+        public String getAverageDistance() {
+            if (validDurationsCount == 0) return "";
+
+            Duration avgDuration = totalDuration.dividedBy(validDurationsCount);
+            return formatDuration(avgDuration);
+        }
+
+        public String getMaxDistance() {
+            if (maxDuration == null) return "";
+            return formatDuration(maxDuration);
+        }
+
+        private String formatDuration(Duration duration) {
+            long hours = duration.toHours();
+            long minutes = duration.toMinutesPart();
+            return String.format("%dh %dm", hours, minutes);
         }
     }
 
@@ -618,16 +804,38 @@ public class ExamGUI extends Application {
         sortExam1Box.setOnAction(e -> updateSort());
         sortExam2Box.setOnAction(e -> updateSort());
 
-        // Double click handler for collision details
+        // Double click handler for collision details and navigation
         collisionTreeTable.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                TreeItem<CollisionEntry> selected =
-                        collisionTreeTable.getSelectionModel().getSelectedItem();
-                if (selected != null && !selected.getValue().isTitle()) {
-                    showCollisionDetails(selected.getValue());
+                TreeItem<CollisionEntry> selected = collisionTreeTable.getSelectionModel().getSelectedItem();
+                if (selected == null) return;
+
+                CollisionEntry entry = selected.getValue();
+                if (!entry.isTitle()) {
+                    // This is a collision entry, find and select the corresponding assessment
+                    Assessment targetAssessment = entry.getCollidingAssessment();
+                    navigateToAssessment(targetAssessment);
                 }
             }
         });
+    }
+
+    private void navigateToAssessment(Assessment targetAssessment) {
+        if (targetAssessment == null || collisionTreeTable.getRoot() == null) return;
+
+        // Search through the tree items to find the matching assessment
+        String targetQualifiedName = targetAssessment.getQualifiedName();
+
+        for (TreeItem<CollisionEntry> titleItem : collisionTreeTable.getRoot().getChildren()) {
+            if (titleItem.getValue().isTitle() &&
+                titleItem.getValue().getAssessment().getQualifiedName().equals(targetQualifiedName)) {
+                // Found the matching assessment, expand and select it
+                titleItem.setExpanded(true);
+                collisionTreeTable.getSelectionModel().select(titleItem);
+                collisionTreeTable.scrollTo(collisionTreeTable.getRow(titleItem));
+                break;
+            }
+        }
     }
 
     private void selectFile(FileChooser fileChooser, TextField field, Stage stage, boolean save) {
@@ -678,21 +886,53 @@ public class ExamGUI extends Application {
     private void saveCollisions() {
         String collisionsPath = collisionPathField.getText();
 
-        if (!(new File(collisionsPath).getParentFile().exists() && new File(collisionsPath).getParentFile() != null && new File(collisionsPath).getParentFile().canWrite() && (!new File(collisionsPath).exists() || new File(collisionsPath).canWrite()))) {
-            showAlert("Invalid collisions file path.", Alert.AlertType.ERROR);
+        // Check if path is null or empty
+        if (collisionsPath == null || collisionsPath.trim().isEmpty()) {
+            showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
             return;
         }
 
-        // save paths to preferences
-        prefs.put("collisionsPath", collisionsPath);
+        File collisionFile = new File(collisionsPath);
 
+        // Check if parent directory exists and is accessible
+        File parentDir = collisionFile.getParentFile();
+        if (parentDir == null) {
+            showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        if (!parentDir.exists()) {
+            showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
+            return;
+        }
+
+        if (!parentDir.canWrite()) {
+            showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Check if file exists and is writable
+        if (collisionFile.exists() && !collisionFile.canWrite()) {
+            showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Check if we have collision data to save
         if (assessments == null || assessments.length == 0) {
             showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
             return;
         }
 
-        SaveManager.saveCollisions(collisionsPath, assessments);
-        showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
+        // Save paths to preferences
+        prefs.put("collisionsPath", collisionsPath);
+
+        // Proceed with saving
+        try {
+            SaveManager.saveCollisions(collisionsPath, assessments);
+            showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            showAlert("Error saving collisions: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
 
     private void updateCollisionTable() {
@@ -757,6 +997,11 @@ public class ExamGUI extends Application {
 
         // Sort the data
         sortTreeItems(root);
+
+        // Apply time-based filtering if checkbox is selected
+        if (hideNullTimesCheckbox.isSelected()) {
+            filterTreeItems(root, true);
+        }
 
         // Update the tree table
         collisionTreeTable.setRoot(root);
@@ -828,6 +1073,25 @@ public class ExamGUI extends Application {
                     entry2.getCollisionCountValue(),  // Descending order
                     entry1.getCollisionCountValue()
             );
+            case "Avg. Distance" -> {
+                if (!entry1.isTitle() || !entry2.isTitle()) {
+                    yield entry1.isTitle() ? -1 : 1;
+                }
+                if (entry1.validDurationsCount == 0 || entry2.validDurationsCount == 0) {
+                    yield entry1.validDurationsCount == 0 ? 1 : -1;
+                }
+                yield entry1.totalDuration.dividedBy(entry1.validDurationsCount)
+                    .compareTo(entry2.totalDuration.dividedBy(entry2.validDurationsCount));
+            }
+            case "Max. Distance" -> {
+                if (!entry1.isTitle() || !entry2.isTitle()) {
+                    yield entry1.isTitle() ? -1 : 1;
+                }
+                if (entry1.maxDuration == null || entry2.maxDuration == null) {
+                    yield entry1.maxDuration == null ? 1 : -1;
+                }
+                yield entry1.maxDuration.compareTo(entry2.maxDuration);
+            }
             default -> 0;
         };
     }
@@ -952,6 +1216,97 @@ public class ExamGUI extends Application {
     @Override
     public void stop() {
         savePreferences();
+    }
+
+    private Tab createStatisticsTab() {
+        Tab statisticsTab = new Tab("Statistics");
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
+
+        Label inProgressLabel = new Label("Statistics View - In Progress");
+        inProgressLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        inProgressLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        Label descriptionLabel = new Label("This feature is currently under development.");
+        descriptionLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        content.getChildren().addAll(inProgressLabel, descriptionLabel);
+        statisticsTab.setContent(content);
+        return statisticsTab;
+    }
+
+    private Tab createRoomPlansTab() {
+        Tab roomPlansTab = new Tab("Room Occupancy Plans");
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
+
+        Label inProgressLabel = new Label("Room Occupancy Plans - In Progress");
+        inProgressLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        inProgressLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        Label descriptionLabel = new Label("This feature is currently under development.");
+        descriptionLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        content.getChildren().addAll(inProgressLabel, descriptionLabel);
+        roomPlansTab.setContent(content);
+        return roomPlansTab;
+    }
+
+    private void showAboutDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("About " + APP_NAME);
+        dialog.setHeaderText(null);
+
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setStyle("-fx-background-color: white;");
+
+        // App name and version
+        Label nameLabel = new Label(APP_NAME);
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        nameLabel.setTextFill(Color.web(PRIMARY_COLOR));
+
+        Label versionLabel = new Label("Version " + APP_VERSION);
+        versionLabel.setFont(Font.font("System", FontWeight.MEDIUM, 14));
+        versionLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        // Authors section
+        Label authorsTitle = new Label("Authors:");
+        authorsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+        authorsTitle.setTextFill(Color.web(SECONDARY_COLOR));
+
+        VBox authorsBox = new VBox(5);
+        for (String author : APP_AUTHORS) {
+            Label authorLabel = new Label("• " + author);
+            authorLabel.setTextFill(Color.web(SECONDARY_COLOR));
+            authorsBox.getChildren().add(authorLabel);
+        }
+
+        // Copyright
+        Label copyrightLabel = new Label("© " + COPYRIGHT_YEAR + " All rights reserved.");
+        copyrightLabel.setTextFill(Color.web(SECONDARY_COLOR));
+
+        Separator separator = new Separator();
+        separator.setPadding(new Insets(10, 0, 10, 0));
+
+        content.getChildren().addAll(
+            nameLabel,
+            versionLabel,
+            separator,
+            authorsTitle,
+            authorsBox,
+            new Separator(),
+            copyrightLabel
+        );
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.getDialogPane().setPrefWidth(400);
+        dialog.getDialogPane().setStyle("-fx-background-color: white;");
+
+        dialog.showAndWait();
     }
 
     public static void run() {
