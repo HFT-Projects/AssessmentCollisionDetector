@@ -1,0 +1,44 @@
+Claude 3.5 Sonnet:
+
+!.Prompt: // Add a CheckBox to the UI near the TreeTableView labeled "Show only assessments".
+          // When the CheckBox is selected, collapse all TreeItems in the TreeTableView so that only the top-level assessments are visible (their children — collisions — are hidden).
+          // When the CheckBox is unselected, expand all TreeItems so that all collisions under each assessment are shown again.
+          // Ensure that the toggle works dynamically and updates the view immediately when the checkbox state changes.
+
+2.Prompt:// Fix an issue where the "Show only assessments" checkbox (which collapses all collisions) does not restore its collapsed state after toggling other filters.
+         // Specifically, when the user:
+         // 1. Selects "Show only assessments" → collisions are collapsed (hidden)
+         // 2. Selects "Don't show rows with no time" → filters apply
+         // 3. Deselects "Don't show rows with no time" → all rows return, but collisions are now expanded
+         // Desired behavior:
+         // - If "Show only assessments" is still checked, all collision rows should remain collapsed after any filter is toggled.
+         // Solution:
+         // - After any filtering action (such as toggling the "Don't show rows without date" checkbox), re-apply the collapsing logic if "Show only assessments" is still selected.
+         // This ensures the TreeTableView always reflects the current state of all filters correctly.
+
+3.Prompt: // Add a dropdown menu (e.g. a MenuButton or ContextMenu) labeled "Columns" near the TreeTableView.
+          // This menu should contain a CheckMenuItem for each column in the table.
+          // The CheckMenuItem for the first column ("Exam 1") should always be selected and disabled (setDisable(true)) so it cannot be unchecked by the user.
+          // All other columns should have enabled CheckMenuItems that allow toggling their visibility using column.setVisible(true/false).
+          // When a user unchecks a column's CheckMenuItem, hide the column by setting its visibility to false.
+          // When a column is rechecked, make it visible again.
+          // Ensure the menu reflects the current visibility status of each column in real time.
+
+4.Prompt: Wenn man die Spalten wieder im CheckMenuItem wieder anklickt, dann sind die Spalten enger: // When the visibility of any column is toggled via the CheckMenuItem, // force the TreeTableView to re-layout and adjust column widths properly.
+
+5.Prompt: implement a method that, after changing column visibility:
+          explicitly forces recalculation of column widths,
+          triggers a layout pass or refresh on the TreeTableView,
+          and ensures all visible columns get appropriate widths to avoid the last column being cut off or having zero width.
+          Make sure this method is robust against JavaFX’s delayed layout updates and works reliably when showing or hiding columns dynamically.
+
+ 6.Prompt: Add a numeric input field (e.g., a TextField) to filter collisions in the TreeTableView by distance.
+           When the user enters a distance value, update the displayed collisions to show only those with a distance less than or equal to the entered value.
+           The filter should apply dynamically as the input changes or after the user confirms the input.
+           Make sure the filtering works correctly alongside any existing filters and updates the TreeTableView accordingly.
+
+ 7.Prompt: Implement a numeric TextField to filter collisions in the TreeTableView by distance.
+           Add a listener to the TextField so that whenever the input changes (on key released or on action), the collisions are filtered to only show those with distance <= input value.
+           If the input is empty or invalid, show all collisions without filtering.
+           Ensure the TreeTableView refreshes properly after filtering.
+           Integrate the filtering logic with the existing data model of CollisionEntry objects that have a distance property.

@@ -56,7 +56,9 @@ public class ExamGUI extends Application {
     private ComboBox<String> sortExam2Box;
     private TextField filterExam1Field;
     private TextField filterExam2Field;
+    private TextField filterDistanceField;  // Add this field
     private CheckBox hideNullTimesCheckbox;  // Add this field
+    private CheckBox showOnlyAssessmentsCheckbox; // Add this field
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
@@ -311,20 +313,72 @@ public class ExamGUI extends Application {
         filterExam1Label.setTextFill(Color.web(SECONDARY_COLOR));
         Label filterExam2Label = new Label("Filter Exam 2");
         filterExam2Label.setTextFill(Color.web(SECONDARY_COLOR));
+        Label filterDistanceLabel = new Label("Max Distance (hours)");
+        filterDistanceLabel.setTextFill(Color.web(SECONDARY_COLOR));
         Label sortExam1Label = new Label("Sort Exam 1");
         sortExam1Label.setTextFill(Color.web(SECONDARY_COLOR));
         Label sortExam2Label = new Label("Sort Exam 2");
         sortExam2Label.setTextFill(Color.web(SECONDARY_COLOR));
+
+        // Create distance filter field
+        filterDistanceField = createStyledTextField("");
+        filterDistanceField.setPromptText("Enter max distance (hours)...");
+        filterDistanceField.setPrefWidth(150);
+
+        // Add numeric validation and filtering
+        filterDistanceField.textProperty().addListener((obs, oldVal, newVal) -> {
+            // Allow empty value for no filtering
+            if (newVal.isEmpty()) {
+                updateCollisionTreeTable();
+                return;
+            }
+
+            // Allow only digits and one decimal point
+            if (!newVal.matches("^\\d*\\.?\\d*$")) {
+                filterDistanceField.setText(oldVal);
+                return;
+            }
+
+            // Don't update on partial decimal (e.g., "." or "5.")
+            if (!newVal.equals(".") && !newVal.endsWith(".")) {
+                updateCollisionTreeTable();
+            }
+        });
+
+        // Also update on focus lost to handle partial inputs
+        filterDistanceField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) { // Focus lost
+                String text = filterDistanceField.getText();
+                if (text.equals(".") || text.endsWith(".")) {
+                    filterDistanceField.setText(text.replace(".", ""));
+                }
+                updateCollisionTreeTable();
+            }
+        });
 
         // Add components to grid
         controlGrid.add(filterExam1Label, 0, 0);
         controlGrid.add(filterExam1Field, 1, 0);
         controlGrid.add(filterExam2Label, 2, 0);
         controlGrid.add(filterExam2Field, 3, 0);
+
         controlGrid.add(sortExam1Label, 0, 1);
         controlGrid.add(sortExam1Box, 1, 1);
         controlGrid.add(sortExam2Label, 2, 1);
         controlGrid.add(sortExam2Box, 3, 1);
+
+        // Place Max Distance filter side by side on the left
+        HBox distanceBox = new HBox(10); // 10px spacing between label and field
+        distanceBox.setAlignment(Pos.CENTER_LEFT);
+        distanceBox.setPadding(new Insets(0, 0, 0, 0)); // Reset padding to align with other rows
+        filterDistanceLabel.setPadding(new Insets(0, 10, 0, 0)); // Add some right padding to the label
+        distanceBox.getChildren().addAll(filterDistanceLabel, filterDistanceField);
+
+        // Add the HBox to the grid in the third row, spanning all columns
+        controlGrid.add(distanceBox, 0, 2, 4, 1);
+
+        // Configure the TextField width to be reasonable
+        filterDistanceField.setPrefWidth(150); // Set a reasonable width for the field
 
         // Column constraints for even distribution
         ColumnConstraints labelCol = new ColumnConstraints();
@@ -355,9 +409,29 @@ public class ExamGUI extends Application {
         Label sectionDescription = new Label("Detected exam collisions based on student registrations.");
         sectionDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
 
-        // Add checkbox for filtering
+        // Create controls container
+        HBox controlsContainer = new HBox(20);
+        controlsContainer.setAlignment(Pos.CENTER_LEFT);
+
+        // Add checkboxes for filtering
         hideNullTimesCheckbox = new CheckBox("Hide entries with no times");
         hideNullTimesCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+
+        showOnlyAssessmentsCheckbox = new CheckBox("Show only assessments");
+        showOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+
+        // Create columns menu button
+        MenuButton columnsMenuButton = new MenuButton("Columns");
+        columnsMenuButton.setStyle(
+            "-fx-background-color: " + PRIMARY_COLOR + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;" +
+            "-fx-padding: 5px 10px;" +
+            "-fx-cursor: hand;" +
+            "-fx-border-radius: 4px;"
+        );
+
+        controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, columnsMenuButton);
 
         // Separator
         Separator separator = new Separator();
@@ -370,18 +444,23 @@ public class ExamGUI extends Application {
         VBox.setVgrow(collisionTreeTable, Priority.ALWAYS);
 
         // Set up the filtering
-        hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            // When checkbox is unchecked, rebuild the table to show all entries
-            updateCollisionTreeTable();
-        });
+        hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) ->
+            updateCollisionTreeTable());
 
-        // Apply table styles
-        collisionTreeTable.setStyle(
-                "-fx-background-color: white;" +
-                        "-fx-border-color: #e0e0e0;" +
-                        "-fx-border-width: 1px;" +
-                        "-fx-border-radius: 4px;"
-        );
+        // Set up assessment-only view toggle
+        showOnlyAssessmentsCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
+            if (root != null) {
+                root.getChildren().forEach(titleItem -> {
+                    if (newValue) {
+                        titleItem.getChildren().clear();
+                        titleItem.setExpanded(false);
+                    } else {
+                        updateCollisionTreeTable();
+                    }
+                });
+            }
+        });
 
         // Table columns
         TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
@@ -434,7 +513,6 @@ public class ExamGUI extends Application {
             }
         });
 
-        // Add new columns for average and maximum distance
         TreeTableColumn<CollisionEntry, String> avgDistanceCol = new TreeTableColumn<>("Avg. Distance");
         avgDistanceCol.setCellValueFactory(param -> {
             CollisionEntry entry = param.getValue().getValue();
@@ -469,6 +547,69 @@ public class ExamGUI extends Application {
             }
         });
 
+        // Create column visibility menu items
+        CheckMenuItem exam1Item = new CheckMenuItem("Exam 1");
+        exam1Item.setSelected(true);
+        exam1Item.setDisable(true);  // First column cannot be hidden
+
+        CheckMenuItem exam2Item = new CheckMenuItem("Exam 2");
+        exam2Item.setSelected(true);
+        exam2Item.selectedProperty().addListener((obs, old, newValue) -> {
+            exam2Col.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem collisionCountItem = new CheckMenuItem("Collision Count");
+        collisionCountItem.setSelected(true);
+        collisionCountItem.selectedProperty().addListener((obs, old, newValue) -> {
+            collisionCountCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem beginItem = new CheckMenuItem("Begin");
+        beginItem.setSelected(true);
+        beginItem.selectedProperty().addListener((obs, old, newValue) -> {
+            beginCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem endItem = new CheckMenuItem("End");
+        endItem.setSelected(true);
+        endItem.selectedProperty().addListener((obs, old, newValue) -> {
+            endCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem distanceItem = new CheckMenuItem("Distance");
+        distanceItem.setSelected(true);
+        distanceItem.selectedProperty().addListener((obs, old, newValue) -> {
+            distanceCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem avgDistanceItem = new CheckMenuItem("Avg. Distance");
+        avgDistanceItem.setSelected(true);
+        avgDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
+            avgDistanceCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        CheckMenuItem maxDistanceItem = new CheckMenuItem("Max. Distance");
+        maxDistanceItem.setSelected(true);
+        maxDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
+            maxDistanceCol.setVisible(newValue);
+            adjustColumnWidths();
+        });
+
+        // Add menu items to the columns menu
+        columnsMenuButton.getItems().addAll(
+            exam1Item, exam2Item, collisionCountItem,
+            new SeparatorMenuItem(),
+            beginItem, endItem, distanceItem,
+            new SeparatorMenuItem(),
+            avgDistanceItem, maxDistanceItem
+        );
+
         // Set equal width constraints for all columns
         exam1Col.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.18));
         exam2Col.prefWidthProperty().bind(collisionTreeTable.widthProperty().multiply(0.18));
@@ -499,11 +640,118 @@ public class ExamGUI extends Application {
         section.getChildren().addAll(
             sectionTitle,
             sectionDescription,
-            hideNullTimesCheckbox,
+            controlsContainer,
             separator,
             collisionTreeTable
         );
         return section;
+    }
+
+    private void adjustColumnWidths() {
+        // Ensure we're on the JavaFX Application Thread
+        if (!javafx.application.Platform.isFxApplicationThread()) {
+            javafx.application.Platform.runLater(this::adjustColumnWidths);
+            return;
+        }
+
+        // First pass: Reset all column bindings and widths
+        collisionTreeTable.getColumns().forEach(column -> {
+            column.prefWidthProperty().unbind();
+            column.setMinWidth(50);
+            column.setPrefWidth(100);
+        });
+
+        // Force initial layout pass
+        collisionTreeTable.layout();
+
+        // Get current table width (excluding scrollbar if present)
+        double tableWidth = collisionTreeTable.getWidth();
+        double scrollbarWidth = 15;
+        if (collisionTreeTable.lookup(".virtual-flow .scroll-bar:vertical") != null) {
+            tableWidth -= scrollbarWidth;
+        }
+
+        final double finalTableWidth = tableWidth;
+
+        // Count visible columns for proper width distribution
+        long visibleColumns = collisionTreeTable.getColumns().stream()
+            .filter(javafx.scene.control.TreeTableColumn::isVisible)
+            .count();
+
+        if (visibleColumns == 0) return;
+
+        // Second pass: Apply proportional widths with proper bindings
+        javafx.application.Platform.runLater(() -> {
+            // Calculate total proportion to ensure we use 100% of width
+            double totalProportion = 0;
+            for (javafx.scene.control.TreeTableColumn<?, ?> column : collisionTreeTable.getColumns()) {
+                if (column.isVisible()) {
+                    if (column.getText().equals("Exam 1") || column.getText().equals("Exam 2")) {
+                        totalProportion += 0.18;
+                    } else if (column.getText().equals("Collision Count")) {
+                        totalProportion += 0.12;
+                    } else {
+                        totalProportion += 0.13;
+                    }
+                }
+            }
+
+            // Scale factor to ensure proportions sum to 1.0
+            final double scaleFactor = 1.0 / totalProportion;
+
+            collisionTreeTable.getColumns().forEach(column -> {
+                // Add visibility change listener to each column
+                column.visibleProperty().addListener((obs, oldVal, newVal) -> {
+                    // Use runLater to ensure layout is updated after visibility change
+                    javafx.application.Platform.runLater(() -> {
+                        adjustColumnWidths();
+                        // Additional refresh after a short delay to ensure proper layout
+                        javafx.application.Platform.runLater(() -> {
+                            collisionTreeTable.refresh();
+                            collisionTreeTable.layout();
+                        });
+                    });
+                });
+
+                if (column.isVisible()) {
+                    // Calculate scaled proportion based on column type
+                    double proportion;
+                    if (column.getText().equals("Exam 1") || column.getText().equals("Exam 2")) {
+                        proportion = 0.18 * scaleFactor;
+                    } else if (column.getText().equals("Collision Count")) {
+                        proportion = 0.12 * scaleFactor;
+                    } else {
+                        proportion = 0.13 * scaleFactor;
+                    }
+
+                    // Apply width binding with minimum width constraint
+                    column.prefWidthProperty().bind(
+                        collisionTreeTable.widthProperty().multiply(proportion)
+                            .subtract(scrollbarWidth / visibleColumns)
+                    );
+
+                    // Ensure minimum width is maintained
+                    double minWidth = Math.max(50, finalTableWidth * proportion * 0.8);
+                    column.setMinWidth(minWidth);
+                }
+            });
+
+            // Force immediate layout update
+            collisionTreeTable.refresh();
+            collisionTreeTable.layout();
+        });
+
+        // Final layout pass after a short delay to ensure all changes are applied
+        javafx.application.Platform.runLater(() -> {
+            // Add a small delay to ensure all bindings are properly applied
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            collisionTreeTable.layout();
+            collisionTreeTable.refresh();
+        });
     }
 
     private void filterTreeItems(TreeItem<CollisionEntry> item, boolean hideNullTimes) {
@@ -950,6 +1198,7 @@ public class ExamGUI extends Application {
         // First, filter based on exam1 and exam2 filters
         String exam1Filter = filterExam1Field.getText().toLowerCase();
         String exam2Filter = filterExam2Field.getText().toLowerCase();
+        String distanceFilter = filterDistanceField.getText();
 
         // Process and filter the collision data
         for (Assessment assessment : assessments) {
@@ -965,32 +1214,61 @@ public class ExamGUI extends Application {
             TreeItem<CollisionEntry> titleItem = new TreeItem<>(
                     new CollisionEntry(assessment)
             );
-            titleItem.setExpanded(true);
+            titleItem.setExpanded(!showOnlyAssessmentsCheckbox.isSelected());
 
             boolean hasMatchingChild = false;
 
-            // Add child items for each colliding assessment
-            for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
-                Assessment collidingAssessment = detail.getKey();
-                int collisionCount = detail.getValue();
+            // Add child items for each colliding assessment if not showing only assessments
+            if (!showOnlyAssessmentsCheckbox.isSelected()) {
+                for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
+                    Assessment collidingAssessment = detail.getKey();
+                    int collisionCount = detail.getValue();
 
-                // Check if colliding assessment matches exam2 filter
-                boolean matchesExam2 = exam2Filter.isEmpty() ||
-                        collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
+                    // Check if colliding assessment matches exam2 filter
+                    boolean matchesExam2 = exam2Filter.isEmpty() ||
+                            collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
 
-                if (matchesExam2) {
-                    TreeItem<CollisionEntry> childItem = new TreeItem<>(
-                            new CollisionEntry(assessment, collidingAssessment, collisionCount)
-                    );
-                    titleItem.getChildren().add(childItem);
-                    hasMatchingChild = true;
+                    // Check if colliding assessment matches distance filter
+                    boolean matchesDistance = true;
+                    if (!distanceFilter.isEmpty()) {
+                        try {
+                            double maxHours = Double.parseDouble(distanceFilter);
+                            if (assessment.getBegin() != null && assessment.getEnd() != null &&
+                                collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
+
+                                Duration distance;
+                                if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                                    distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
+                                } else {
+                                    distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
+                                }
+
+                                // Convert the distance to hours with decimal places for more precise filtering
+                                double distanceHours = distance.toMinutes() / 60.0;
+                                matchesDistance = !distance.isNegative() && distanceHours <= maxHours;
+                            } else {
+                                matchesDistance = false; // No times available, don't show in filtered results
+                            }
+                        } catch (NumberFormatException e) {
+                            matchesDistance = false;
+                        }
+                    }
+
+                    if (matchesExam2 && matchesDistance) {
+                        TreeItem<CollisionEntry> childItem = new TreeItem<>(
+                                new CollisionEntry(assessment, collidingAssessment, collisionCount)
+                        );
+                        titleItem.getChildren().add(childItem);
+                        hasMatchingChild = true;
+                    }
                 }
             }
 
             // Add title item if it either:
             // 1. Has no exam2 filter (so we show all title rows)
             // 2. Has matching children (so we show title rows with matching children)
-            if (exam2Filter.isEmpty() || hasMatchingChild) {
+            // 3. We're showing only assessments (so we show all title rows regardless of children)
+            if (exam2Filter.isEmpty() || hasMatchingChild || showOnlyAssessmentsCheckbox.isSelected()) {
                 root.getChildren().add(titleItem);
             }
         }
@@ -1204,6 +1482,7 @@ public class ExamGUI extends Application {
         sortExam2Box.setValue(prefs.get("sortExam2", "Date"));
         filterExam1Field.setText(prefs.get("filterExam1", ""));
         filterExam2Field.setText(prefs.get("filterExam2", ""));
+        filterDistanceField.setText(prefs.get("filterDistance", ""));
     }
 
     private void savePreferences() {
@@ -1211,6 +1490,7 @@ public class ExamGUI extends Application {
         prefs.put("sortExam2", sortExam2Box.getValue());
         prefs.put("filterExam1", filterExam1Field.getText());
         prefs.put("filterExam2", filterExam2Field.getText());
+        prefs.put("filterDistance", filterDistanceField.getText());
     }
 
     @Override
