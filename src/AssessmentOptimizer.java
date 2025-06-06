@@ -1,6 +1,7 @@
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class AssessmentOptimizer {
@@ -116,6 +117,61 @@ public class AssessmentOptimizer {
         }
 
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
+    }
+
+    // value used to optimize -> the greater the value the better
+    private static double getSatisfactionValueAll(Assessment[] assessments) {
+        double sum = 0;
+        for (Assessment a : assessments) {
+            sum += getSatisfactionValueOfAssessment(a);
+        }
+        return sum;
+    }
+
+    private static double getSatisfactionValueOfAssessment(Assessment assessment) {
+        double sum = 0;
+        int collisions_with_date = 0;
+
+        if (assessment.getBegin() == null || assessment.getEnd() == null) {
+            return -1;
+        }
+
+        for (Assessment b : assessment.getCollisionCountByAssessment().keySet()) {
+            if (b.getBegin() == null || b.getEnd() == null) {
+                continue;
+            }
+
+            collisions_with_date++;
+
+            // calculate time distance between colliding assessments (end to begin)
+            Assessment first;
+            Assessment last;
+            if (assessment.getBegin().isBefore(b.getBegin())) {
+                first = assessment;
+                last = b;
+            } else {
+                first = b;
+                last = assessment;
+            }
+            long distance_hours = Duration.between(first.getEnd(), last.getBegin()).toHours();
+            long distance_days = ChronoUnit.DAYS.between(first.getEnd().toLocalDate(), last.getBegin().toLocalDate());
+
+            double satis;
+            if (distance_days >= 2) {
+                satis = 1;
+            } else if (distance_days == 1) {
+                satis = 0.9;
+            } else {
+                if (distance_hours <= 1)
+                    satis = 0;
+                else if (distance_hours <= 3)
+                    satis = 0.1;
+                else
+                    satis = 0.2 + (double)distance_hours / 12 * 0.6;
+            }
+            sum += satis * Math.sqrt(assessment.getCollisionCountByAssessment().get(b));
+        }
+        return sum / collisions_with_date;
     }
 
     public static MergedAssessment[][] optimizeAssessments(MergedAssessment[][] assessmentGroups) {
