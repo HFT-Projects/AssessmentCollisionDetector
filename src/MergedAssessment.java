@@ -3,9 +3,30 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class MergedAssessment extends Assessment {
-    public MergedAssessment(String name, LocalDateTime begin, LocalDateTime end) {
 
+    private LocalDateTime optimizedBegin;
+    private LocalDateTime optimizedEnd;
+
+    public MergedAssessment(String name, LocalDateTime begin, LocalDateTime end) {
         super(null, name, null, null, begin, end);
+        this.optimizedBegin = begin;
+        this.optimizedEnd = end;
+    }
+
+    public LocalDateTime getOptimizedBegin() {
+        return optimizedBegin != null ? optimizedBegin : getBegin();
+    }
+
+    public LocalDateTime getOptimizedEnd() {
+        return optimizedEnd != null ? optimizedEnd : getEnd();
+    }
+
+    public void setOptimizedBegin(LocalDateTime begin) {
+        this.optimizedBegin = begin;
+    }
+
+    public void setOptimizedEnd(LocalDateTime end) {
+        this.optimizedEnd = end;
     }
 
     @Override

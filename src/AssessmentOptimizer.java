@@ -1,6 +1,45 @@
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 public class AssessmentOptimizer {
+
+    private static class TimeSlot {
+        LocalDateTime start;
+        Duration duration;
+
+        TimeSlot(LocalDateTime start, Duration duration) {
+            this.start = start;
+            this.duration = duration;
+        }
+    }
+
+    // false/true je nachdem was man angezeigt bekommen will
+    private static final boolean SHOW_INDIVIDUAL_MOVES = false;
+    private static final boolean SHOW_GROUP_SUMMARY = true;
+    private static final boolean SHOW_DETAILED_STATS = false;
+
+    private static void debugMove(String message) {
+        if (SHOW_INDIVIDUAL_MOVES) {
+            System.out.println(message);
+        }
+    }
+
+    private static void debugGroupInfo(String message) {
+        if (SHOW_GROUP_SUMMARY) {
+            System.out.println(message);
+        }
+    }
+
+    private static void debugStats(String message) {
+        if (SHOW_DETAILED_STATS) {
+            System.out.println(message);
+        }
+    }
+
+    // IMPORTANT! ORGANIZED OUTPUT IS CONTROLLED BY THE DECLARATIONS: SHOW_INDIVIDUAL_MOVES etc.
+    // IN TEST.JAVA PRINT_ORGANIZED_ASSESSMENTS WAS COMMENTED OUT FOR CLEAN OUTPUT - SEE CHANGES AFTER PUSH
     public static Map<Assessment, MergedAssessment> mergeAssessments(Assessment[] assessments) {
         Map<String, List<MergedAssessment>> nameToMergedAssessment = new HashMap<>();
         Map<Assessment, MergedAssessment> assessmentToMergedAssessment = new HashMap<>();
@@ -80,7 +119,245 @@ public class AssessmentOptimizer {
     }
 
     public static MergedAssessment[][] optimizeAssessments(MergedAssessment[][] assessmentGroups) {
-        throw new RuntimeException("not implemented");
+        for (MergedAssessment[] assessmentGroup : assessmentGroups) {
+            optimizeGroup(assessmentGroup);
+        }
+        return assessmentGroups;
+    }
+
+    private static void optimizeGroup(MergedAssessment[] group) {
+        if (group.length <= 1) {
+            return; // no optimization needed for 0 or 1 prüfungen
+        }
+
+        debugGroupInfo("\n=== Optimiere Gruppe mit " + group.length + " Prüfungen ===");
+
+        // only show the first three prüfungen
+        int maxShow = Math.min(3, group.length);
+        for (int i = 0; i < maxShow; i++) {
+            MergedAssessment a = group[i];
+            System.out.println("Prüfung " + i + ": " + a.getName() +
+                    " (Kollisionen: " + a.getCollisionSum() + ")");
+        }
+
+        if (group.length > 3) {
+            System.out.println("... und " + (group.length - 3) + " weitere");
+        }
+
+        // sorted form most prüfungen in the group
+        Arrays.sort(group, (a, b) -> Integer.compare(b.getCollisionSum(), a.getCollisionSum()));
+
+        //selfexplenetory -> schreibt mir wenn nciht
+        List<TimeSlot> availableSlots = getAvailableTimeSlots(group);
+        debugStats("Verfügbare Zeitslots: " + availableSlots.size() + " Stück");
+        for (MergedAssessment assessment : group) {
+            optimizeAssessment(assessment, group, availableSlots);
+        }
+
+        //output
+        int totalCollisionsBefore = Arrays.stream(group).mapToInt(Assessment::getCollisionSum).sum();
+        int totalCollisionsAfter = calculateNewCollisions(group);
+        debugGroupInfo("--- Optimierung abgeschlossen für Gruppe ---");
+        System.out.println("Kollisionen: " + totalCollisionsBefore + " → " + totalCollisionsAfter +
+                " (Verbesserung: " + (totalCollisionsBefore - totalCollisionsAfter) + ")");
+    }
+
+    private static void optimizeAssessment(MergedAssessment assessment, MergedAssessment[] group, List<TimeSlot> availableSlots) {
+        if (availableSlots.isEmpty()) {
+            return; //Guard Clause if somethign fails
+        }
+
+        TimeSlot bestSlot = null;
+        int minCollisions = Integer.MAX_VALUE;
+
+        // core Algorithm testing for the wenigsten collisions
+        for (TimeSlot slot : availableSlots) {
+            int collisions = calculateCollisionsForSlot(assessment, group, slot);
+
+            if (collisions < minCollisions) {
+                minCollisions = collisions;
+                bestSlot = slot;
+            }
+        }
+
+        // best solt found and prüfung set on it
+        if (bestSlot != null && bestSlot.start != assessment.getBegin()) {
+            debugMove("Verschiebe " + assessment.getName() + " von " + assessment.getBegin() + " nach " + bestSlot.start);
+
+            assessment.setOptimizedBegin(bestSlot.start);
+            assessment.setOptimizedEnd(bestSlot.start.plus(bestSlot.duration));
+        }
+    }
+
+    private static int calculateCollisionsForSlot(MergedAssessment assessment, MergedAssessment[] group, TimeSlot slot) {
+        int collisions = 0;
+
+        LocalDateTime newStart = slot.start;
+        LocalDateTime newEnd = slot.start.plus(slot.duration);
+
+        for (MergedAssessment other : group) {
+            if (other == assessment) {
+                continue;
+            }
+
+            // using getOtpimizedBegin etc. from class MergedAssesment -> see changes after push (it has been verändert)
+            LocalDateTime otherStart = other.getOptimizedBegin();
+            LocalDateTime otherEnd = other.getOptimizedEnd();
+
+            if (otherStart == null || otherEnd == null) {
+                continue;
+            }
+
+            // explained in getTotalCollisioons
+            collisions = getTotalCollisions(collisions, assessment, other, newStart, newEnd, otherStart, otherEnd);
+        }
+
+        return collisions;
+    }
+
+    private static List<TimeSlot> getAvailableTimeSlots(MergedAssessment[] group) {
+        List<TimeSlot> timeSlots = new ArrayList<>();
+
+        // gather all timslots
+        for (MergedAssessment assessment : group) {
+            if (assessment.getBegin() != null && assessment.getEnd() != null) {
+                Duration duration = Duration.between(assessment.getBegin(), assessment.getEnd());
+                TimeSlot slot = new TimeSlot(assessment.getBegin(), duration);
+
+                if (!containsTimeSlot(timeSlots, slot)) {
+                    timeSlots.add(slot);
+                }
+            }
+        }
+
+        // generate new timslots if none available
+        if (timeSlots.isEmpty()) {
+            generateUniversalTimeSlots(timeSlots, group);
+        }
+
+        return timeSlots;
+    }
+
+    // its applicable on all times and not hardcoded (Hat mich meine letzten nerven gekostet)
+    private static void generateUniversalTimeSlots(List<TimeSlot> timeSlots, MergedAssessment[] group) {
+        // extract zeitraum der prüfungen
+        LocalDateTime earliestDate = null;
+        LocalDateTime latestDate = null;
+
+        for (MergedAssessment assessment : group) {
+            if (assessment.getBegin() != null) {
+                if (earliestDate == null || assessment.getBegin().isBefore(earliestDate)) {
+                    earliestDate = assessment.getBegin();
+                }
+                if (latestDate == null || assessment.getBegin().isAfter(latestDate)) {
+                    latestDate = assessment.getBegin();
+                }
+            }
+        }
+
+        // verschiebe if no termine could be found
+        if (earliestDate != null && latestDate != null) {
+            LocalDateTime startRange = earliestDate.minusWeeks(1);
+            LocalDateTime endRange = latestDate.plusWeeks(1);
+
+            // gather all durations
+            Set<Duration> existingDurations = new HashSet<>();
+            for (MergedAssessment assessment : group) {
+                if (assessment.getBegin() != null && assessment.getEnd() != null) {
+                    existingDurations.add(Duration.between(assessment.getBegin(), assessment.getEnd()));
+                }
+            }
+
+            // if no duration could be found add a standrd duration of 2 hours
+            // can be changed without exploding the whole algorithm
+            if (existingDurations.isEmpty()) {
+                existingDurations.add(Duration.ofHours(2));
+            }
+
+            // gatehr all start times
+            Set<LocalTime> existingTimes = new HashSet<>();
+            for (MergedAssessment assessment : group) {
+                if (assessment.getBegin() != null) {
+                    existingTimes.add(assessment.getBegin().toLocalTime());
+                }
+            }
+
+            // if no starting time has been found they get one between 8:00 and 16:00
+            if (existingTimes.isEmpty()) {
+                existingTimes.addAll(Arrays.asList(
+                        LocalTime.of(8, 0), LocalTime.of(9, 0), LocalTime.of(10, 0),
+                        LocalTime.of(11, 0), LocalTime.of(12, 0), LocalTime.of(13, 0),
+                        LocalTime.of(14, 0), LocalTime.of(15, 0), LocalTime.of(16, 0)
+                ));
+            }
+
+            // generate slots for each day in duration
+            LocalDateTime current = startRange.toLocalDate().atStartOfDay();
+            while (current.isBefore(endRange)) {
+                // monaday - friday
+                if (current.getDayOfWeek().getValue() <= 5) {
+                    for (LocalTime time : existingTimes) {
+                        LocalDateTime slotStart = current.toLocalDate().atTime(time);
+
+                        for (Duration duration : existingDurations) {
+                            timeSlots.add(new TimeSlot(slotStart, duration));
+                        }
+                    }
+                }
+                current = current.plusDays(1);
+            }
+        }
+    }
+
+    // self explenatory
+    private static boolean containsTimeSlot(List<TimeSlot> slots, TimeSlot newSlot) {
+        for (TimeSlot slot : slots) {
+            if (slot.start.equals(newSlot.start) && slot.duration.equals(newSlot.duration)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int calculateNewCollisions(MergedAssessment[] group) {
+        int totalCollisions = 0;
+
+        for (int i = 0; i < group.length; i++) {
+            for (int j = i + 1; j < group.length; j++) {
+                MergedAssessment a = group[i];
+                MergedAssessment b = group[j];
+
+                LocalDateTime aStart = a.getOptimizedBegin();
+                LocalDateTime aEnd = a.getOptimizedEnd();
+                LocalDateTime bStart = b.getOptimizedBegin();
+                LocalDateTime bEnd = b.getOptimizedEnd();
+
+                if (aStart != null && aEnd != null && bStart != null && bEnd != null) {
+                    // check überschneidung
+                    totalCollisions = getTotalCollisions(totalCollisions, a, b, aStart, aEnd, bStart, bEnd);
+                }
+            }
+        }
+
+        return totalCollisions;
+    }
+
+    private static int getTotalCollisions(int totalCollisions, MergedAssessment a, MergedAssessment b, LocalDateTime aStart,
+                                          LocalDateTime aEnd, LocalDateTime bStart, LocalDateTime bEnd) {
+        // checking if they are überschneiden
+        if (aStart.isBefore(bEnd) && aEnd.isAfter(bStart)) {
+
+            //safety mechanism if one of them is null -> NullPointerException
+            Set<String> aStudents = a.getRegisteredStudents();
+            Set<String> bStudents = b.getRegisteredStudents();
+
+            if (aStudents != null && bStudents != null) {
+                Set<String> commonStudents = new HashSet<>(aStudents);
+                commonStudents.retainAll(bStudents);
+                totalCollisions += commonStudents.size();
+            }
+        }
+        return totalCollisions;
     }
 }
 

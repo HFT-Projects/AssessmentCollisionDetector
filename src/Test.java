@@ -22,8 +22,8 @@ class Test {
 
         MergedAssessment[] optimizedAssessments = Arrays.stream(optimizedAssessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
 
-        // print optimizedAssessments
-        System.out.println(Arrays.toString(optimizedAssessments));
+//        // print optimizedAssessments
+//        System.out.println(Arrays.toString(optimizedAssessments));
 
 
 
