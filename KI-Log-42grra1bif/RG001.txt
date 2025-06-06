@@ -1,0 +1,9 @@
+Claude Sonnet 3.7:
+
+3. Prompt: wie Sollich am besten die Kollisionen neu berechnen? Also die nach der Optimierung, meine idee wäre mit ner doppelschleidfe die von 0 
+
+4. Prompt: "Wie strukturiere ich die optimizeGroup Methode richtig? Ich weiß dass ich nach Kollisionen sortieren muss, aber wie organisiere ich den Ablauf mit Debug-Ausgaben und Verbesserungsanzeige?"
+
+5.1. Prompt: wie kann ich die duration extrahieren aus den prüfungen extrahieren und wie kann ich am besten neue zeiten bzw duration anfang und ende neu erstellen? es soll am besten nicht unmengen an ram essen da es große dateien verarbeiten soll, deswgeen ich weiß nicht ob ich temporäre dateien erstellen sollte oder nicht
+
+5.2. Prompt: Chef bitte es knallt bald mit dir ich kann nicht mehr warum sind die Zeiten hartkodiert? Es soll frei wählbar sein also  es soll klappen wenn man prüfungen rund um die Uhr schreiben will damit es flexibel bleibt
