@@ -14,6 +14,19 @@ public class AssessmentOptimizer {
             this.start = start;
             this.duration = duration;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            TimeSlot timeSlot = (TimeSlot) obj;
+            return start.equals(timeSlot.start) && duration.equals(timeSlot.duration);
+        }
+
+        @Override
+        public int hashCode() {
+            return start.hashCode() + duration.hashCode();
+        }
     }
 
     // false/true je nachdem was man angezeigt bekommen will
@@ -119,15 +132,6 @@ public class AssessmentOptimizer {
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
 
-    // value used to optimize -> the greater the value the better
-    private static double getSatisfactionValueAll(Assessment[] assessments) {
-        double sum = 0;
-        for (Assessment a : assessments) {
-            sum += getSatisfactionValueOfAssessment(a);
-        }
-        return sum;
-    }
-
     private static double getSatisfactionValueOfAssessment(Assessment assessment) {
         double sum = 0;
         int collisions_with_date = 0;
@@ -213,9 +217,43 @@ public class AssessmentOptimizer {
         //output
         int totalCollisionsBefore = Arrays.stream(group).mapToInt(Assessment::getCollisionSum).sum();
         int totalCollisionsAfter = calculateNewCollisions(group);
+        double improvement = totalCollisionsBefore > 0 ?
+                ((double)(totalCollisionsBefore - totalCollisionsAfter) / totalCollisionsBefore) * 100 : 0;
+
         debugGroupInfo("--- Optimierung abgeschlossen für Gruppe ---");
         System.out.println("Kollisionen: " + totalCollisionsBefore + " → " + totalCollisionsAfter +
-                " (Verbesserung: " + (totalCollisionsBefore - totalCollisionsAfter) + ")");
+                " (Verbesserung: " + (totalCollisionsBefore - totalCollisionsAfter) +
+                " = " + String.format("%.1f%%", improvement) + ")");
+
+        debugGroupInfo("FINALE TERMINE:");
+        for (MergedAssessment assessment : group) {
+            System.out.println("  " + assessment.getName() +
+                    ": " + assessment.getOptimizedBegin());
+        }
+
+        // debug studenten
+        debugGroupInfo("STUDENT-BEISPIELE:");
+            // Nimm die ersten 2 Prüfungen und zeige gemeinsame Studenten
+            MergedAssessment p1 = group[0];
+            MergedAssessment p2 = group[1];
+
+            Set<String> gemeinsam = new HashSet<>(p1.getRegisteredStudents());
+            gemeinsam.retainAll(p2.getRegisteredStudents());
+
+            if (!gemeinsam.isEmpty()) {
+                String student = gemeinsam.iterator().next(); // Ersten nehmen
+                System.out.println("Student " + student.substring(0,8) + "...");
+                System.out.println("  " + p1.getName() + ": " + p1.getOptimizedBegin());
+                System.out.println("  " + p2.getName() + ": " + p2.getOptimizedBegin());
+
+                if (p1.getOptimizedBegin() != null && p2.getOptimizedBegin() != null) {
+                    long tageAbstand = ChronoUnit.DAYS.between(
+                            p1.getOptimizedBegin().toLocalDate(),
+                            p2.getOptimizedBegin().toLocalDate()
+                    );
+                    System.out.println("  → Abstand: " + Math.abs(tageAbstand) + " Tage");
+                }
+            }
     }
 
     private static void optimizeAssessment(MergedAssessment assessment, MergedAssessment[] group, List<TimeSlot> availableSlots) {
@@ -224,51 +262,48 @@ public class AssessmentOptimizer {
         }
 
         TimeSlot bestSlot = null;
-        int minCollisions = Integer.MAX_VALUE;
+        double bestSatisfaction = Double.NEGATIVE_INFINITY;
 
         // core Algorithm testing for the wenigsten collisions
         for (TimeSlot slot : availableSlots) {
-            int collisions = calculateCollisionsForSlot(assessment, group, slot);
+            //temp
+            LocalDateTime oldBegin = assessment.getOptimizedBegin();
+            LocalDateTime oldEnd = assessment.getOptimizedEnd();
 
-            if (collisions < minCollisions) {
-                minCollisions = collisions;
+            assessment.setOptimizedBegin(slot.start);
+            assessment.setOptimizedEnd(slot.start.plus(slot.duration));
+
+            double satisfaction = getSatisfactionValueOfAssessment(assessment);
+
+            if (satisfaction > bestSatisfaction) {  // HÖHER ist besser
+                bestSatisfaction = satisfaction;
                 bestSlot = slot;
-            }
-        }
 
-        // best solt found and prüfung set on it
-        if (bestSlot != null && bestSlot.start != assessment.getBegin()) {
-            debugMove("Verschiebe " + assessment.getName() + " von " + assessment.getBegin() + " nach " + bestSlot.start);
-
-            assessment.setOptimizedBegin(bestSlot.start);
-            assessment.setOptimizedEnd(bestSlot.start.plus(bestSlot.duration));
-        }
-    }
-
-    private static int calculateCollisionsForSlot(MergedAssessment assessment, MergedAssessment[] group, TimeSlot slot) {
-        int collisions = 0;
-
-        LocalDateTime newStart = slot.start;
-        LocalDateTime newEnd = slot.start.plus(slot.duration);
-
-        for (MergedAssessment other : group) {
-            if (other == assessment) {
-                continue;
+                if (satisfaction >= 3.0) {
+                    break;
+                }
             }
 
-            // using getOtpimizedBegin etc. from class MergedAssesment -> see changes after push (it has been verändert)
-            LocalDateTime otherStart = other.getOptimizedBegin();
-            LocalDateTime otherEnd = other.getOptimizedEnd();
-
-            if (otherStart == null || otherEnd == null) {
-                continue;
-            }
-
-            // explained in getTotalCollisioons
-            collisions = getTotalCollisions(collisions, assessment, other, newStart, newEnd, otherStart, otherEnd);
+            // Restore old times
+            assessment.setOptimizedBegin(oldBegin);
+            assessment.setOptimizedEnd(oldEnd);
+            debugStats("Teste " + assessment.getName() + " auf " + slot.start +
+                    " -> Satisfaction: " + satisfaction);
         }
 
-        return collisions;
+        // best slot found and prüfung set on it
+        if (bestSlot != null) {
+            debugStats("Gewählter Slot: " + bestSlot.start + " Duration: " + bestSlot.duration);
+
+            if (bestSlot.start != assessment.getBegin()) {
+                debugMove("Verschiebe " + assessment.getName() + " von " + assessment.getBegin() + " nach " + bestSlot.start);
+                assessment.setOptimizedBegin(bestSlot.start);
+                assessment.setOptimizedEnd(bestSlot.start.plus(bestSlot.duration));
+            }
+
+            boolean removed = availableSlots.remove(bestSlot);
+            debugStats("Slot entfernt: " + removed + ". Verbleibende Slots: " + availableSlots.size());
+        }
     }
 
     private static List<TimeSlot> getAvailableTimeSlots(MergedAssessment[] group) {
@@ -287,9 +322,7 @@ public class AssessmentOptimizer {
         }
 
         // generate new timslots if none available
-        if (timeSlots.isEmpty()) {
-            generateUniversalTimeSlots(timeSlots, group);
-        }
+        generateUniversalTimeSlots(timeSlots, group);
 
         return timeSlots;
     }
@@ -313,8 +346,8 @@ public class AssessmentOptimizer {
 
         // verschiebe if no termine could be found
         if (earliestDate != null && latestDate != null) {
-            LocalDateTime startRange = earliestDate.minusWeeks(1);
-            LocalDateTime endRange = latestDate.plusWeeks(1);
+            LocalDateTime startRange = earliestDate.minusDays(6);
+            LocalDateTime endRange = latestDate.plusDays(6);
 
             // gather all durations
             Set<Duration> existingDurations = new HashSet<>();
@@ -343,7 +376,13 @@ public class AssessmentOptimizer {
                 existingTimes.addAll(Arrays.asList(
                         LocalTime.of(8, 0), LocalTime.of(9, 0), LocalTime.of(10, 0),
                         LocalTime.of(11, 0), LocalTime.of(12, 0), LocalTime.of(13, 0),
-                        LocalTime.of(14, 0), LocalTime.of(15, 0), LocalTime.of(16, 0)
+                        LocalTime.of(14, 0), LocalTime.of(15, 0), LocalTime.of(16, 0),
+                        LocalTime.of(17, 0)
+                ));
+            } else {
+                existingTimes.addAll(Arrays.asList(
+                        LocalTime.of(8, 0), LocalTime.of(9, 30), LocalTime.of(11, 0),
+                        LocalTime.of(13, 0), LocalTime.of(14, 30), LocalTime.of(16, 0)
                 ));
             }
 

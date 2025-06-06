@@ -1,0 +1,16 @@
+Verwendetes Modell: Claude Sonnet 3.7
+
+Prompt 1: Also ich muss den optimizer anpassen, die Kollisionen werden aber in unserem Fall anderes definiert: möglichst viele
+Abstände der prüfungen pro student pro tag. die dürfen sich aber nie überschneiden. da muss nicht viel geändert werden denke ich mal da der grund algorithmus eig funktioniert.
+
+Prompt 2: ich brauche hilfe bei dem vergelich also die equals methode in TimeSlot, und die hashcode methode auch also die ist
+glaube ich nur start time + durationtime aber in mir nciht sicher
+
+Prompt 3: okay das läuft eig perfekt also der output sieht gut aus wenn man das überhaupt in diesem zugemüllten zustand
+sgaen kann die runtime ist aber des todes schlecht, es wird bei einem hohen satisfactory value neuberechnet obwohl der hoch, ist also > 3,
+das ziel ist aber eig für > 2 also wäre genug, wie optimiere ich das
+
+Prompt 4: kannst du mir den code schreiben zum output von studenten beispielen, damit ich das besser überprüfen kann
+
+Prompt 5: das ist ein teil des outputs [Output-Text]
+sieht richtig aus oder? ist aufjedenfall übersichtlicher, studenten haben jetzt 4-13 tage abstand statt 0 tage
