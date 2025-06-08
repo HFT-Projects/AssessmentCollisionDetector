@@ -7,16 +7,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Assessment {
-    private final Long number;
-    private final String name;
-    private final String stg;
-    private final String pversion;
-    private final LocalDateTime begin;
-    private final LocalDateTime end;
-    private Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
-    private Integer collisionSum = null;
-    private Map<Assessment, Integer> collisionCountByAssessment = null;
+public abstract class Assessment {
+    protected final Long number;
+    protected final String name;
+    protected final String stg;
+    protected final String pversion;
+    protected final LocalDateTime begin;
+    protected final LocalDateTime end;
+    protected Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
+    protected Integer collisionSum = null;
+    protected Map<Assessment, Integer> collisionCountByAssessment = null;
 
     public Assessment(Long number, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
         this.number = number;
@@ -57,26 +57,14 @@ public class Assessment {
         return new HashSet<>(registeredStudents);
     }
 
-    public void setRegisteredStudents(Set<String> registeredStudents) {
-        this.registeredStudents = registeredStudents;
-    }
-
     public Integer getCollisionSum() {
         return collisionSum;
-    }
-
-    public void setCollisionSum(Integer collisionSum) {
-        this.collisionSum = collisionSum;
     }
 
     public Map<Assessment, Integer> getCollisionCountByAssessment() {
         if (collisionCountByAssessment == null)
             return null;
         return new HashMap<>(collisionCountByAssessment);
-    }
-
-    public void setCollisionCountByAssessment(Map<Assessment, Integer> collisionCountByAssessment) {
-        this.collisionCountByAssessment = collisionCountByAssessment;
     }
 
     @Override

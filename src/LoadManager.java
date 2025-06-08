@@ -1,4 +1,5 @@
 import data.Assessment;
+import data.AssessmentEditable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -202,7 +203,7 @@ public class LoadManager {
             int minutes2 = Integer.parseInt(endTimeSplit[1]);
             LocalDateTime end = day.plusMinutes(hours2 * 60L + minutes2);
 
-            Assessment p = new Assessment(no, name, columns[1], columns[2], begin, end);
+            Assessment p = new AssessmentEditable(no, name, columns[1], columns[2], begin, end);
             exams.add(p);
             existingExams.add(qualifiedName);
         }
@@ -249,7 +250,7 @@ public class LoadManager {
 
             // ass Assessment if it doesn't already exist
             if (!existingAssessments.contains(qualifiedName)) {
-                Assessment p = new Assessment(assessmentNo, name, stg, pversion, null, null);
+                Assessment p = new AssessmentEditable(assessmentNo, name, stg, pversion, null, null);
                 additionalAssessments.add(p);
                 existingAssessments.add(qualifiedName);
             }

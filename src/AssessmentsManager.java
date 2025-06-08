@@ -1,4 +1,5 @@
 import data.Assessment;
+import data.AssessmentEditable;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -20,7 +21,7 @@ public class AssessmentsManager {
             if (p.getRegisteredStudents() != null)
                 throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
 
-            p.setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
+            ((AssessmentEditable)p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
         }
     }
 
@@ -33,8 +34,8 @@ public class AssessmentsManager {
                 throw new AssertionError("The collisions of the assessment " + p + " was already loaded.");
 
             CollisionDetector.ReturnTuple collision = collisions.get(p);
-            p.setCollisionSum(collision.collisionSum());
-            p.setCollisionCountByAssessment(collision.collisionCountByAssessment());
+            ((AssessmentEditable)p).setCollisionSum(collision.collisionSum());
+            ((AssessmentEditable)p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
         }
     }
 }
