@@ -1,3 +1,5 @@
+import data.Assessment;
+
 class Main {
     private final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
     private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";

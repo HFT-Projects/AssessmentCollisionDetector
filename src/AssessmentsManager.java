@@ -1,3 +1,5 @@
+import data.Assessment;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
