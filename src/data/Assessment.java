@@ -1,5 +1,6 @@
 package data;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -49,6 +50,29 @@ public abstract class Assessment {
 
     public LocalDateTime getEnd() {
         return end;
+    }
+
+    // calculate distance between the end of the first assessment (in time, not necessarily a) and the beginning of the second (negative -> overlap)
+    public static Duration getDistance(Assessment a, Assessment b) {
+        if (a.begin == null || b.begin == null) {
+            return null;
+        } else {
+            // calculate time distance between colliding assessments (end to begin)
+            Assessment first;
+            Assessment last;
+            if (a.begin.isBefore(b.begin)) {
+                first = a;
+                last = b;
+            } else {
+                first = b;
+                last = a;
+            }
+            return Duration.between(first.getEnd(), last.getBegin());
+        }
+    }
+
+    public Duration getDistance(Assessment b) {
+        return getDistance(this, b);
     }
 
     public Set<String> getRegisteredStudents() {

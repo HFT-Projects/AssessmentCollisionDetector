@@ -38,24 +38,14 @@ public class SaveManager {
             for (Assessment k : collidingAssessmentsSorted) {
                 String distanceStr;
                 // calculate time distance; replace with empty string if one assessment has no date
-                if (p.getBegin() == null || k.getBegin() == null) {
+                Duration distance = p.getDistance(k);
+                if (distance == null) {
                     distanceStr = "";
                 } else {
-                    // calculate time distance between colliding assessments (end to begin)
-                    Assessment first;
-                    Assessment last;
-                    if (p.getBegin().isBefore(k.getBegin())) {
-                        first = p;
-                        last = k;
-                    } else {
-                        first = k;
-                        last = p;
-                    }
-                    long distance = Duration.between(first.getEnd(), last.getBegin()).toHours(); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
-                    distanceStr = String.format("%03d", distance);
+                    distanceStr = String.format("%03d", distance.toHours()); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
 
                     // replace distance with string "Überschneidung" if assessments overlap
-                    if (distance < 0)
+                    if (distance.toHours() < 0)
                         distanceStr = "Überschneidung";
                 }
 
