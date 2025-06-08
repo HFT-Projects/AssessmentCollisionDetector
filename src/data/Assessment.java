@@ -36,6 +36,14 @@ public abstract class Assessment {
         return name;
     }
 
+    public String getStg() {
+        return stg;
+    }
+
+    public String getPversion() {
+        return pversion;
+    }
+
     public static String calculateQualifiedName(String stg, String pversion, Long no, String name) {
         return name + ".--." + (no == null ? "" : no) + ".--." + (pversion == null ? "" : pversion) + ".--." + (stg == null ? "" : stg);
     }
