@@ -8,14 +8,14 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AssessmentCollisionDetectorTest {
-    private final static String PATH_INPUT_ASSESSMENTS = "resources/pruefungen.csv";
+    private final static String PATH_INPUT_EXAMS = "resources/pruefungen.csv";
     private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
     public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
     private final static String PATH_INPUT_COLLISIONS_SAMPLE = "resources/kollisionen_v2.csv";
 
     @Test
-    void testMainOutputMatchesSample() throws Exception {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS);
+    void testCollisionDetectionAndSaving() throws Exception {
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
         SaveManager.saveCollision(PATH_OUTPUT_COLLISIONS, assessments);
