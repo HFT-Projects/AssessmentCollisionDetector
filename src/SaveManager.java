@@ -139,9 +139,9 @@ public class SaveManager {
                     //Leave the date columns empty if the assessment isn't on that day
                     ";".repeat(Math.max(0, dayIndex)) +
                     //Add day to the column
-                    day + ";" +
+                    day +
                     //Leave the rest of the Date columns empty
-                    ";".repeat(Math.max(0, dayToRowIndex.size() - dayIndex)) +
+                    ";".repeat(Math.max(0, dayToRowIndex.size() - 1 - dayIndex)) +
 
                     ";;;;;;;;";
             lines.add(pruefung);
