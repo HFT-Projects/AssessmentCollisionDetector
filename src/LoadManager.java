@@ -164,16 +164,15 @@ public class LoadManager {
         for (String row : rowsWithoutHeader) {
             String[] columns = row.split(";");
 
-            // TODO: hamann: no & pversion sometimes blank
             // check that data is complete
             if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() || !columns[4].strip().matches("[0-9]*") ||*/ columns[5].isBlank() || columns[10].isBlank() || !columns[10].strip().matches("[0-9]{1,2}:[0-9]{2}") || columns[11].isBlank() || !columns[11].strip().matches("[0-9]{1,2}:[0-9]{2}"))
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
             Long no = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
             String name = columns[5];
-            String stg = columns[1];
-            String pversion = columns[2].isBlank() ? null : columns[2];
-            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, no, name);
+            String courseOfStudy = columns[1];
+            String assessmentVersion = columns[2].isBlank() ? null : columns[2];
+            String qualifiedName = Assessment.calculateQualifiedName(courseOfStudy, assessmentVersion, no, name);
 
             // file contains duplicates because sometimes exams are in multiple rooms (-> ignore)
             if (existingExams.contains(qualifiedName))
@@ -244,13 +243,13 @@ public class LoadManager {
 
             long assessmentNo = Long.parseLong(columns[5]);
             String name = columns[6];
-            String stg = columns[2];
-            String pversion = columns[3];
-            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, name);
+            String courseOfStudy = columns[2];
+            String assessmentVersion = columns[3];
+            String qualifiedName = Assessment.calculateQualifiedName(courseOfStudy, assessmentVersion, assessmentNo, name);
 
             // ass Assessment if it doesn't already exist
             if (!existingAssessments.contains(qualifiedName)) {
-                Assessment p = new AssessmentEditable(assessmentNo, name, stg, pversion, null, null);
+                Assessment p = new AssessmentEditable(assessmentNo, name, courseOfStudy, assessmentVersion, null, null);
                 additionalAssessments.add(p);
                 existingAssessments.add(qualifiedName);
             }
@@ -260,7 +259,7 @@ public class LoadManager {
     }
 
     public static Map<String, Set<String>> loadRegistrations(String path, Assessment[] assessments) throws UncheckedIOException {
-        Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> MatrNo
+        Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> StudentNo
 
         // add all Assessments to registrationsByAssessmentsQualifiedName
         for (Assessment p : assessments) {
@@ -291,18 +290,18 @@ public class LoadManager {
             if (columns[0].isBlank() || columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
                 throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
 
-            String matrNo = columns[0];
+            String studentNo = columns[0];
             long assessmentNo = Long.parseLong(columns[5]);
             String assessmentName = columns[6];
-            String stg = columns[2];
-            String pversion = columns[3];
-            String qualifiedName = Assessment.calculateQualifiedName(stg, pversion, assessmentNo, assessmentName);
+            String courseOfStudy = columns[2];
+            String assessmentVersion = columns[3];
+            String qualifiedName = Assessment.calculateQualifiedName(courseOfStudy, assessmentVersion, assessmentNo, assessmentName);
 
             // the following exception should never occur (-> internal logic error -> bug)
             if (!registrationsByAssessmentsQualifiedName.containsKey(qualifiedName))
                 throw new AssertionError("a user registration references a unknown assessment: " + qualifiedName);
 
-            registrationsByAssessmentsQualifiedName.get(qualifiedName).add(matrNo);
+            registrationsByAssessmentsQualifiedName.get(qualifiedName).add(studentNo);
         }
 
         return registrationsByAssessmentsQualifiedName;

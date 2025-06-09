@@ -16,7 +16,7 @@ public abstract class Assessment {
     protected final String assessmentVersion;
     protected final LocalDateTime begin;
     protected final LocalDateTime end;
-    protected Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
+    protected Set<String> registeredStudents = null;
     protected Integer collisionSum = null;
     protected Map<Assessment, Integer> collisionCountByAssessment = null;
 

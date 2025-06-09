@@ -21,7 +21,7 @@ public class AssessmentsManager {
             if (p.getRegisteredStudents() != null)
                 throw new AssertionError("The registration of the assessment " + p + " was already loaded.");
 
-            ((AssessmentEditable)p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
+            ((AssessmentEditable) p).setRegisteredStudents(registrationsByAssessmentsQualifiedName.get(p.getQualifiedName()));
         }
     }
 
@@ -34,8 +34,8 @@ public class AssessmentsManager {
                 throw new AssertionError("The collisions of the assessment " + p + " was already loaded.");
 
             CollisionDetector.ReturnTuple collision = collisions.get(p);
-            ((AssessmentEditable)p).setCollisionSum(collision.collisionSum());
-            ((AssessmentEditable)p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
+            ((AssessmentEditable) p).setCollisionSum(collision.collisionSum());
+            ((AssessmentEditable) p).setCollisionCountByAssessment(collision.collisionCountByAssessment());
         }
     }
 }
