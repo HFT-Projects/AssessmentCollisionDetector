@@ -10,12 +10,20 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 public abstract class Assessment {
+    public record AssessmentEntry(String faculty, String vert, String examiner1, String examiner2,
+                                  String externalRegistrationCount, String externalDuration, String group, String room,
+                                  String supervisor, String externalCourseOfStudy, String externalExamName,
+                                  String externalExamId,
+                                  String wiSe) {
+    } //TODO: wiSe?!
+
     protected final Long number;
     protected final String name;
     protected final String courseOfStudy;
     protected final String assessmentVersion;
     protected final LocalDateTime begin;
     protected final LocalDateTime end;
+    protected Set<AssessmentEntry> assessmentEntries;
     protected Set<String> registeredStudents = null;
     protected Integer collisionSum = null;
     protected Map<Assessment, Integer> collisionCountByAssessment = null;
@@ -84,6 +92,12 @@ public abstract class Assessment {
         return getDistance(this, b);
     }
 
+    public Set<AssessmentEntry> getAssessmentEntries() {
+        if (assessmentEntries == null)
+            return null;
+        return new HashSet<>(assessmentEntries);
+    }
+
     public Set<String> getRegisteredStudents() {
         if (registeredStudents == null)
             return null;
@@ -120,9 +134,10 @@ public abstract class Assessment {
                 ", qualifiedName='" + getQualifiedName() + '\'' +
                 ", begin=" + (begin != null ? begin.format(formatter) : null) +
                 ", end=" + (end != null ? end.format(formatter) : null) +
+                ", assessmentEntries='" + assessmentEntries + '\'' +
+                ", registeredStudents=" + registeredStudents +
                 ", collisionSum=" + collisionSum +
                 ", collisionCountByAssessment=" + collisions +
-                ", registeredStudents=" + registeredStudents +
                 '}';
     }
 }

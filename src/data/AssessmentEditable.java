@@ -9,6 +9,10 @@ public class AssessmentEditable extends Assessment {
         super(number, name, courseOfStudy, assessmentVersion, begin, end);
     }
 
+    public void setAssessmentEntries(Set<AssessmentEntry> assessmentEntries) {
+        this.assessmentEntries = assessmentEntries;
+    }
+
     public void setRegisteredStudents(Set<String> registeredStudents) {
         this.registeredStudents = registeredStudents;
     }

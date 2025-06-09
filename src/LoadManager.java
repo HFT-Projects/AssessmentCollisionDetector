@@ -119,7 +119,7 @@ public class LoadManager {
 
     public static Assessment[] loadExams(String path, Integer year) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
-        Set<String> existingExams = new HashSet<>(); // check existingExams by qualifiedName
+        Map<String, AssessmentEditable> existingExams = new HashMap<>(); // qualifiedName -> existingExams
 
         List<String> rows;
         try {
@@ -175,8 +175,14 @@ public class LoadManager {
             String qualifiedName = Assessment.calculateQualifiedName(courseOfStudy, assessmentVersion, no, name);
 
             // file contains duplicates because sometimes exams are in multiple rooms (-> ignore)
-            if (existingExams.contains(qualifiedName))
+            if (existingExams.containsKey(qualifiedName)) {
+                AssessmentEditable a = existingExams.get(qualifiedName);
+                Set<Assessment.AssessmentEntry> assessmentEntries = a.getAssessmentEntries();
+                int last = columns.length - 1;
+                assessmentEntries.add(new Assessment.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
+                a.setAssessmentEntries(assessmentEntries);
                 continue;
+            }
 
             String beginTime = columns[10];
             String endTime = columns[11];
@@ -202,9 +208,15 @@ public class LoadManager {
             int minutes2 = Integer.parseInt(endTimeSplit[1]);
             LocalDateTime end = day.plusMinutes(hours2 * 60L + minutes2);
 
-            Assessment p = new AssessmentEditable(no, name, columns[1], columns[2], begin, end);
+            int last = columns.length - 1;
+            AssessmentEditable p = new AssessmentEditable(no, name, columns[1], columns[2], begin, end);
+
+            Set<Assessment.AssessmentEntry> assessmentEntries = new HashSet<>();
+            assessmentEntries.add(new Assessment.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
+            p.setAssessmentEntries(assessmentEntries);
+
             exams.add(p);
-            existingExams.add(qualifiedName);
+            existingExams.put(qualifiedName, p);
         }
         return exams.toArray(new Assessment[0]);
     }
