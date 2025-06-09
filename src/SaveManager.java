@@ -131,9 +131,10 @@ public class SaveManager {
             int dayIndex = a.getBegin() == null ? 0 : dayToRowIndex.indexOf(a.getBegin().withMinute(0).withHour(0));
             String beginFormatted = a.getBegin() == null ? "" : a.getBegin().format(formatter);
             String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
+            String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
 
             String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + a.getNumber() + ";" + a.getName() + ";;;"
-                    + a.getRegisteredStudents().size() + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
+                    + registeredStudents + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
 
                     //Leave the date columns empty if the assessment isn't on that day
                     ";".repeat(Math.max(0, dayIndex)) +
