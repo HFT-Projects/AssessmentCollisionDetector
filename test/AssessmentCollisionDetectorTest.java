@@ -24,7 +24,7 @@ class AssessmentCollisionDetectorTest {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
-        SaveManager.saveCollision(PATH_OUTPUT_COLLISIONS, assessments);
+        SaveManager.saveCollisions(PATH_OUTPUT_COLLISIONS, assessments);
 
         String f1 = Files.readString(Paths.get(PATH_INPUT_COLLISIONS_SAMPLE));
         String f2 = Files.readString(Paths.get(PATH_OUTPUT_COLLISIONS));

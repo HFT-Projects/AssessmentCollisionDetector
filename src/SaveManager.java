@@ -18,7 +18,7 @@ public class SaveManager {
         return p.getBegin().format(formatterDay) + " " + p.getBegin().format(formatterTime) + "-" + p.getEnd().format(formatterTime);
     }
 
-    public static void saveCollision(String path, Assessment[] assessments) throws UncheckedIOException {
+    public static void saveCollisions(String path, Assessment[] assessments) throws UncheckedIOException {
         List<String> lines = new LinkedList<>();
 
         // add header line

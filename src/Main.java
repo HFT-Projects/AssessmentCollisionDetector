@@ -9,7 +9,7 @@ class Main {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
-        SaveManager.saveCollision(PATH_OUTPUT_COLLISIONS, assessments);
+        SaveManager.saveCollisions(PATH_OUTPUT_COLLISIONS, assessments);
 
         System.out.println("completed");
     }
