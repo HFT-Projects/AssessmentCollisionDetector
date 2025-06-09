@@ -122,7 +122,7 @@ public class SaveManager {
                 dynamicDates + "Gruppe;Raum;Aufsicht;;Studiengang;Prüfung;ID;WiSe");
 
         //Format for Begin and End
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm");
 
         //Create the String for each Assessment
         for (Assessment a : assessments) {
