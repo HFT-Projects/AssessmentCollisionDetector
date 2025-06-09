@@ -1,10 +1,11 @@
 import data.Assessment;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -66,4 +67,113 @@ public class SaveManager {
             throw new UncheckedIOException(e);
         }
     }
+
+    public static void saveAssessments(String path, Assessment[] assessments) throws UncheckedIOException {
+        List<String> lines = new LinkedList<>();
+
+        // get date range for assessments (first & last)
+        LocalDateTime first = null;
+        LocalDateTime last = null;
+        for (Assessment assessment : assessments) {
+            if (assessment.getBegin() != null && (first == null || assessment.getBegin().isBefore(first)))
+                first = assessment.getBegin();
+            if (assessment.getEnd() != null && (last == null || assessment.getBegin().isAfter(last)))
+                last = assessment.getBegin();
+        }
+
+        // make sure at least one has a date.
+        if (first == null || last == null)
+            throw new AssertionError();
+
+        // create date columns
+        List<LocalDateTime> dayToColumnIndex = new LinkedList<>();
+        for (int i = 0; ; i++) {
+            LocalDateTime k = first.withHour(0).withMinute(0).plusDays(i);
+            LocalDateTime end = last.withHour(0).withMinute(0);
+            if (k.isAfter(end))
+                break;
+
+            if (k.getDayOfWeek() == DayOfWeek.SUNDAY)
+                continue;
+
+            dayToColumnIndex.add(k);
+        }
+
+        // convert dates to german format
+        Map<DayOfWeek, String> dayAbbrev = Map.of(
+                DayOfWeek.MONDAY, "Mo",
+                DayOfWeek.TUESDAY, "Di",
+                DayOfWeek.WEDNESDAY, "Mi",
+                DayOfWeek.THURSDAY, "Do",
+                DayOfWeek.FRIDAY, "Fr",
+                DayOfWeek.SATURDAY, "Sa"
+        );
+
+        // build the date headers
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.");
+        StringBuilder dynamicDates = new StringBuilder();
+        for (LocalDateTime date : dayToColumnIndex) {
+            String abbrev = dayAbbrev.get(date.getDayOfWeek());
+            dynamicDates.append(abbrev).append(" ").append(date.format(dateFormatter)).append(";");
+        }
+
+        // add the header line with the date columns
+        lines.add("Fak;stg;pversion;vert;pnr;pltxt1;prüfer1;prüfer2;Anzahl;pdauer;Beginn;Ende;" +
+                dynamicDates + "Gruppe;Raum;Aufsicht;;Studiengang;Prüfung;ID;WiSe");
+
+        // formatter for begin & end columns
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm");
+
+        // create the row for each Assessment
+        for (Assessment a : assessments) {
+            String duration = a.getBegin() == null ? "" : Long.toString(Duration.between(a.getBegin(), a.getEnd()).toMinutes());
+
+            String day = a.getBegin() == null ? "" : Integer.toString(a.getBegin().getDayOfMonth());
+            int dayIndex = a.getBegin() == null ? 0 : dayToColumnIndex.indexOf(a.getBegin().withMinute(0).withHour(0));
+
+            String beginFormatted = a.getBegin() == null ? "" : a.getBegin().format(formatter);
+            String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
+
+            String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
+
+            // check if Assessment has AssessmentEntries. if not -> write only basic information, if yes -> write a line for each entry.
+            if (a.getAssessmentEntries() == null) {
+                String assessment = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";;;"
+                        + registeredStudents + ";" + duration + ";" + beginFormatted + ";" + endFormatted + ";" +
+
+                        //Leave the date columns empty if the assessment isn't on that day
+                        ";".repeat(Math.max(0, dayIndex)) +
+                        //Add day to the column
+                        day +
+                        //Leave the rest of the Date columns empty
+                        ";".repeat(Math.max(0, dayToColumnIndex.size() - 1 - dayIndex)) +
+
+                        ";;;;;;;;";
+                lines.add(assessment);
+            } else {
+                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                    String assessment = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
+                            + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
+
+                            //Leave the date columns empty if the assessment isn't on that day
+                            ";".repeat(Math.max(0, dayIndex)) +
+                            //Add day to the column
+                            day +
+                            //Leave the rest of the Date columns empty
+                            ";".repeat(Math.max(0, dayToColumnIndex.size() - 1 - dayIndex)) +
+
+                            ";" + ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";" + ae.wiSe();
+                    lines.add(assessment);
+                }
+            }
+        }
+
+        // write to file
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
+            writer.write(lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
 }

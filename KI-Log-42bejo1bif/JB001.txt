@@ -1,0 +1,8 @@
+Prompt:
+Convert the LinkedList format dayToRowIndex from the format: " [2025-01-25T00:00, 2025-01-27T00:00, 2025-01-28T00:00, 2025-01-29T00:00, 2025-01-30T00:00, 2025-01-31T00:00, 2025-02-01T00:00, 2025-02-03T00:00, 2025-02-04T00:00, 2025-02-05T00:00, 2025-02-06T00:00, 2025-02-07T00:00]"
+to: Day DD.MM. separated by semicolons and only write the first two letters of the day in German.
+Model: ChatGPT 4.1
+
+Prompt:
+I'm saving some data into an Excel document. The data is in German, so there are German characters such as "ä, ü, ö and ß". Right now they don't show up properly in the document and for example instead of "ü" it says "Ã¼". How do I fix this?
+Model: ChatGPT 4.1
