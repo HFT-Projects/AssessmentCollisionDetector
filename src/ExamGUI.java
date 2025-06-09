@@ -59,6 +59,7 @@ public class ExamGUI extends Application {
     private TextField filterDistanceField;  // Add this field
     private CheckBox hideNullTimesCheckbox;  // Add this field
     private CheckBox showOnlyAssessmentsCheckbox; // Add this field
+    private CheckBox showOnlyWithCollisionsCheckbox; // Add checkbox to show only assessments with collisions
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
@@ -319,7 +320,7 @@ public class ExamGUI extends Application {
         filterExam1Label.setTextFill(Color.web(SECONDARY_COLOR));
         Label filterExam2Label = new Label("Filter Exam 2");
         filterExam2Label.setTextFill(Color.web(SECONDARY_COLOR));
-        Label filterDistanceLabel = new Label("Max Distance (hours)");
+        Label filterDistanceLabel = new Label("Min Distance (hours)");
         filterDistanceLabel.setTextFill(Color.web(SECONDARY_COLOR));
         Label sortExam1Label = new Label("Sort Exam 1");
         sortExam1Label.setTextFill(Color.web(SECONDARY_COLOR));
@@ -328,7 +329,7 @@ public class ExamGUI extends Application {
 
         // Create distance filter field
         filterDistanceField = createStyledTextField("");
-        filterDistanceField.setPromptText("Enter max distance (hours)...");
+        filterDistanceField.setPromptText("Enter hours");
         filterDistanceField.setPrefWidth(150);
 
         // Add numeric validation and filtering
@@ -373,7 +374,7 @@ public class ExamGUI extends Application {
         controlGrid.add(sortExam2Label, 2, 1);
         controlGrid.add(sortExam2Box, 3, 1);
 
-        // Place Max Distance filter side by side on the left
+        // Place Min Distance filter side by side on the left
         HBox distanceBox = new HBox(10); // 10px spacing between label and field
         distanceBox.setAlignment(Pos.CENTER_LEFT);
         distanceBox.setPadding(new Insets(0, 0, 0, 0)); // Reset padding to align with other rows
@@ -471,6 +472,9 @@ public class ExamGUI extends Application {
         showOnlyAssessmentsCheckbox = new CheckBox("Show only assessments");
         showOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
 
+        showOnlyWithCollisionsCheckbox = new CheckBox("Show only with collisions");
+        showOnlyWithCollisionsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+
         // Create columns menu button
         MenuButton columnsMenuButton = new MenuButton("Columns");
         columnsMenuButton.setStyle(
@@ -482,7 +486,7 @@ public class ExamGUI extends Application {
                         "-fx-border-radius: 4px;"
         );
 
-        controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, columnsMenuButton);
+        controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, showOnlyWithCollisionsCheckbox, columnsMenuButton);
 
         // Separator
         Separator separator = new Separator();
@@ -496,20 +500,6 @@ public class ExamGUI extends Application {
 
         // Set up the filtering
         hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            // Only update if "Show Only Assessments" is not checked, or we're unchecking "Hide Entries with No Times"
-            // This prevents disrupting the collapsed state when both filters are active
-            /*if (!showOnlyAssessmentsCheckbox.isSelected() || !newValue) {
-                updateCollisionTreeTable();
-            } else {
-                // Just apply the filtering without rebuilding the entire tree
-                TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
-                if (root != null) {
-                    filterTreeItems(root, true);
-                }
-            }*/
-
-
-
             // Vor dem Filtern oder Neuaufbauen immer die Expansion-States speichern
             if (collisionTreeTable.getRoot() != null) {
                 saveExpansionStates(collisionTreeTable.getRoot());
@@ -535,8 +525,6 @@ public class ExamGUI extends Application {
                     filterTreeItems(root, newValue);
                 }
             }
-
-
         });
 
         // Set up assessment-only view toggle
@@ -577,11 +565,28 @@ public class ExamGUI extends Application {
             }
         });
 
+        // Set up with-collisions-only view toggle
+        showOnlyWithCollisionsCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            // Save expansion states before updating
+            if (collisionTreeTable.getRoot() != null) {
+                saveExpansionStates(collisionTreeTable.getRoot());
+            }
 
+            // Update the table with the new filter
+            updateCollisionTreeTable();
 
+            // Restore expansion states
+            if (collisionTreeTable.getRoot() != null) {
+                restoreExpansionStates(collisionTreeTable.getRoot());
 
-
-
+                // Keep items collapsed if "Show Only Assessments" is checked
+                if (showOnlyAssessmentsCheckbox.isSelected()) {
+                    for (TreeItem<CollisionEntry> titleItem : collisionTreeTable.getRoot().getChildren()) {
+                        titleItem.setExpanded(false);
+                    }
+                }
+            }
+        });
 
         // Table columns
         TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
@@ -651,11 +656,11 @@ public class ExamGUI extends Application {
             }
         });
 
-        TreeTableColumn<CollisionEntry, String> maxDistanceCol = new TreeTableColumn<>("Max. Distance");
+        TreeTableColumn<CollisionEntry, String> maxDistanceCol = new TreeTableColumn<>("Min. Distance");
         maxDistanceCol.setCellValueFactory(param -> {
             CollisionEntry entry = param.getValue().getValue();
             if (entry.isTitle()) {
-                return new SimpleStringProperty(entry.getMaxDistance());
+                return new SimpleStringProperty(entry.getMinDistance());
             }
             return new SimpleStringProperty("");
         });
@@ -712,7 +717,7 @@ public class ExamGUI extends Application {
             adjustColumnWidths();
         });
 
-        CheckMenuItem maxDistanceItem = new CheckMenuItem("Max. Distance");
+        CheckMenuItem maxDistanceItem = new CheckMenuItem("Min. Distance");
         maxDistanceItem.setSelected(true);
         maxDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
             maxDistanceCol.setVisible(newValue);
@@ -749,8 +754,24 @@ public class ExamGUI extends Application {
         avgDistanceCol.setStyle(columnStyle);
         maxDistanceCol.setStyle(columnStyle);
 
+        // Make sort arrows always visible for all columns
+       
+
         collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
                 beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
+
+        // Set default sort on Exam 1 column (ascending)
+        exam1Col.setSortType(TreeTableColumn.SortType.ASCENDING);
+        collisionTreeTable.getSortOrder().add(exam1Col);
+
+        // Prevent "no sort" state by forcing ascending when sort type becomes null
+        for (TreeTableColumn<CollisionEntry, ?> column : collisionTreeTable.getColumns()) {
+            column.sortTypeProperty().addListener((obs, oldValue, newValue) -> {
+                if (newValue == null) {
+                    column.setSortType(TreeTableColumn.SortType.ASCENDING);
+                }
+            });
+        }
 
         // Store reference to tree table
         this.collisionTreeTable = collisionTreeTable;
@@ -888,6 +909,17 @@ public class ExamGUI extends Application {
                 item.getParent().getChildren().remove(item);
             }
         }
+
+        // If this is a parent node with children, re-sort its children to maintain sort order
+        if (item.getChildren() != null && !item.getChildren().isEmpty()) {
+            String sortCriteria = item == collisionTreeTable.getRoot() ?
+                                 sortExam1Box.getValue() : sortExam2Box.getValue();
+
+            if (sortCriteria != null && !sortCriteria.isEmpty()) {
+                item.getChildren().sort((item1, item2) ->
+                        compareCollisionEntries(item1.getValue(), item2.getValue(), sortCriteria));
+            }
+        }
     }
 
     private void saveExpansionStates(TreeItem<CollisionEntry> item) {
@@ -966,6 +998,7 @@ public class ExamGUI extends Application {
         private final int collisionCountValue;
 
         private Duration maxDuration;
+        private Duration minDuration;
         private Duration totalDuration;
         private int validDurationsCount;
 
@@ -1002,6 +1035,7 @@ public class ExamGUI extends Application {
 
             // Initialize duration calculations
             this.maxDuration = null;
+            this.minDuration = null;
             this.totalDuration = Duration.ZERO;
             this.validDurationsCount = 0;
 
@@ -1022,6 +1056,9 @@ public class ExamGUI extends Application {
                         if (!distance.isNegative()) {
                             if (maxDuration == null || distance.compareTo(maxDuration) > 0) {
                                 maxDuration = distance;
+                            }
+                            if (minDuration == null || distance.compareTo(minDuration) < 0) {
+                                minDuration = distance;
                             }
                             totalDuration = totalDuration.plus(distance);
                             validDurationsCount++;
@@ -1093,6 +1130,11 @@ public class ExamGUI extends Application {
         public String getMaxDistance() {
             if (maxDuration == null) return "";
             return formatDuration(maxDuration);
+        }
+
+        public String getMinDistance() {
+            if (minDuration == null) return "";
+            return formatDuration(minDuration);
         }
 
         private String formatDuration(Duration duration) {
@@ -1375,6 +1417,9 @@ public class ExamGUI extends Application {
             saveExpansionStates(collisionTreeTable.getRoot());
         }
 
+        // Store current column sorting information before rebuilding the tree
+        List<TreeTableColumn<CollisionEntry, ?>> sortOrder = new ArrayList<>(collisionTreeTable.getSortOrder());
+
         // Create a root item to hold all entries
         TreeItem<CollisionEntry> root = new TreeItem<>(new CollisionEntry(null));
 
@@ -1393,6 +1438,18 @@ public class ExamGUI extends Application {
                 continue; // Skip this assessment if it doesn't match exam1 filter
             }
 
+            // Check if assessment has collisions when "Show only with collisions" is active
+            if (showOnlyWithCollisionsCheckbox.isSelected()) {
+                int totalCollisions = assessment.getCollisionCountByAssessment().values().stream()
+                        .mapToInt(Integer::intValue)
+                        .sum();
+
+                // Skip assessments with no collisions
+                if (totalCollisions == 0) {
+                    continue;
+                }
+            }
+
             // Create a title item for this assessment
             TreeItem<CollisionEntry> titleItem = new TreeItem<>(
                     new CollisionEntry(assessment)
@@ -1402,7 +1459,6 @@ public class ExamGUI extends Application {
             boolean hasMatchingChild = false;
 
             // Create child items regardless of showOnlyAssessmentsCheckbox setting
-            // This ensures the tree structure is complete even when only showing assessments
             for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
                 Assessment collidingAssessment = detail.getKey();
                 int collisionCount = detail.getValue();
@@ -1415,7 +1471,7 @@ public class ExamGUI extends Application {
                 boolean matchesDistance = true;
                 if (!distanceFilter.isEmpty()) {
                     try {
-                        double maxHours = Double.parseDouble(distanceFilter);
+                        double minHours = Double.parseDouble(distanceFilter);
                         if (assessment.getBegin() != null && assessment.getEnd() != null &&
                                 collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
 
@@ -1428,7 +1484,7 @@ public class ExamGUI extends Application {
 
                             // Convert the distance to hours with decimal places for more precise filtering
                             double distanceHours = distance.toMinutes() / 60.0;
-                            matchesDistance = !distance.isNegative() && distanceHours <= maxHours;
+                             matchesDistance = !distance.isNegative() && distanceHours >= minHours;
                         } else {
                             matchesDistance = false; // No times available, don't show in filtered results
                         }
@@ -1455,16 +1511,22 @@ public class ExamGUI extends Application {
             }
         }
 
-        // Sort the data
-        sortTreeItems(root);
-
         // Apply time-based filtering if checkbox is selected
         if (hideNullTimesCheckbox.isSelected()) {
             filterTreeItems(root, true);
         }
 
+        // THE FIX: Apply sorting AFTER all filtering is complete
+        sortTreeItems(root);
+
         // Update the tree table
         collisionTreeTable.setRoot(root);
+
+        // Restore column-based sorting if it was active before
+        if (!sortOrder.isEmpty()) {
+            collisionTreeTable.getSortOrder().clear();
+            collisionTreeTable.getSortOrder().addAll(sortOrder);
+        }
 
         // Set expansion states based on saved states and checkbox settings
         for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
@@ -1786,6 +1848,7 @@ public class ExamGUI extends Application {
 
         dialog.showAndWait();
     }
+
 
     public static void run() {
         launch();

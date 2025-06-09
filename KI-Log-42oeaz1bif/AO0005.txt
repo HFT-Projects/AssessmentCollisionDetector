@@ -1,0 +1,18 @@
+Claude 3.7 Sonnet:
+
+
+
+1.Propmpt: "Max Distance" column with "Min Distance" in the collision table:
+Change the column header text to "Min Distance".
+For each assessment row, find the smallest time distance in this assessment and its colliding assessments. Ignore collisions where time data is missing (i.e., null).
+If no valid distance is available, leave the field empty or display “–”.
+
+2.Prompt: Add a new checkbox called showOnlyWithCollisionsCheckbox. When it's checked, only show assessments that contain at least one collision entry. When unchecked, show all assessments. Make sure the filtering is applied inside updateCollisionTreeTable() by skipping assessments that have no collisions when the checkbox is active. Also make sure expansion states are preserved before and after the update.
+
+3.Prompt:In a JavaFX TreeTableView. The "Exam 1" column should be sorted by default (ascending) when the table loads, and its sort arrow should be visible and active immediately. There should never be a "no sort" state, users should only be able to switch between ascending, descending, or another column.
+
+4.Prompt: The active sort column should show the normal arrow (up or down) depending on the current sort order.
+          // Clicking on a column header toggles the sort direction but should never remove the sorting indicator completely.
+          // When switching to a different column, the previously sorted column should show gray arrows, and the new one gets the active arrow.
+          // This should work for columns like "Exam 1", "Exam 2", "Collision Count", "Begin", "End", "Average Distance", "Minimum Distance", "Next".
+
