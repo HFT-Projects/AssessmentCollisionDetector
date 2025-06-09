@@ -1,0 +1,13 @@
+Modell: Claude Sonnet 3.7
+
+Prompt 1: Ich habe ein Problem mit meinem AssessmentOptimizer, er erstellt Überschneidungen.
+business intelligence wird auf 29 14:00-16:00 verschoben, aber software verification ist auch 29 14:00-15:30.
+das geht offensichtlich nciht weil ein student kann ja schlecht bei zwei prüfungen teilenhemn also zur selben zeit
+
+Prompt 2: Wie kann ich prüfen ob sich zwei Zeitslots überschneiden gib mir ein pseudocode für if (aStart.isBefore(bEnd) && aEnd.isAfter(bStart))
+
+Prompt 3: die getSatisfactionValueOfAssessment methode prüft nur gegen ursprüngliche termine,
+nicht gegen bereits optimierte Termine in der gruppe, ich denke das ist das problem kannst du mir zeigen wie ich das fixe?
+
+Prompt 4: basierend auf der bereits bestehenden methdoe schriebe mir eine neue wo ich die neuen daten separat im res ordner speichere, damit ich es richtig
+überprüfen kann also es geht eig nur ums debuggen

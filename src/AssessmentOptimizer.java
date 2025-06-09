@@ -132,12 +132,29 @@ public class AssessmentOptimizer {
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
 
-    private static double getSatisfactionValueOfAssessment(Assessment assessment) {
+    private static double getSatisfactionValueOfAssessment(MergedAssessment assessment, MergedAssessment[] group) {
         double sum = 0;
         int collisions_with_date = 0;
 
         if (assessment.getBegin() == null || assessment.getEnd() == null) {
             return -1;
+        }
+
+        LocalDateTime assessmentStart = assessment.getOptimizedBegin() != null ? assessment.getOptimizedBegin() : assessment.getBegin();
+        LocalDateTime assessmentEnd = assessment.getOptimizedEnd() != null ? assessment.getOptimizedEnd() : assessment.getEnd();
+
+        for (MergedAssessment other : group) {
+            if (other == assessment) continue;
+
+            LocalDateTime otherStart = other.getOptimizedBegin();
+            LocalDateTime otherEnd = other.getOptimizedEnd();
+
+            if (otherStart != null && otherEnd != null) {
+                // check for overlap
+                if (assessmentStart.isBefore(otherEnd) && assessmentEnd.isAfter(otherStart)) {
+                    return -1000; // low stf
+                }
+            }
         }
 
         for (Assessment b : assessment.getCollisionCountByAssessment().keySet()) {
@@ -273,7 +290,7 @@ public class AssessmentOptimizer {
             assessment.setOptimizedBegin(slot.start);
             assessment.setOptimizedEnd(slot.start.plus(slot.duration));
 
-            double satisfaction = getSatisfactionValueOfAssessment(assessment);
+            double satisfaction = getSatisfactionValueOfAssessment(assessment, group);
 
             if (satisfaction > bestSatisfaction) {  // HÖHER ist besser
                 bestSatisfaction = satisfaction;

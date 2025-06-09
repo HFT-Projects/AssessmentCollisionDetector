@@ -26,7 +26,8 @@ class Test {
 //        System.out.println(Arrays.toString(optimizedAssessments));
 
 
-
         //SaveManager.saveCollision(PATH_OUTPUT_COLLISIONS, assessments);
+
+        SaveManager.saveOptimizedCollision("resources/kollisionen_optimized.csv", optimizedAssessments);
     }
 }
