@@ -134,7 +134,7 @@ public class SaveManager {
             String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
 
             if (a.getAssessmentEntries() == null) {
-                String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + a.getNumber() + ";" + a.getName() + ";;;"
+                String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";;;"
                         + registeredStudents + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
 
                         //Leave the date columns empty if the assessment isn't on that day
@@ -148,7 +148,7 @@ public class SaveManager {
                 lines.add(pruefung);
             } else {
                 for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
-                    String pruefung = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + a.getNumber() + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
+                    String pruefung = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
                             + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
 
                             //Leave the date columns empty if the assessment isn't on that day
