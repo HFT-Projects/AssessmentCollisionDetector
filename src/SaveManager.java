@@ -127,8 +127,8 @@ public class SaveManager {
         //Create the String for each Assessment
         for (Assessment a : assessments) {
             String distance = a.getBegin() == null ? "" : Long.toString(Duration.between(a.getBegin(), a.getEnd()).toMinutes());
-            int day = a.getBegin() == null ? 0 : a.getBegin().getDayOfMonth();
             int dayIndex = a.getBegin() == null ? 0 : dayToRowIndex.indexOf(a.getBegin().withMinute(0).withHour(0));
+            String day = a.getBegin() == null ? "" : Integer.toString(a.getBegin().getDayOfMonth());
             String beginFormatted = a.getBegin() == null ? "" : a.getBegin().format(formatter);
             String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
             String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
