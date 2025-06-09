@@ -81,6 +81,9 @@ public class SaveManager {
                 last = assessment.getBegin();
         }
 
+        if (first == null || last == null)
+            throw new AssertionError();
+
         List<LocalDateTime> dayToRowIndex = new LinkedList<>();
 
         for (int i = 0; ; i++) {
@@ -130,21 +133,16 @@ public class SaveManager {
             String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
 
             String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + a.getNumber() + ";" + a.getName() + ";;;"
-                    + a.getRegisteredStudents().size() + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";";
+                    + a.getRegisteredStudents().size() + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
 
-            //Leave the date columns empty if the assessment isn't on that day
-            for (int i = 0; i < dayIndex; i++) {
-                pruefung += ";";
-            }
+                    //Leave the date columns empty if the assessment isn't on that day
+                    ";".repeat(Math.max(0, dayIndex)) +
+                    //Add day to the column
+                    day + ";" +
+                    //Leave the rest of the Date columns empty
+                    ";".repeat(Math.max(0, dayToRowIndex.size() - dayIndex)) +
 
-            //Add day to the column
-            pruefung += day + ";";
-
-            //Leave the rest of the Date columns empty
-            for (int k = 0; k < dayToRowIndex.size() - dayIndex; k++) {
-                pruefung += ";";
-            }
-            pruefung += ";;;;;;;;";
+                    ";;;;;;;;";
             lines.add(pruefung);
         }
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
