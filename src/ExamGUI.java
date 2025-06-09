@@ -35,10 +35,10 @@ public class ExamGUI extends Application {
     private static final String APP_NAME = "Exam Collision Detector";
     private static final String APP_VERSION = "1.0.0";
     private static final String[] APP_AUTHORS = {
-        "Author 1",
-        "Author 2",
-        "Author 3",
-        "Author 4"
+            "Author 1",
+            "Author 2",
+            "Author 3",
+            "Author 4"
     };
     private static final String COPYRIGHT_YEAR = "2025";
 
@@ -61,6 +61,12 @@ public class ExamGUI extends Application {
     private CheckBox showOnlyAssessmentsCheckbox; // Add this field
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
+
+    // Store expansion states for TreeItems
+    private final Map<String, Boolean> expansionStates = new HashMap<>();
+
+    // Dies speichert explizit den Zustand VOR dem Aktivieren von "Show only assessments"
+    private final Map<String, Boolean> preCheckboxExpansionStates = new HashMap<>();
 
     // Page management
     private TabPane tabPane;
@@ -175,10 +181,10 @@ public class ExamGUI extends Application {
         Button aboutButton = new Button("About");
         aboutButton.setStyle(
                 "-fx-background-color: transparent;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-border-color: white;" +
-                "-fx-border-radius: 3px;"
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-border-color: white;" +
+                        "-fx-border-radius: 3px;"
         );
         aboutButton.setOnAction(e -> showAboutDialog());
         buttonSection.getChildren().add(aboutButton);
@@ -393,6 +399,51 @@ public class ExamGUI extends Application {
         return section;
     }
 
+    private void saveExpansionStatesToMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
+        if (item == null) return;
+
+        // Nur speichern wenn Item einen Wert hat (nicht für Root)
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                stateMap.put(key, item.isExpanded());
+            }
+        }
+
+        // Für alle Kinder rekursiv
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            saveExpansionStatesToMap(child, stateMap);
+        }
+    }
+
+    private void restoreExpansionStatesFromMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
+        if (item == null) return;
+
+        // Status aus Map wiederherstellen für diesen Item
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                Boolean wasExpanded = stateMap.get(key);
+                if (wasExpanded != null) {
+                    item.setExpanded(wasExpanded);
+                } else if (item.getValue().isTitle()) {
+                    // Wenn kein Status gespeichert ist und es ein Titel ist,
+                    // default auf expanded für bessere Benutzbarkeit
+                    item.setExpanded(true);
+                }
+            }
+        }
+
+        // Für alle Kinder rekursiv
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            restoreExpansionStatesFromMap(child, stateMap);
+        }
+    }
+
+
+
+
+
     private VBox createTableSection() {
         VBox section = new VBox(15);
         section.setPadding(new Insets(20));
@@ -423,12 +474,12 @@ public class ExamGUI extends Application {
         // Create columns menu button
         MenuButton columnsMenuButton = new MenuButton("Columns");
         columnsMenuButton.setStyle(
-            "-fx-background-color: " + PRIMARY_COLOR + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 5px 10px;" +
-            "-fx-cursor: hand;" +
-            "-fx-border-radius: 4px;"
+                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 5px 10px;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-border-radius: 4px;"
         );
 
         controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, columnsMenuButton);
@@ -444,23 +495,93 @@ public class ExamGUI extends Application {
         VBox.setVgrow(collisionTreeTable, Priority.ALWAYS);
 
         // Set up the filtering
-        hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) ->
-            updateCollisionTreeTable());
+        hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            // Only update if "Show Only Assessments" is not checked, or we're unchecking "Hide Entries with No Times"
+            // This prevents disrupting the collapsed state when both filters are active
+            /*if (!showOnlyAssessmentsCheckbox.isSelected() || !newValue) {
+                updateCollisionTreeTable();
+            } else {
+                // Just apply the filtering without rebuilding the entire tree
+                TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
+                if (root != null) {
+                    filterTreeItems(root, true);
+                }
+            }*/
+
+
+
+            // Vor dem Filtern oder Neuaufbauen immer die Expansion-States speichern
+            if (collisionTreeTable.getRoot() != null) {
+                saveExpansionStates(collisionTreeTable.getRoot());
+            }
+
+            if (!showOnlyAssessmentsCheckbox.isSelected() || !newValue) {
+                updateCollisionTreeTable();
+
+                // Nach dem Neuaufbau States wiederherstellen
+                if (collisionTreeTable.getRoot() != null) {
+                    restoreExpansionStates(collisionTreeTable.getRoot());
+
+                    // Wenn "Show Only Assessment" aktiv ist, immer wieder einklappen
+                    if (showOnlyAssessmentsCheckbox.isSelected()) {
+                        for (TreeItem<CollisionEntry> titleItem : collisionTreeTable.getRoot().getChildren()) {
+                            titleItem.setExpanded(false);
+                        }
+                    }
+                }
+            } else {
+                TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
+                if (root != null) {
+                    filterTreeItems(root, newValue);
+                }
+            }
+
+
+        });
 
         // Set up assessment-only view toggle
         showOnlyAssessmentsCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
             TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
-            if (root != null) {
-                root.getChildren().forEach(titleItem -> {
-                    if (newValue) {
-                        titleItem.getChildren().clear();
-                        titleItem.setExpanded(false);
-                    } else {
-                        updateCollisionTreeTable();
-                    }
-                });
+            if (root == null) return;
+
+            if (newValue) {  // Checkbox wurde aktiviert - speichern und einklappen
+                // Speichere aktuellen Zustand explizit in die dedizierte Map
+                preCheckboxExpansionStates.clear();
+                saveExpansionStatesToMap(root, preCheckboxExpansionStates);
+
+                // Alle einklappen, keine Kinder entfernen
+                for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
+                    titleItem.setExpanded(false);
+                }
+            }
+            else {  // Checkbox wurde deaktiviert - wiederherstellen
+                // Zuerst alle Einträge sichtbar machen falls nötig
+                boolean wasHidingNullTimes = hideNullTimesCheckbox.isSelected();
+                if (wasHidingNullTimes) {
+                    // Deaktivieren ohne Listener auszulösen
+                    hideNullTimesCheckbox.setSelected(false);
+                    // Baum neu aufbauen mit allen Einträgen
+                    updateCollisionTreeTable();
+                }
+
+                // Jetzt auf den neuen root anwenden (könnte sich nach updateCollisionTreeTable geändert haben)
+                root = collisionTreeTable.getRoot();
+                if (root != null) {
+                    restoreExpansionStatesFromMap(root, preCheckboxExpansionStates);
+                }
+
+                // Filter ggf. wieder einschalten
+                if (wasHidingNullTimes) {
+                    hideNullTimesCheckbox.setSelected(true);
+                }
             }
         });
+
+
+
+
+
+
 
         // Table columns
         TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
@@ -554,10 +675,7 @@ public class ExamGUI extends Application {
 
         CheckMenuItem exam2Item = new CheckMenuItem("Exam 2");
         exam2Item.setSelected(true);
-        exam2Item.selectedProperty().addListener((obs, old, newValue) -> {
-            exam2Col.setVisible(newValue);
-            adjustColumnWidths();
-        });
+        exam2Item.setDisable(true);
 
         CheckMenuItem collisionCountItem = new CheckMenuItem("Collision Count");
         collisionCountItem.setSelected(true);
@@ -603,11 +721,11 @@ public class ExamGUI extends Application {
 
         // Add menu items to the columns menu
         columnsMenuButton.getItems().addAll(
-            exam1Item, exam2Item, collisionCountItem,
-            new SeparatorMenuItem(),
-            beginItem, endItem, distanceItem,
-            new SeparatorMenuItem(),
-            avgDistanceItem, maxDistanceItem
+                exam1Item, exam2Item, collisionCountItem,
+                new SeparatorMenuItem(),
+                beginItem, endItem, distanceItem,
+                new SeparatorMenuItem(),
+                avgDistanceItem, maxDistanceItem
         );
 
         // Set equal width constraints for all columns
@@ -632,17 +750,17 @@ public class ExamGUI extends Application {
         maxDistanceCol.setStyle(columnStyle);
 
         collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
-            beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
+                beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
 
         // Store reference to tree table
         this.collisionTreeTable = collisionTreeTable;
 
         section.getChildren().addAll(
-            sectionTitle,
-            sectionDescription,
-            controlsContainer,
-            separator,
-            collisionTreeTable
+                sectionTitle,
+                sectionDescription,
+                controlsContainer,
+                separator,
+                collisionTreeTable
         );
         return section;
     }
@@ -675,8 +793,8 @@ public class ExamGUI extends Application {
 
         // Count visible columns for proper width distribution
         long visibleColumns = collisionTreeTable.getColumns().stream()
-            .filter(javafx.scene.control.TreeTableColumn::isVisible)
-            .count();
+                .filter(javafx.scene.control.TreeTableColumn::isVisible)
+                .count();
 
         if (visibleColumns == 0) return;
 
@@ -726,8 +844,8 @@ public class ExamGUI extends Application {
 
                     // Apply width binding with minimum width constraint
                     column.prefWidthProperty().bind(
-                        collisionTreeTable.widthProperty().multiply(proportion)
-                            .subtract(scrollbarWidth / visibleColumns)
+                            collisionTreeTable.widthProperty().multiply(proportion)
+                                    .subtract(scrollbarWidth / visibleColumns)
                     );
 
                     // Ensure minimum width is maintained
@@ -768,10 +886,70 @@ public class ExamGUI extends Application {
             boolean hasNullTimes = item.getValue().beginTime.isEmpty() && item.getValue().endTime.isEmpty();
             if (hideNullTimes && hasNullTimes) {
                 item.getParent().getChildren().remove(item);
-            } else {
-                item.setExpanded(true);
             }
         }
+    }
+
+    private void saveExpansionStates(TreeItem<CollisionEntry> item) {
+        if (item == null) return;
+
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                expansionStates.put(key, item.isExpanded());
+            }
+        }
+
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            saveExpansionStates(child);
+        }
+    }
+
+    private void restoreExpansionStates(TreeItem<CollisionEntry> item) {
+        if (item == null) return;
+
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                Boolean wasExpanded = expansionStates.get(key);
+                // When unchecking "Show Only Assessments", we want to restore previous
+                // expansion states or expand by default for better usability
+                if (wasExpanded != null) {
+                    item.setExpanded(wasExpanded);
+                } else if (item.getValue().isTitle()) {
+                    // For assessment items without saved state, expand by default when
+                    // showing children is allowed
+                    item.setExpanded(true);
+                }
+            }
+        }
+
+        // Process children recursively
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            restoreExpansionStates(child);
+        }
+
+        // Force a layout refresh to ensure expansion state is visually updated
+        collisionTreeTable.refresh();
+    }
+
+    private String getItemKey(CollisionEntry entry) {
+        if (entry == null) return null;
+
+        if (entry.isTitle()) {
+            return "title:" + entry.exam1QualifiedName;
+        } else {
+            return entry.exam1QualifiedName + ":" + entry.exam2QualifiedName;
+        }
+    }
+
+    private boolean hasTimesData(CollisionEntry entry) {
+        if (entry == null) return false;
+
+        boolean hasBeginTime = entry.beginTime != null && !entry.beginTime.trim().isEmpty();
+        boolean hasEndTime = entry.endTime != null && !entry.endTime.trim().isEmpty();
+
+        return hasBeginTime && hasEndTime;
     }
 
     // Inner class to hold collision entry data for the tree table
@@ -832,7 +1010,7 @@ public class ExamGUI extends Application {
                 for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
                     Assessment collidingAssessment = detail.getKey();
                     if (assessment.getBegin() != null && assessment.getEnd() != null &&
-                        collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
+                            collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
 
                         Duration distance;
                         if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
@@ -1076,7 +1254,7 @@ public class ExamGUI extends Application {
 
         for (TreeItem<CollisionEntry> titleItem : collisionTreeTable.getRoot().getChildren()) {
             if (titleItem.getValue().isTitle() &&
-                titleItem.getValue().getAssessment().getQualifiedName().equals(targetQualifiedName)) {
+                    titleItem.getValue().getAssessment().getQualifiedName().equals(targetQualifiedName)) {
                 // Found the matching assessment, expand and select it
                 titleItem.setExpanded(true);
                 collisionTreeTable.getSelectionModel().select(titleItem);
@@ -1192,6 +1370,11 @@ public class ExamGUI extends Application {
     private void updateCollisionTreeTable() {
         if (assessments == null) return;
 
+        // Store current expansion states before rebuilding tree
+        if (collisionTreeTable.getRoot() != null) {
+            saveExpansionStates(collisionTreeTable.getRoot());
+        }
+
         // Create a root item to hold all entries
         TreeItem<CollisionEntry> root = new TreeItem<>(new CollisionEntry(null));
 
@@ -1214,53 +1397,52 @@ public class ExamGUI extends Application {
             TreeItem<CollisionEntry> titleItem = new TreeItem<>(
                     new CollisionEntry(assessment)
             );
-            titleItem.setExpanded(!showOnlyAssessmentsCheckbox.isSelected());
 
+            // Don't expand automatically - we'll restore expansion states later
             boolean hasMatchingChild = false;
 
-            // Add child items for each colliding assessment if not showing only assessments
-            if (!showOnlyAssessmentsCheckbox.isSelected()) {
-                for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
-                    Assessment collidingAssessment = detail.getKey();
-                    int collisionCount = detail.getValue();
+            // Create child items regardless of showOnlyAssessmentsCheckbox setting
+            // This ensures the tree structure is complete even when only showing assessments
+            for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
+                Assessment collidingAssessment = detail.getKey();
+                int collisionCount = detail.getValue();
 
-                    // Check if colliding assessment matches exam2 filter
-                    boolean matchesExam2 = exam2Filter.isEmpty() ||
-                            collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
+                // Check if colliding assessment matches exam2 filter
+                boolean matchesExam2 = exam2Filter.isEmpty() ||
+                        collidingAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
 
-                    // Check if colliding assessment matches distance filter
-                    boolean matchesDistance = true;
-                    if (!distanceFilter.isEmpty()) {
-                        try {
-                            double maxHours = Double.parseDouble(distanceFilter);
-                            if (assessment.getBegin() != null && assessment.getEnd() != null &&
+                // Check if colliding assessment matches distance filter
+                boolean matchesDistance = true;
+                if (!distanceFilter.isEmpty()) {
+                    try {
+                        double maxHours = Double.parseDouble(distanceFilter);
+                        if (assessment.getBegin() != null && assessment.getEnd() != null &&
                                 collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
 
-                                Duration distance;
-                                if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
-                                    distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
-                                } else {
-                                    distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
-                                }
-
-                                // Convert the distance to hours with decimal places for more precise filtering
-                                double distanceHours = distance.toMinutes() / 60.0;
-                                matchesDistance = !distance.isNegative() && distanceHours <= maxHours;
+                            Duration distance;
+                            if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                                distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
                             } else {
-                                matchesDistance = false; // No times available, don't show in filtered results
+                                distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
                             }
-                        } catch (NumberFormatException e) {
-                            matchesDistance = false;
-                        }
-                    }
 
-                    if (matchesExam2 && matchesDistance) {
-                        TreeItem<CollisionEntry> childItem = new TreeItem<>(
-                                new CollisionEntry(assessment, collidingAssessment, collisionCount)
-                        );
-                        titleItem.getChildren().add(childItem);
-                        hasMatchingChild = true;
+                            // Convert the distance to hours with decimal places for more precise filtering
+                            double distanceHours = distance.toMinutes() / 60.0;
+                            matchesDistance = !distance.isNegative() && distanceHours <= maxHours;
+                        } else {
+                            matchesDistance = false; // No times available, don't show in filtered results
+                        }
+                    } catch (NumberFormatException e) {
+                        matchesDistance = false;
                     }
+                }
+
+                if (matchesExam2 && matchesDistance) {
+                    TreeItem<CollisionEntry> childItem = new TreeItem<>(
+                            new CollisionEntry(assessment, collidingAssessment, collisionCount)
+                    );
+                    titleItem.getChildren().add(childItem);
+                    hasMatchingChild = true;
                 }
             }
 
@@ -1283,6 +1465,22 @@ public class ExamGUI extends Application {
 
         // Update the tree table
         collisionTreeTable.setRoot(root);
+
+        // Set expansion states based on saved states and checkbox settings
+        for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
+            String key = getItemKey(titleItem.getValue());
+            Boolean wasExpanded = expansionStates.get(key);
+
+            // If "Show Only Assessments" is selected, always collapse
+            // Otherwise, restore previous expansion state if available, or expand by default
+            if (showOnlyAssessmentsCheckbox.isSelected()) {
+                titleItem.setExpanded(false);
+            } else if (wasExpanded != null) {
+                titleItem.setExpanded(wasExpanded);
+            } else {
+                titleItem.setExpanded(true); // Default to expanded if no saved state
+            }
+        }
     }
 
     private void sortTreeItems(TreeItem<CollisionEntry> root) {
@@ -1359,7 +1557,7 @@ public class ExamGUI extends Application {
                     yield entry1.validDurationsCount == 0 ? 1 : -1;
                 }
                 yield entry1.totalDuration.dividedBy(entry1.validDurationsCount)
-                    .compareTo(entry2.totalDuration.dividedBy(entry2.validDurationsCount));
+                        .compareTo(entry2.totalDuration.dividedBy(entry2.validDurationsCount));
             }
             case "Max. Distance" -> {
                 if (!entry1.isTitle() || !entry2.isTitle()) {
@@ -1572,13 +1770,13 @@ public class ExamGUI extends Application {
         separator.setPadding(new Insets(10, 0, 10, 0));
 
         content.getChildren().addAll(
-            nameLabel,
-            versionLabel,
-            separator,
-            authorsTitle,
-            authorsBox,
-            new Separator(),
-            copyrightLabel
+                nameLabel,
+                versionLabel,
+                separator,
+                authorsTitle,
+                authorsBox,
+                new Separator(),
+                copyrightLabel
         );
 
         dialog.getDialogPane().setContent(content);
