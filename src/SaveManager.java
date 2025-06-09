@@ -133,18 +133,35 @@ public class SaveManager {
             String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
             String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
 
-            String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + a.getNumber() + ";" + a.getName() + ";;;"
-                    + registeredStudents + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
+            if (a.getAssessmentEntries() == null) {
+                String pruefung = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + a.getNumber() + ";" + a.getName() + ";;;"
+                        + registeredStudents + ";" + distance + ";" + beginFormatted + ";" + endFormatted + ";" +
 
-                    //Leave the date columns empty if the assessment isn't on that day
-                    ";".repeat(Math.max(0, dayIndex)) +
-                    //Add day to the column
-                    day +
-                    //Leave the rest of the Date columns empty
-                    ";".repeat(Math.max(0, dayToRowIndex.size() - 1 - dayIndex)) +
+                        //Leave the date columns empty if the assessment isn't on that day
+                        ";".repeat(Math.max(0, dayIndex)) +
+                        //Add day to the column
+                        day +
+                        //Leave the rest of the Date columns empty
+                        ";".repeat(Math.max(0, dayToRowIndex.size() - 1 - dayIndex)) +
 
-                    ";;;;;;;;";
-            lines.add(pruefung);
+                        ";;;;;;;;";
+                lines.add(pruefung);
+            } else {
+                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                    String pruefung = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + a.getNumber() + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
+                            + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
+
+                            //Leave the date columns empty if the assessment isn't on that day
+                            ";".repeat(Math.max(0, dayIndex)) +
+                            //Add day to the column
+                            day +
+                            //Leave the rest of the Date columns empty
+                            ";".repeat(Math.max(0, dayToRowIndex.size() - 1 - dayIndex)) +
+
+                            ";" + ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";"+ ae.wiSe();
+                    lines.add(pruefung);
+                }
+            }
         }
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(path))) {
             writer.write(lines.stream().reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
