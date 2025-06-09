@@ -8,22 +8,23 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public abstract class Assessment {
     protected final Long number;
     protected final String name;
-    protected final String stg;
-    protected final String pversion;
+    protected final String courseOfStudy;
+    protected final String assessmentVersion;
     protected final LocalDateTime begin;
     protected final LocalDateTime end;
     protected Set<String> registeredStudents = null; //TODO: set<Long> wg. MatrNo -> Hamann
     protected Integer collisionSum = null;
     protected Map<Assessment, Integer> collisionCountByAssessment = null;
 
-    public Assessment(Long number, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
+    public Assessment(Long number, String name, String courseOfStudy, String assessmentVersion, LocalDateTime begin, LocalDateTime end) {
         this.number = number;
         this.name = name;
-        this.stg = stg;
-        this.pversion = pversion;
+        this.courseOfStudy = courseOfStudy;
+        this.assessmentVersion = assessmentVersion;
         this.begin = begin;
         this.end = end;
     }
@@ -36,20 +37,20 @@ public abstract class Assessment {
         return name;
     }
 
-    public String getStg() {
-        return stg;
+    public String getCourseOfStudy() {
+        return courseOfStudy;
     }
 
-    public String getPversion() {
-        return pversion;
+    public String getAssessmentVersion() {
+        return assessmentVersion;
     }
 
-    public static String calculateQualifiedName(String stg, String pversion, Long no, String name) {
-        return name + ".--." + (no == null ? "" : no) + ".--." + (pversion == null ? "" : pversion) + ".--." + (stg == null ? "" : stg);
+    public static String calculateQualifiedName(String stg, String courseOfStudy, Long no, String name) {
+        return name + ".--." + (no == null ? "" : no) + ".--." + (courseOfStudy == null ? "" : courseOfStudy) + ".--." + (stg == null ? "" : stg);
     }
 
     public String getQualifiedName() {
-        return calculateQualifiedName(stg, pversion, number, name);
+        return calculateQualifiedName(courseOfStudy, assessmentVersion, number, name);
     }
 
     public LocalDateTime getBegin() {
@@ -114,6 +115,8 @@ public abstract class Assessment {
         return "Assessment{" +
                 "number=" + number +
                 ", name='" + name + '\'' +
+                ", courseOfStudy='" + courseOfStudy + '\'' +
+                ", assessmentVersion='" + assessmentVersion + '\'' +
                 ", qualifiedName='" + getQualifiedName() + '\'' +
                 ", begin=" + (begin != null ? begin.format(formatter) : null) +
                 ", end=" + (end != null ? end.format(formatter) : null) +

@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class AssessmentEditable extends Assessment {
-    public AssessmentEditable(Long number, String name, String stg, String pversion, LocalDateTime begin, LocalDateTime end) {
-        super(number, name, stg, pversion, begin, end);
+    public AssessmentEditable(Long number, String name, String courseOfStudy, String assessmentVersion, LocalDateTime begin, LocalDateTime end) {
+        super(number, name, courseOfStudy, assessmentVersion, begin, end);
     }
 
     public void setRegisteredStudents(Set<String> registeredStudents) {
