@@ -1,12 +1,12 @@
 import data.Assessment;
 
+import data.MergedAssessment;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,6 +53,92 @@ class AssessmentCollisionDetectorTest {
         Set<String> f2Lines = new HashSet<>(Arrays.asList(f2.split("\n")));
 
         assertTrue(f2Lines.containsAll(f1Lines));
+    }
+
+    @Test
+    @Order(3)
+    void testMergingAssessments() throws Exception {
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
+        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
+        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
+
+        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
+
+        List<Assessment> assessmentList1 = new LinkedList<>(Arrays.asList(assessments));
+        List<Assessment> assessmentList2 = new LinkedList<>();
+
+        for (MergedAssessment ma : mergedAssessments) {
+            assessmentList2.addAll(Arrays.asList(ma.getAssessments()));
+        }
+
+        assertEquals(assessmentList1.size(), assessmentList2.size(), "assessmentLists must be of same size!");
+
+        for (Assessment a : assessmentList1) {
+            assertEquals(Collections.frequency(assessmentList1, a), Collections.frequency(assessmentList2, a), "Assessments must appear equally often in both lists");
+        }
+    }
+
+    @Test
+    @Order(4)
+    void testAssessmentToMergedAssessmentMap() throws Exception {
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
+        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
+        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
+
+        AssessmentOptimizer.mergeAssessments(assessments);
+
+        List<Assessment> assessmentList1 = new LinkedList<>(Arrays.asList(assessments));
+        List<Assessment> assessmentList2 = new LinkedList<>(MergedAssessment.getAssessmentToMergedAssessmentMap().keySet());
+
+        assessmentList1.sort(Comparator.comparing(Assessment::getName));
+        assessmentList2.sort(Comparator.comparing(Assessment::getName));
+
+        assertEquals(assessmentList1.size(), assessmentList2.size(), "assessmentLists must be of same size!");
+
+        for (Assessment a : assessmentList1) {
+            assertEquals(Collections.frequency(assessmentList1, a), Collections.frequency(assessmentList2, a), "Assessments must appear equally often in both lists");
+        }
+    }
+
+    @Test
+    @Order(5)
+    void testMergedAssessmentsFromAssessments2() throws Exception {
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
+        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
+        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
+
+        AssessmentOptimizer.mergeAssessments(assessments);
+
+        for (Assessment a : MergedAssessment.getAssessmentToMergedAssessmentMap().keySet()) {
+            assertTrue(Arrays.asList(MergedAssessment.getAssessmentToMergedAssessmentMap().get(a).getAssessments()).contains(a));
+        }
+    }
+
+    @Test
+    @Order(6)
+    void testAssessmentGroups() throws Exception {
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
+        AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
+        AssessmentsManager.loadCollisionsIntoAssessments(assessments);
+
+        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
+
+        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+
+        List<Assessment> assessmentList1 = new LinkedList<>(Arrays.asList(assessments));
+        List<Assessment> assessmentList2 = new LinkedList<>();
+
+        for (MergedAssessment[] mas : assessmentGroups) {
+            for (MergedAssessment ma : mas) {
+                assessmentList2.addAll(Arrays.asList(ma.getAssessments()));
+            }
+        }
+
+        assertEquals(assessmentList1.size(), assessmentList2.size(), "assessmentLists must be of same size!");
+
+        for (Assessment a : assessmentList1) {
+            assertEquals(Collections.frequency(assessmentList1, a), Collections.frequency(assessmentList2, a), "Assessments must appear equally often in both lists");
+        }
     }
 }
 
