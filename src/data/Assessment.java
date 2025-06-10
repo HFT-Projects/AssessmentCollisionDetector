@@ -136,7 +136,7 @@ public abstract class Assessment {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
         return "Assessment{" +
-                "number=" + number +
+                "number='" + number + '\'' +
                 ", name='" + name + '\'' +
                 ", courseOfStudy='" + courseOfStudy + '\'' +
                 ", assessmentVersion='" + assessmentVersion + '\'' +
@@ -144,9 +144,9 @@ public abstract class Assessment {
                 ", begin=" + (begin != null ? begin.format(formatter) : null) +
                 ", end=" + (end != null ? end.format(formatter) : null) +
                 ", assessmentEntries='" + assessmentEntries + '\'' +
-                ", registeredStudents=" + registeredStudents +
-                ", collisionSum=" + collisionSum +
-                ", collisionCountByAssessment=" + collisions +
+                ", registeredStudents='" + registeredStudents + '\'' +
+                ", collisionSum='" + collisionSum + '\'' +
+                ", collisionCountByAssessment='" + collisions + '\'' +
                 '}';
     }
 }
