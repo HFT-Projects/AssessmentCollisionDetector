@@ -3,10 +3,7 @@ package data;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public abstract class Assessment {
@@ -112,6 +109,18 @@ public abstract class Assessment {
         if (collisionCountByAssessment == null)
             return null;
         return new HashMap<>(collisionCountByAssessment);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Assessment that = (Assessment) o;
+        return Objects.equals(number, that.number) && Objects.equals(name, that.name) && Objects.equals(courseOfStudy, that.courseOfStudy) && Objects.equals(assessmentVersion, that.assessmentVersion) && Objects.equals(begin, that.begin) && Objects.equals(end, that.end) && Objects.equals(assessmentEntries, that.assessmentEntries) && Objects.equals(registeredStudents, that.registeredStudents) && Objects.equals(collisionSum, that.collisionSum);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(number, name, courseOfStudy, assessmentVersion, begin, end, assessmentEntries, registeredStudents, collisionSum);
     }
 
     @Override
