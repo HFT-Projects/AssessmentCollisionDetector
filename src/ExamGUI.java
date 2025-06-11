@@ -6,7 +6,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -442,9 +444,6 @@ public class ExamGUI extends Application {
     }
 
 
-
-
-
     private VBox createTableSection() {
         VBox section = new VBox(15);
         section.setPadding(new Insets(20));
@@ -541,8 +540,7 @@ public class ExamGUI extends Application {
                 for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
                     titleItem.setExpanded(false);
                 }
-            }
-            else {  // Checkbox wurde deaktiviert - wiederherstellen
+            } else {  // Checkbox wurde deaktiviert - wiederherstellen
                 // Zuerst alle Einträge sichtbar machen falls nötig
                 boolean wasHidingNullTimes = hideNullTimesCheckbox.isSelected();
                 if (wasHidingNullTimes) {
@@ -755,7 +753,7 @@ public class ExamGUI extends Application {
         maxDistanceCol.setStyle(columnStyle);
 
         // Make sort arrows always visible for all columns
-       
+
 
         collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
                 beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
@@ -913,7 +911,7 @@ public class ExamGUI extends Application {
         // If this is a parent node with children, re-sort its children to maintain sort order
         if (item.getChildren() != null && !item.getChildren().isEmpty()) {
             String sortCriteria = item == collisionTreeTable.getRoot() ?
-                                 sortExam1Box.getValue() : sortExam2Box.getValue();
+                    sortExam1Box.getValue() : sortExam2Box.getValue();
 
             if (sortCriteria != null && !sortCriteria.isEmpty()) {
                 item.getChildren().sort((item1, item2) ->
@@ -1484,7 +1482,7 @@ public class ExamGUI extends Application {
 
                             // Convert the distance to hours with decimal places for more precise filtering
                             double distanceHours = distance.toMinutes() / 60.0;
-                             matchesDistance = !distance.isNegative() && distanceHours >= minHours;
+                            matchesDistance = !distance.isNegative() && distanceHours >= minHours;
                         } else {
                             matchesDistance = false; // No times available, don't show in filtered results
                         }
@@ -1760,11 +1758,191 @@ public class ExamGUI extends Application {
 
     private Tab createStatisticsTab() {
         Tab statisticsTab = new Tab("Statistics");
+
+        // Create main container with BorderPane to allow positioning
+        BorderPane mainContainer = new BorderPane();
+        mainContainer.setPadding(new Insets(20));
+
+        // Create HBox for the dropdown at top left
+        HBox selectorContainer = new HBox(10);
+        selectorContainer.setAlignment(Pos.TOP_LEFT);
+
+        // Create the statistics selector
+        ComboBox<String> selectStatistic = new ComboBox<>();
+        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Zeitverteilung", "Kollisionsschwere");
+        selectStatistic.setPromptText("Wählen Sie eine Statistik.");
+
+        selectorContainer.getChildren().add(selectStatistic);
+        mainContainer.setTop(selectorContainer);
+
+        // Content area where statistics will be displayed
+        VBox contentArea = new VBox(20);
+        contentArea.setAlignment(Pos.TOP_CENTER);
+        contentArea.setPadding(new Insets(20, 0, 0, 0));
+        mainContainer.setCenter(contentArea);
+
+        // Create a container for course selection and pie chart
+        VBox courseChartContainer = new VBox(15);
+        courseChartContainer.setPadding(new Insets(20));
+        courseChartContainer.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
+        courseChartContainer.setVisible(false); // Initially hidden
+
+        // Course selection
+        ComboBox<String> courseComboBox = new ComboBox<>();
+        courseComboBox.setPromptText("Wählen Sie einen Studiengang.");
+        courseComboBox.setMaxWidth(300);
+
+        // Container for the pie chart
+        VBox chartBox = new VBox();
+        chartBox.setAlignment(Pos.CENTER);
+        chartBox.setMinHeight(400);
+
+        // When a course is selected, create and display the pie chart
+        courseComboBox.setOnAction(e -> {
+            String selectedCourse = courseComboBox.getValue();
+            if (selectedCourse != null && assessments != null && assessments.length > 0) {
+                // Clear previous chart
+                chartBox.getChildren().clear();
+
+                // Create new chart with the selected course
+                PieChart pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
+                chartBox.getChildren().add(pieChart);
+            }
+        });
+
+        // Add components to the course chart container
+        Label courseHeading = new Label("Kollisionen nach Studiengang");
+        courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
+        courseHeading.setTextFill(Color.web(SECONDARY_COLOR));
+
+        Label courseDescription = new Label("Zeigt die Verteilung der Kollisionen nach Zeitabständen zwischen Prüfungen.");
+        courseDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+
+        Separator separator = new Separator();
+        separator.setPadding(new Insets(5, 0, 10, 0));
+
+        courseChartContainer.getChildren().addAll(
+            courseHeading,
+            courseDescription,
+            separator,
+            courseComboBox,
+            chartBox
+        );
+
+        // Action handler for the statistics selector
+        selectStatistic.setOnAction(event -> {
+            String selectedStatistic = selectStatistic.getValue();
+
+            // Clear current content
+            contentArea.getChildren().clear();
+
+            // Handle the selected statistic
+            switch(selectedStatistic) {
+                case "Fakultäten" -> {
+                    if(assessments != null){
+                        courseChartContainer.setVisible(false);
+                        contentArea.getChildren().add(createFakContent());
+                    }else{
+                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
+                    }
+                }
+                case "Studiengänge" -> {
+                    // Update course selection box first
+                    if (assessments != null && assessments.length > 0) {
+                        Set<String> courses = new TreeSet<>();
+                        for (Assessment a : assessments) {
+                            if (a.getCourseOfStudy() != null && !a.getCourseOfStudy().isEmpty()) {
+                                courses.add(a.getCourseOfStudy());
+                            }
+                        }
+                        courseComboBox.getItems().clear();
+                        courseComboBox.getItems().addAll(courses);
+                    } else {
+                        courseComboBox.getItems().clear();
+                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
+                    }
+
+                    // Show the course selection and chart container
+                    courseChartContainer.setVisible(true);
+                    contentArea.getChildren().add(courseChartContainer);
+                }
+                case "Zeitverteilung" -> {
+                    if(assessments != null){
+                        courseChartContainer.setVisible(false);
+                        contentArea.getChildren().add(createTimeContent());
+                    }else{
+                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
+                    }
+                }
+                case "Kollisionsschwere" -> {
+                    if(assessments!=null){
+                        courseChartContainer.setVisible(false);
+                        contentArea.getChildren().add(createColSchwereContent());
+                    }else{
+                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
+                    }
+                }
+                default -> System.out.println("No statistic selected");
+            }
+        });
+
+        statisticsTab.setContent(mainContainer);
+        return statisticsTab;
+    }
+    private Node createFakContent(){
+        long facultyACount = 0;
+        long facultyBCount = 0;
+        long facultyCCount = 0;
+
+        for(Assessment a : assessments) {
+            if (a.getAssessmentEntries() == null) {
+                continue;
+            } else {
+                for (Assessment.AssessmentEntry assessmentEntry : a.getAssessmentEntries()) {
+                    Map<Assessment, Integer> collisions = a.getCollisionCountByAssessment();
+                    for (Map.Entry<Assessment, Integer> entry : collisions.entrySet()) {
+                        Assessment collidingAssessment = entry.getKey();
+                        int count = entry.getValue();
+                        if (assessmentEntry.faculty().equals("A")) {
+                            facultyACount += count;
+                        } else if (assessmentEntry.faculty().equals("B")) {
+                            facultyBCount += count;
+                        } else {
+                            facultyCCount += count;
+                        }
+
+
+                    }
+                }
+            }
+        }
+            CategoryAxis facultyAxis = new CategoryAxis();
+            facultyAxis.setLabel("Fakultät");
+
+            NumberAxis collisionByFacultyAxis = new NumberAxis();
+            collisionByFacultyAxis.setLabel("Kollisionen");
+
+            BarChart<String, Number> facultyBarChart = new BarChart<>(facultyAxis, collisionByFacultyAxis);
+            facultyBarChart.setTitle("Fakultät Säulendiagramm");
+
+            XYChart.Series<String, Number> series = new XYChart.Series<>();
+            series.setName("Fakultät Daten");
+            series.getData().add(new XYChart.Data<>("Fakultät A: "+facultyACount, facultyACount));
+            series.getData().add(new XYChart.Data<>("Fakultät B: "+facultyBCount, facultyBCount));
+            series.getData().add(new XYChart.Data<>("Fakultät C: "+facultyCCount, facultyCCount));
+
+            facultyBarChart.getData().add(series);
+            return facultyBarChart;
+    }
+    private Node createTimeContent() {
+        return CollisionPieChartView.createCollisionPieChartByTime(assessments);
+    }
+    private Node createColSchwereContent(){
         VBox content = new VBox(20);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.CENTER);
 
-        Label inProgressLabel = new Label("Statistics View - In Progress");
+        Label inProgressLabel = new Label("Kollisionsschwerestatistik - In Progress");
         inProgressLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
         inProgressLabel.setTextFill(Color.web(SECONDARY_COLOR));
 
@@ -1772,9 +1950,9 @@ public class ExamGUI extends Application {
         descriptionLabel.setTextFill(Color.web(SECONDARY_COLOR));
 
         content.getChildren().addAll(inProgressLabel, descriptionLabel);
-        statisticsTab.setContent(content);
-        return statisticsTab;
+        return content;
     }
+
 
     private Tab createRoomPlansTab() {
         Tab roomPlansTab = new Tab("Room Occupancy Plans");
@@ -1850,7 +2028,7 @@ public class ExamGUI extends Application {
     }
 
 
-    public static void run() {
+    public static void run(){
         launch();
     }
 }
