@@ -84,8 +84,6 @@ public class ExamGUI extends Application {
     // Flag to prevent infinite loops in sorting synchronization
     private boolean isUpdating = false;
 
-    private String validYear;
-
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Exam Collision Detector");
@@ -284,7 +282,7 @@ public class ExamGUI extends Application {
         optionalYearBox.setAlignment(Pos.CENTER_LEFT);
         optionalYearBox.setPadding(new Insets(15, 0, 0, 0));
 
-        Label optionalYearLabel = new Label("Optional Year:");
+        Label optionalYearLabel = new Label("Year (Optional):");
         optionalYearLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
         optionalYearLabel.setTextFill(Color.web(SECONDARY_COLOR));
 
@@ -292,24 +290,7 @@ public class ExamGUI extends Application {
         optionalYearField.setPromptText("YYYY");
         optionalYearField.setPrefWidth(100);
 
-        Button applyYearButton = createStyledButton("Apply", PRIMARY_COLOR);
-        applyYearButton.setOnAction(e -> {
-            String input = optionalYearField.getText();
-            if (input == null || input.isEmpty() || !input.matches("\\d{4}")) {
-                // Show error dialog
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Fehler");
-                alert.setHeaderText(null);
-                alert.setContentText("Bitte ein gültiges Jahr eingeben!");
-                alert.showAndWait();
-            } else {
-                // Parse year, store it and update table
-                validYear = input;
-                updateCollisionTreeTable();
-            }
-        });
-
-        optionalYearBox.getChildren().addAll(optionalYearLabel, optionalYearField, applyYearButton);
+        optionalYearBox.getChildren().addAll(optionalYearLabel, optionalYearField);
 
         // Action buttons
         HBox actionBox = new HBox(15);
@@ -1427,11 +1408,25 @@ public class ExamGUI extends Application {
             return;
         }
 
+
+        String yearInput = optionalYearField.getText();
+        Integer year;
+        if (yearInput == null || yearInput.isEmpty()) {
+            year = null;
+        }
+        else if (!yearInput.matches("\\d{4}")) {
+            showAlert("Invalid year!", Alert.AlertType.ERROR);
+            return;
+        } else {
+            // Parse year, store it and update table
+            year = Integer.parseInt(yearInput);
+        }
+
         // save paths to preferences
         prefs.put("examsPath", examsPath);
         prefs.put("registrationsPath", registrationsPath);
 
-        assessments = AssessmentsManager.loadAllAssessments(examsPath, registrationsPath, null);
+        assessments = AssessmentsManager.loadAllAssessments(examsPath, registrationsPath, year);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, registrationsPath);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
 
