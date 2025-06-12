@@ -21,7 +21,7 @@ class AssessmentCollisionDetectorTest {
     @Test
     @Order(1)
     void testCollisionDetectionAndSaving() throws Exception {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS);
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
         SaveManager.saveCollisions(PATH_OUTPUT_COLLISIONS, assessments);
@@ -39,7 +39,7 @@ class AssessmentCollisionDetectorTest {
     @Test
     @Order(2)
     void testSavingAssessments() throws Exception {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS);
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         SaveManager.saveAssessments(PATH_OUTPUT_ASSESSMENTS, assessments);
 

@@ -113,10 +113,6 @@ public class LoadManager {
         return dates;
     }
 
-    public static Assessment[] loadExams(String path) throws UncheckedIOException {
-        return loadExams(path, null);
-    }
-
     public static Assessment[] loadExams(String path, Integer year) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
         Map<String, AssessmentEditable> existingExams = new HashMap<>(); // qualifiedName -> existingExams

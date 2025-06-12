@@ -7,8 +7,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 public class AssessmentsManager {
-    public static Assessment[] loadAllAssessments(String pathInputExams, String pathInputRegistrations) {
-        Assessment[] assessments1 = LoadManager.loadExams(pathInputExams);
+    public static Assessment[] loadAllAssessments(String pathInputExams, String pathInputRegistrations, Integer year) {
+        Assessment[] assessments1 = LoadManager.loadExams(pathInputExams, year);
         Assessment[] assessments2 = LoadManager.loadMissingAssessments(pathInputRegistrations, assessments1);
         return Stream.of(assessments1, assessments2).flatMap(Arrays::stream).toArray(Assessment[]::new);
     }

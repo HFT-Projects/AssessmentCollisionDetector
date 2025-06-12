@@ -6,7 +6,7 @@ class Main {
     public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
 
     public static void main(String[] args) {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS);
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
         SaveManager.saveCollisions(PATH_OUTPUT_COLLISIONS, assessments);
