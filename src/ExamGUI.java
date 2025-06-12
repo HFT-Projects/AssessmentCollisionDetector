@@ -87,6 +87,7 @@ public class ExamGUI extends Application {
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Exam Collision Detector");
+        primaryStage.setMaximized(true);
 
         // Create a drop shadow effect for cards
         DropShadow dropShadow = new DropShadow();
