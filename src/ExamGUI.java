@@ -1056,7 +1056,7 @@ public class ExamGUI extends Application {
 
             // Format date and time information if available
             if (assessment != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
                 this.beginTime = assessment.getBegin() != null ? assessment.getBegin().format(formatter) : "";
                 this.endTime = assessment.getEnd() != null ? assessment.getEnd().format(formatter) : "";
             } else {
@@ -1150,7 +1150,7 @@ public class ExamGUI extends Application {
 
             // Format date and time information if available
             if (assessment != null) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM. HH:mm");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
                 this.beginTime = assessment.getBegin() != null ? assessment.getBegin().format(formatter) : "";
                 this.endTime = assessment.getEnd() != null ? assessment.getEnd().format(formatter) : "";
             } else {
