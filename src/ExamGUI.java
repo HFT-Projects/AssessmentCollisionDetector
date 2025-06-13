@@ -1575,7 +1575,7 @@ public class ExamGUI extends Application {
                             double distanceHours = distance.toMinutes() / 60.0;
                             // Only include entries with distance less than or equal to the max hours
                             // and non-negative distances (assessments that don't overlap)
-                            matchesDistance = !distance.isNegative() && distanceHours <= maxHours;
+                            matchesDistance = distanceHours <= maxHours;
                         }
                     } catch (NumberFormatException e) {
                         matchesDistance = false;
