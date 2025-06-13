@@ -335,7 +335,7 @@ public class ExamGUI extends Application {
         sortExam1Box = createStyledComboBox();
         sortExam1Box.setPromptText("Select Exam 1 sort...");
         sortExam1Box.setItems(FXCollections.observableArrayList(
-                "Exam1 Name", "Collision Count", "Begin", "End", "Average Distance", "Min Distance"
+                "Exam 1 Name", "Collision Count", "Begin", "End", "Avg. Distance", "Min. Distance"
         ));
 
         sortDirectionExam1Box = createStyledComboBox();
@@ -345,7 +345,7 @@ public class ExamGUI extends Application {
         sortExam2Box = createStyledComboBox();
         sortExam2Box.setPromptText("Select Exam 2 sort...");
         sortExam2Box.setItems(FXCollections.observableArrayList(
-                "Exam2 Name", "Collision Count", "Begin", "End", "Distance"
+                "Exam 2 Name", "Collision Count", "Begin", "End", "Distance"
         ));
 
         sortDirectionExam2Box = createStyledComboBox();
@@ -1742,7 +1742,7 @@ public class ExamGUI extends Application {
         if (a1 == null || a2 == null) return 0;
 
         return switch (property) {
-            case "Exam1 Name", "Exam Name" -> {
+            case "Exam 1 Name", "Exam Name" -> {
                 if (entry1.isTitle()) {
                     // For title rows (Exam 1), sort by primary exam
                     yield compareGermanStrings(a1.getQualifiedName(), a2.getQualifiedName());
@@ -1756,7 +1756,7 @@ public class ExamGUI extends Application {
                     yield 0;
                 }
             }
-            case "Exam2 Name" -> {
+            case "Exam 2 Name" -> {
                 // This is only for child rows (Exam 2)
                 if (!entry1.isTitle() && !entry2.isTitle()) {
                     Assessment c1 = entry1.getCollidingAssessment();
@@ -1820,7 +1820,7 @@ public class ExamGUI extends Application {
                 }
                 yield 0;
             }
-            case "Average Distance" -> {
+            case "Avg. Distance" -> {
                 if (entry1.isTitle() && entry2.isTitle()) {
                     String avg1 = entry1.getAverageDistance();
                     String avg2 = entry2.getAverageDistance();
@@ -1846,7 +1846,7 @@ public class ExamGUI extends Application {
                 }
                 yield 0;
             }
-            case "Min Distance" -> {
+            case "Min. Distance" -> {
                 if (entry1.isTitle() && entry2.isTitle()) {
                     String min1 = entry1.getMinDistance();
                     String min2 = entry2.getMinDistance();
@@ -1936,13 +1936,13 @@ public class ExamGUI extends Application {
      */
     private String mapDropdownValueToColumnName(String dropdownValue) {
         return switch (dropdownValue) {
-            case "Exam1 Name" -> "Exam 1";
-            case "Exam2 Name" -> "Exam 2";
+            case "Exam 1 Name" -> "Exam 1";
+            case "Exam 2 Name" -> "Exam 2";
             case "Collision Count" -> "Collision Count";
             case "Begin" -> "Begin";
             case "End" -> "End";
-            case "Average Distance" -> "Avg. Distance";
-            case "Min Distance" -> "Min. Distance";
+            case "Avg. Distance" -> "Avg. Distance";
+            case "Min. Distance" -> "Min. Distance";
             case "Distance" -> "Distance";
             default -> dropdownValue;
         };
@@ -2306,11 +2306,11 @@ public class ExamGUI extends Application {
                         // Aktualisiere die entsprechenden Dropdowns basierend auf der Spalte
                         switch (columnText) {
                             case "Exam 1":
-                                sortExam1Box.setValue("Exam1 Name");
+                                sortExam1Box.setValue("Exam 1 Name");
                                 sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 break;
                             case "Exam 2":
-                                sortExam2Box.setValue("Exam2 Name");
+                                sortExam2Box.setValue("Exam 2 Name");
                                 sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 break;
                             case "Distance":
@@ -2318,11 +2318,11 @@ public class ExamGUI extends Application {
                                 sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 break;
                             case "Min. Distance":
-                                sortExam1Box.setValue("Min Distance");
+                                sortExam1Box.setValue("Min. Distance");
                                 sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 break;
                             case "Avg. Distance":
-                                sortExam1Box.setValue("Average Distance");
+                                sortExam1Box.setValue("Avg. Distance");
                                 sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 break;
                         }
@@ -2342,12 +2342,12 @@ public class ExamGUI extends Application {
                         String columnText = column.getText();
                         switch (columnText) {
                             case "Exam 1":
-                                if (sortExam1Box.getValue().equals("Exam1 Name")) {
+                                if (sortExam1Box.getValue().equals("Exam 1 Name")) {
                                     sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 }
                                 break;
                             case "Exam 2":
-                                if (sortExam2Box.getValue().equals("Exam2 Name")) {
+                                if (sortExam2Box.getValue().equals("Exam 2 Name")) {
                                     sortDirectionExam2Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 }
                                 break;
@@ -2357,12 +2357,12 @@ public class ExamGUI extends Application {
                                 }
                                 break;
                             case "Min. Distance":
-                                if (sortExam1Box.getValue().equals("Min Distance")) {
+                                if (sortExam1Box.getValue().equals("Min. Distance")) {
                                     sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 }
                                 break;
                             case "Avg. Distance":
-                                if (sortExam1Box.getValue().equals("Average Distance")) {
+                                if (sortExam1Box.getValue().equals("Avg. Distance")) {
                                     sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
                                 }
                                 break;
