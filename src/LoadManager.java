@@ -157,12 +157,20 @@ public class LoadManager {
 
         // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
-        for (String row : rowsWithoutHeader) {
+        for (int i = 0; i < rowsWithoutHeader.size(); i++) {
+            String row = rowsWithoutHeader.get(i);
             String[] columns = row.split(";");
 
             // check that data is complete
-            if (columns[1].isBlank() || /*columns[2].isBlank() || columns[4].isBlank() || !columns[4].strip().matches("[0-9]*") ||*/ columns[5].isBlank() || columns[10].isBlank() || !columns[10].strip().matches("[0-9]{1,2}:[0-9]{2}") || columns[11].isBlank() || !columns[11].strip().matches("[0-9]{1,2}:[0-9]{2}"))
-                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
+            if (columns[1].isBlank())
+                throw new AssertionError("missing data in exams file in column stg (2) in line " + (i + 1));
+            else if (columns[5].isBlank())
+                throw new AssertionError("missing data in exams file in column pltext1 (6) in line " + (i + 1));
+            else if (columns[10].isBlank() || !columns[10].strip().matches("[0-9]{1,2}:[0-9]{2}"))
+                throw new AssertionError("missing or invalid data in exams file in column Begin (11) in line " + (i + 1));
+            else if (columns[11].isBlank() || !columns[11].strip().matches("[0-9]{1,2}:[0-9]{2}"))
+                throw new AssertionError("missing or invalid data in exams file in column Ende (12) in line " + (i + 1));
+
 
             Long no = columns[4].isBlank() ? null : Long.parseLong(columns[4]);
             String name = columns[5];
@@ -184,9 +192,9 @@ public class LoadManager {
             String endTime = columns[11];
 
             LocalDateTime day = null;
-            for (int i = indexDaysBegin; i <= indexDaysEnd; i++) {
-                if (!columns[i].isBlank()) {
-                    day = days[i - indexDaysBegin];
+            for (int k = indexDaysBegin; k <= indexDaysEnd; k++) {
+                if (!columns[k].isBlank()) {
+                    day = days[k - indexDaysBegin];
                     break;
                 }
             }
@@ -242,12 +250,19 @@ public class LoadManager {
 
         // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
-        for (String row : rowsWithoutHeader) {
+        for (int i = 0; i < rowsWithoutHeader.size(); i++) {
+            String row = rowsWithoutHeader.get(i);
             String[] columns = row.split(";");
 
             // check that data is complete
-            if (columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
-                throw new AssertionError("missing data in registrations file"); //TODO: specify whats missing & line
+            if (columns[2].isBlank())
+                throw new AssertionError("missing data in registration file in column stg (3) in line " + (i + 1));
+            else if (columns[3].isBlank())
+                throw new AssertionError("missing data in registration file in column pversion (4) in line " + (i + 1));
+            else if (columns[5].isBlank() || !columns[5].strip().matches("[0-9]*"))
+                throw new AssertionError("missing or invalid data in registration file in column pnr (6) in line " + (i + 1));
+            else if (columns[6].isBlank())
+                throw new AssertionError("missing data in registration file in column pltxt1 (7) in line " + (i + 1));
 
             long assessmentNo = Long.parseLong(columns[5]);
             String name = columns[6];
@@ -291,12 +306,21 @@ public class LoadManager {
 
         // loop through body
         List<String> rowsWithoutHeader = rows.subList(1, rows.size());
-        for (String row : rowsWithoutHeader) {
+        for (int i = 0; i < rowsWithoutHeader.size(); i++) {
+            String row = rowsWithoutHeader.get(i);
             String[] columns = row.split(";");
 
             // check that data is complete
-            if (columns[0].isBlank() || columns[2].isBlank() || columns[3].isBlank() || columns[5].isBlank() || !columns[5].strip().matches("[0-9]*") || columns[6].isBlank())
-                throw new AssertionError("missing data in exams file"); //TODO: specify whats missing & line
+            if (columns[0].isBlank())
+                throw new AssertionError("missing data in exams file in column mtknr (1) in line " + (i + 1));
+            else if (columns[2].isBlank())
+                throw new AssertionError("missing data in registration file in column stg (3) in line " + (i + 1));
+            else if (columns[3].isBlank())
+                throw new AssertionError("missing data in registration file in column pversion (4) in line " + (i + 1));
+            else if (columns[5].isBlank() || !columns[5].strip().matches("[0-9]*"))
+                throw new AssertionError("missing or invalid data in registration file in column pnr (6) in line " + (i + 1));
+            else if (columns[6].isBlank())
+                throw new AssertionError("missing data in registration file in column pltxt1 (7) in line " + (i + 1));
 
             String studentNo = columns[0];
             long assessmentNo = Long.parseLong(columns[5]);
