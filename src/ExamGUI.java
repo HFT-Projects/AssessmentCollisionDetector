@@ -88,6 +88,21 @@ public class ExamGUI extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Exam Collision Detector");
         primaryStage.setMaximized(true);
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            final StringWriter sw = new StringWriter();
+            final PrintWriter pw = new PrintWriter(sw, true);
+            throwable.printStackTrace(pw);
+            String[] stackTrace = sw.getBuffer().toString().replace("\r", "").split("\n");
+            String err;
+            if (stackTrace.length <= 20) {
+                err = Arrays.stream(stackTrace).reduce("", (s1, s2) -> s1 + "\n" + s2);
+            } else {
+                err = Arrays.stream(stackTrace).limit(19).reduce("", (s1, s2) -> s1 + "\n" + s2);
+                err += "\n... and " + (stackTrace.length - 19) + " more lines.";
+            }
+            System.out.println(err);
+            showAlert(err, Alert.AlertType.ERROR);
+        });
 
         // Create a drop shadow effect for cards
         DropShadow dropShadow = new DropShadow();
@@ -1987,6 +2002,8 @@ public class ExamGUI extends Application {
         alert.setTitle(type == Alert.AlertType.ERROR ? "Error" : "Information");
         alert.setHeaderText(null);
         alert.setContentText(message);
+        alert.setResizable(true);
+        alert.getDialogPane().setMinWidth(1000);
 
         alert.showAndWait();
     }
