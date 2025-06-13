@@ -81,22 +81,21 @@ public class SaveManager {
                 last = assessment.getBegin();
         }
 
-        // make sure at least one has a date.
-        if (first == null || last == null)
-            throw new AssertionError();
-
         // create date columns
         List<LocalDateTime> dayToColumnIndex = new LinkedList<>();
-        for (int i = 0; ; i++) {
-            LocalDateTime k = first.withHour(0).withMinute(0).plusDays(i);
-            LocalDateTime end = last.withHour(0).withMinute(0);
-            if (k.isAfter(end))
-                break;
 
-            if (k.getDayOfWeek() == DayOfWeek.SUNDAY)
-                continue;
+        if (first != null && last != null) {
+            for (int i = 0; ; i++) {
+                LocalDateTime k = first.withHour(0).withMinute(0).plusDays(i);
+                LocalDateTime end = last.withHour(0).withMinute(0);
+                if (k.isAfter(end))
+                    break;
 
-            dayToColumnIndex.add(k);
+                if (k.getDayOfWeek() == DayOfWeek.SUNDAY)
+                    continue;
+
+                dayToColumnIndex.add(k);
+            }
         }
 
         // convert dates to german format
@@ -146,9 +145,9 @@ public class SaveManager {
                         //Add day to the column
                         day +
                         //Leave the rest of the Date columns empty
-                        ";".repeat(Math.max(0, dayToColumnIndex.size() - 1 - dayIndex)) +
+                        ";".repeat(Math.max(0, dayToColumnIndex.size() - dayIndex)) +
 
-                        ";;;;;;;;";
+                        ";;;;;;;";
                 lines.add(assessment);
             } else {
                 for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
@@ -160,9 +159,9 @@ public class SaveManager {
                             //Add day to the column
                             day +
                             //Leave the rest of the Date columns empty
-                            ";".repeat(Math.max(0, dayToColumnIndex.size() - 1 - dayIndex)) +
+                            ";".repeat(Math.max(0, dayToColumnIndex.size() - dayIndex)) +
 
-                            ";" + ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";" + ae.wiSe();
+                            ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";" + ae.wiSe();
                     lines.add(assessment);
                 }
             }
