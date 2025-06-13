@@ -1415,12 +1415,12 @@ public class ExamGUI extends Application {
         if (yearInput == null || yearInput.isEmpty()) {
             year = null;
         }
-        else if (!yearInput.matches("\\d{4}")) {
+        else if (!(yearInput.matches("\\d{4}"))) {
             showAlert("Invalid year!", Alert.AlertType.ERROR);
             return;
         } else {
             // Parse year, store it and update table
-            year = Integer.parseInt(yearInput);
+            year = Integer.parseInt(yearInput.trim());
         }
 
         // save paths to preferences
@@ -1496,6 +1496,7 @@ public class ExamGUI extends Application {
         if (assessments == null) return;
 
         updateCollisionTreeTable();
+        setupColumnSort();
     }
 
     private void updateCollisionTreeTable() {
@@ -1527,27 +1528,13 @@ public class ExamGUI extends Application {
                 continue; // Skip this assessment if it doesn't match exam1 filter
             }
 
-            // Check if assessment has collisions when "Show only with collisions" is active
-            if (showOnlyWithCollisionsCheckbox.isSelected()) {
-                int totalCollisions = assessment.getCollisionCountByAssessment().values().stream()
-                        .mapToInt(Integer::intValue)
-                        .sum();
+            // Create a list of child items that match our filters
+            List<TreeItem<CollisionEntry>> validChildren = new ArrayList<>();
+            int validCollisionCount = 0;
+            Duration minDistance = null;
+            Duration totalDistance = Duration.ZERO;
+            int validDistanceCount = 0;
 
-                // Skip assessments with no collisions
-                if (totalCollisions == 0) {
-                    continue;
-                }
-            }
-
-            // Create a title item for this assessment
-            TreeItem<CollisionEntry> titleItem = new TreeItem<>(
-                    new CollisionEntry(assessment)
-            );
-
-            // Don't expand automatically - we'll restore expansion states later
-            boolean hasMatchingChild = false;
-
-            // Create child items regardless of showOnlyAssessmentsCheckbox setting
             for (Map.Entry<Assessment, Integer> detail : assessment.getCollisionCountByAssessment().entrySet()) {
                 Assessment collidingAssessment = detail.getKey();
                 int collisionCount = detail.getValue();
@@ -1571,45 +1558,78 @@ public class ExamGUI extends Application {
                                 distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
                             }
 
-                            // Convert the distance to hours with decimal places for more precise filtering
                             double distanceHours = distance.toMinutes() / 60.0;
-                            // Only include entries with distance less than or equal to the max hours
-                            // and non-negative distances (assessments that don't overlap)
-                            matchesDistance = distanceHours <= maxHours;
+                            matchesDistance = distanceHours <= maxHours && distanceHours >= 0;
                         }
                     } catch (NumberFormatException e) {
-                        matchesDistance = false;
+                        matchesDistance = true;
                     }
                 }
 
-                if (matchesExam2 && matchesDistance) {
+                // Check if entry should be hidden due to missing times
+                boolean hasValidTimes = !hideNullTimesCheckbox.isSelected() ||
+                    (assessment.getBegin() != null && assessment.getEnd() != null &&
+                     collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null);
+
+                // If entry passes all filters, add it and update statistics
+                if (matchesExam2 && matchesDistance && hasValidTimes) {
                     TreeItem<CollisionEntry> childItem = new TreeItem<>(
                             new CollisionEntry(assessment, collidingAssessment, collisionCount)
                     );
-                    titleItem.getChildren().add(childItem);
-                    hasMatchingChild = true;
+                    validChildren.add(childItem);
+                    validCollisionCount += collisionCount;
+
+                    // Update distance statistics if time info is available
+                    if (assessment.getBegin() != null && assessment.getEnd() != null &&
+                            collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
+
+                        Duration distance;
+                        if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                            distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
+                        } else {
+                            distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
+                        }
+
+                        if (!distance.isNegative()) {
+                            if (minDistance == null || distance.compareTo(minDistance) < 0) {
+                                minDistance = distance;
+                            }
+                            totalDistance = totalDistance.plus(distance);
+                            validDistanceCount++;
+                        }
+                    }
                 }
             }
 
-            // Add title item if it either:
-            // 1. Has no exam2 filter (so we show all title rows)
-            // 2. Has matching children (so we show title rows with matching children)
-            // 3. We're showing only assessments (so we show all title rows regardless of children)
-            if (exam2Filter.isEmpty() || hasMatchingChild || showOnlyAssessmentsCheckbox.isSelected()) {
+            // Skip the assessment if it has no valid collisions and "Show only with collisions" is enabled
+            if (showOnlyWithCollisionsCheckbox.isSelected() && validCollisionCount == 0) {
+                continue;
+            }
+
+            // Create a title item for this assessment with updated statistics
+            TreeItem<CollisionEntry> titleItem = new TreeItem<>(
+                new CollisionEntry(
+                    assessment,
+                    validCollisionCount,
+                    minDistance,
+                    validDistanceCount > 0 ? totalDistance.dividedBy(validDistanceCount) : null
+                )
+            );
+
+            // Add the valid children
+            titleItem.getChildren().addAll(validChildren);
+
+            // Add the title item to the root if:
+            // 1. No exam2 filter is active, or
+            // 2. It has matching children, or
+            // 3. We're showing only assessments
+            if (exam2Filter.isEmpty() || !validChildren.isEmpty() || showOnlyAssessmentsCheckbox.isSelected()) {
                 root.getChildren().add(titleItem);
             }
         }
 
-        // Apply time-based filtering if checkbox is selected
-        if (hideNullTimesCheckbox.isSelected()) {
-            filterTreeItems(root, true);
-        }
-
-        // Apply sorting AFTER all filtering is complete
+        // Apply sorting
         sortTreeItems(root);
-
-        // Recalculate assessment values based on visible collisions
-        recalculateAssessmentValues(root);
 
         // Update the tree table
         collisionTreeTable.setRoot(root);
@@ -1972,19 +1992,43 @@ public class ExamGUI extends Application {
     }
 
     private void loadPreferences() {
-        sortExam1Box.setValue(prefs.get("sortExam1", "Exam Name"));
-        sortExam2Box.setValue(prefs.get("sortExam2", "Date"));
+        // Load existing name filters and distance filter
         filterExam1Field.setText(prefs.get("filterExam1", ""));
         filterExam2Field.setText(prefs.get("filterExam2", ""));
         filterDistanceField.setText(prefs.get("filterDistance", ""));
+
+        // Load sort column selections
+        sortExam1Box.setValue(prefs.get("sortExam1", "Exam 1 Name"));
+        sortExam2Box.setValue(prefs.get("sortExam2", "Exam 2 Name"));
+
+        // Load sort directions
+        sortDirectionExam1Box.setValue(prefs.get("sortDirectionExam1", ASCENDING));
+        sortDirectionExam2Box.setValue(prefs.get("sortDirectionExam2", ASCENDING));
+
+        // Load filter checkbox states
+        hideNullTimesCheckbox.setSelected(prefs.getBoolean("hideNullTimes", false));
+        showOnlyWithCollisionsCheckbox.setSelected(prefs.getBoolean("showOnlyWithCollisions", false));
+        showOnlyAssessmentsCheckbox.setSelected(prefs.getBoolean("showOnlyAssessments", false));
     }
 
     private void savePreferences() {
-        prefs.put("sortExam1", sortExam1Box.getValue());
-        prefs.put("sortExam2", sortExam2Box.getValue());
+        // Save name filters and distance filter
         prefs.put("filterExam1", filterExam1Field.getText());
         prefs.put("filterExam2", filterExam2Field.getText());
         prefs.put("filterDistance", filterDistanceField.getText());
+
+        // Save sort column selections
+        prefs.put("sortExam1", sortExam1Box.getValue());
+        prefs.put("sortExam2", sortExam2Box.getValue());
+
+        // Save sort directions
+        prefs.put("sortDirectionExam1", sortDirectionExam1Box.getValue());
+        prefs.put("sortDirectionExam2", sortDirectionExam2Box.getValue());
+
+        // Save filter checkbox states
+        prefs.putBoolean("hideNullTimes", hideNullTimesCheckbox.isSelected());
+        prefs.putBoolean("showOnlyWithCollisions", showOnlyWithCollisionsCheckbox.isSelected());
+        prefs.putBoolean("showOnlyAssessments", showOnlyAssessmentsCheckbox.isSelected());
     }
 
     @Override
@@ -2292,39 +2336,34 @@ public class ExamGUI extends Application {
     }
 
     private void setupColumnSort() {
-        // Füge einen Listener für die SortOrder der TreeTableView hinzu
+        // Add listener for TreeTableView's sort order changes
         collisionTreeTable.getSortOrder().addListener((ListChangeListener<TreeTableColumn<CollisionEntry, ?>>) change -> {
             if (!isUpdating) {
                 isUpdating = true;
                 try {
-                    // Hole die erste sortierte Spalte (falls vorhanden)
+                    // Get the first sorted column (if any)
                     if (!collisionTreeTable.getSortOrder().isEmpty()) {
                         TreeTableColumn<CollisionEntry, ?> firstSortColumn = collisionTreeTable.getSortOrder().get(0);
                         String columnText = firstSortColumn.getText();
                         TreeTableColumn.SortType sortType = firstSortColumn.getSortType();
+                        String direction = sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING;
 
-                        // Aktualisiere die entsprechenden Dropdowns basierend auf der Spalte
-                        switch (columnText) {
-                            case "Exam 1":
-                                sortExam1Box.setValue("Exam 1 Name");
-                                sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                break;
-                            case "Exam 2":
-                                sortExam2Box.setValue("Exam 2 Name");
-                                sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                break;
-                            case "Distance":
-                                sortExam2Box.setValue("Distance");
-                                sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                break;
-                            case "Min. Distance":
-                                sortExam1Box.setValue("Min. Distance");
-                                sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                break;
-                            case "Avg. Distance":
-                                sortExam1Box.setValue("Avg. Distance");
-                                sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                break;
+                        // Update corresponding dropdowns based on the column
+                        if ("Exam 1".equals(columnText)) {
+                            sortExam1Box.setValue("Exam 1 Name");
+                            sortDirectionExam1Box.setValue(direction);
+                        } else if ("Exam 2".equals(columnText)) {
+                            sortExam2Box.setValue("Exam 2 Name");
+                            sortDirectionExam2Box.setValue(direction);
+                        } else if ("Distance".equals(columnText)) {
+                            sortExam2Box.setValue("Distance");
+                            sortDirectionExam2Box.setValue(direction);
+                        } else if ("Min. Distance".equals(columnText)) {
+                            sortExam1Box.setValue("Min. Distance");
+                            sortDirectionExam1Box.setValue(direction);
+                        } else if ("Avg. Distance".equals(columnText)) {
+                            sortExam1Box.setValue("Avg. Distance");
+                            sortDirectionExam1Box.setValue(direction);
                         }
                     }
                 } finally {
@@ -2333,39 +2372,26 @@ public class ExamGUI extends Application {
             }
         });
 
-        // Behalte den SortType Listener für zusätzliche Synchronisation bei
+        // Maintain sortType listeners for additional synchronization
         for (TreeTableColumn<CollisionEntry, ?> column : collisionTreeTable.getColumns()) {
             column.sortTypeProperty().addListener((obs, oldValue, newValue) -> {
                 if (!isUpdating && newValue != null) {
                     isUpdating = true;
                     try {
                         String columnText = column.getText();
-                        switch (columnText) {
-                            case "Exam 1":
-                                if (sortExam1Box.getValue().equals("Exam 1 Name")) {
-                                    sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                }
-                                break;
-                            case "Exam 2":
-                                if (sortExam2Box.getValue().equals("Exam 2 Name")) {
-                                    sortDirectionExam2Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                }
-                                break;
-                            case "Distance":
-                                if (sortExam2Box.getValue().equals("Distance")) {
-                                    sortDirectionExam2Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                }
-                                break;
-                            case "Min. Distance":
-                                if (sortExam1Box.getValue().equals("Min. Distance")) {
-                                    sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                }
-                                break;
-                            case "Avg. Distance":
-                                if (sortExam1Box.getValue().equals("Avg. Distance")) {
-                                    sortDirectionExam1Box.setValue(newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
-                                }
-                                break;
+                        String direction = newValue == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING;
+
+                        // Use direct equality comparison for column text
+                        if ("Exam 1".equals(columnText) && "Exam 1 Name".equals(sortExam1Box.getValue())) {
+                            sortDirectionExam1Box.setValue(direction);
+                        } else if ("Exam 2".equals(columnText) && "Exam 2 Name".equals(sortExam2Box.getValue())) {
+                            sortDirectionExam2Box.setValue(direction);
+                        } else if ("Distance".equals(columnText) && "Distance".equals(sortExam2Box.getValue())) {
+                            sortDirectionExam2Box.setValue(direction);
+                        } else if ("Min. Distance".equals(columnText) && "Min. Distance".equals(sortExam1Box.getValue())) {
+                            sortDirectionExam1Box.setValue(direction);
+                        } else if ("Avg. Distance".equals(columnText) && "Avg. Distance".equals(sortExam1Box.getValue())) {
+                            sortDirectionExam1Box.setValue(direction);
                         }
                     } finally {
                         isUpdating = false;
