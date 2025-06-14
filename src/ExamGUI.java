@@ -2080,6 +2080,7 @@ public class ExamGUI extends Application {
         contentArea.setPadding(new Insets(20, 0, 0, 0));
         mainContainer.setCenter(contentArea);
 
+
         // Create a container for course selection and pie chart
         VBox courseChartContainer = new VBox(15);
         courseChartContainer.setPadding(new Insets(20));
@@ -2108,7 +2109,6 @@ public class ExamGUI extends Application {
                 chartBox.getChildren().add(pieChart);
             }
         });
-
         // Add components to the course chart container
         Label courseHeading = new Label("Kollisionen nach Studiengang");
         courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));

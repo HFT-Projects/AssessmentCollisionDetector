@@ -1,0 +1,7 @@
+Prompt:
+How do I configure the chart legend, as it isn't properly displaying the colors?
+Model: ChatGPT 4.1
+
+Prompt:
+This code didn't change the legend colors. Please fix it.
+Model: Claude-Sonnet 3.5
