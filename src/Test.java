@@ -7,7 +7,7 @@ class Test {
     private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
 
     public static void main(String[] args) {
-        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS);
+        Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_ASSESSMENTS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
 
@@ -18,11 +18,14 @@ class Test {
         // print assessmentGroups
         // Arrays.stream(assessmentGroups).map(Arrays::stream).forEach(as -> {System.out.println("\n\n"); as.forEach(System.out::println);});
 
+        //show overview
+        AssessmentOptimizer.logGroupStatistics(assessmentGroups);
+
         // call to optimizer here
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
 
         // print optimizedAssessments
-        System.out.println(Arrays.toString(optimizedAssessments));
+        //System.out.println(Arrays.toString(optimizedAssessments));
 
 
 
