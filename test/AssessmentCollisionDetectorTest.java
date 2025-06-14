@@ -1,4 +1,5 @@
 import data.Assessment;
+import optimizer.AssessmentOptimizer;
 
 import data.MergedAssessment;
 import org.junit.jupiter.api.*;

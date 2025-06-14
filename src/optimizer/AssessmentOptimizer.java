@@ -1,3 +1,5 @@
+package optimizer;
+
 import data.*;
 import org.optaplanner.core.api.solver.Solver;
 import org.optaplanner.core.api.solver.SolverFactory;
