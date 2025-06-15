@@ -1,4 +1,3 @@
-import com.sun.javafx.charts.Legend;
 import data.Assessment;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -97,27 +96,14 @@ public class CollisionPieChartView {
         ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
 
         // Only add slices for categories that have collisions
-        if (greenCollisions > 0) {
-            pieChartData.add(new PieChart.Data("(>36h): " + greenCollisions, greenCollisions));
-        }
-        if (yellowCollisions > 0) {
-            pieChartData.add(new PieChart.Data("(>12h, ≤36h): " + yellowCollisions, yellowCollisions));
-        }
-        if (orangeCollisions > 0) {
-            pieChartData.add(new PieChart.Data("(>3h, ≤12h): " + orangeCollisions, orangeCollisions));
-        }
-        if (redCollisions > 0) {
-            pieChartData.add(new PieChart.Data("(>1h, ≤3h): " + redCollisions, redCollisions));
-        }
-        if (blackCollisions > 0) {
-            pieChartData.add(new PieChart.Data("(≤1h): " + blackCollisions, blackCollisions));
-        }
+        pieChartData.add(new PieChart.Data("(>36h): " + greenCollisions, greenCollisions));
+        pieChartData.add(new PieChart.Data("(>12h, ≤36h): " + yellowCollisions, yellowCollisions));
+        pieChartData.add(new PieChart.Data("(>3h, ≤12h): " + orangeCollisions, orangeCollisions));
+        pieChartData.add(new PieChart.Data("(>1h, ≤3h): " + redCollisions, redCollisions));
+        pieChartData.add(new PieChart.Data("(≤1h): " + blackCollisions, blackCollisions));
 
-        if (pieChartData.isEmpty()) {
-            // Add a placeholder if no collisions were found
-            pieChartData.add(new PieChart.Data("Keine Kollisionen", 1));
-        }
-// Create and configure the chart
+
+        // Create and configure the chart
         final PieChart chart = new PieChart(pieChartData);
         chart.setTitle("Kollisionsverteilung für " + info);
         chart.setLabelsVisible(true);
@@ -130,30 +116,6 @@ public class CollisionPieChartView {
         } catch (Exception e) {
             System.err.println("Could not load CSS file: " + e.getMessage());
         }
-
-
-// Apply colors to the chart after it's been displayed
-
-            for (PieChart.Data data : pieChartData) {
-                String label = data.getName();
-                String cssClass;
-                if(label.startsWith("(>36h)"))
-                    cssClass = "slice-green";
-                else if (label.startsWith("(>12h, ≤36h)"))
-                    cssClass = "slice-yellow";
-                else if (label.startsWith("(>3h, ≤12h)"))
-                    cssClass = "slice-orange";
-                else if (label.startsWith("(>1h, ≤3h)"))
-                    cssClass = "slice-red";
-                else if (label.startsWith("(≤1h)"))
-                    cssClass = "slice-black";
-                else
-                    cssClass = "slice-grey";
-
-                data.getNode().getStyleClass().add(cssClass);
-
-
-            }
 
         return chart;
     }
