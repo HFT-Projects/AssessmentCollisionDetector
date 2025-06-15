@@ -1583,7 +1583,7 @@ public class ExamGUI extends Application {
                             }
 
                             double distanceHours = distance.toMinutes() / 60.0;
-                            matchesDistance = distanceHours <= maxHours && distanceHours >= 0;
+                            matchesDistance = distanceHours <= maxHours;
                         }
                     } catch (NumberFormatException e) {
                         matchesDistance = true;
