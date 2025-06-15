@@ -102,7 +102,7 @@ public class ExamGUI extends Application {
                 err = Arrays.stream(stackTrace).limit(19).reduce("", (s1, s2) -> s1 + "\n" + s2);
                 err += "\n... and " + (stackTrace.length - 19) + " more lines.";
             }
-            System.out.println(err);
+            throwable.printStackTrace();
             showAlert(err, Alert.AlertType.ERROR);
         });
 
