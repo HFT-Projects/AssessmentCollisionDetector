@@ -2441,15 +2441,15 @@ public class ExamGUI extends Application {
 
 
         // TODO: tmp
-        //MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        //MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
-        // return optimizedAssessments
+        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+        return optimizedAssessments;
 
-        for (MergedAssessment ma : mergedAssessments) {
+        /*for (MergedAssessment ma : mergedAssessments) {
             ((MergedAssessmentEditable)ma).setOptimizedBegin(ma.getBegin());
             ((MergedAssessmentEditable)ma).setOptimizedEnd(ma.getEnd());
         }
-        return mergedAssessments;
+        return mergedAssessments;*/
     }
 
 
@@ -2458,4 +2458,5 @@ public class ExamGUI extends Application {
         launch();
     }
 }
+
 
