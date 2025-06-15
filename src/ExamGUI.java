@@ -1,6 +1,7 @@
 import data.Assessment;
 
-import data.AssessmentEditable;
+import data.MergedAssessment;
+import data.MergedAssessmentEditable;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -25,6 +26,7 @@ import java.util.*;
 import java.util.prefs.Preferences;
 
 import javafx.scene.effect.DropShadow;
+import optimizer.AssessmentOptimizer;
 
 public class ExamGUI extends Application {
     // Style constants
@@ -70,6 +72,7 @@ public class ExamGUI extends Application {
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
+
     // Store expansion states for TreeItems
     private final Map<String, Boolean> expansionStates = new HashMap<>();
 
@@ -80,8 +83,9 @@ public class ExamGUI extends Application {
     private TabPane tabPane;
     private Tab inputTab;
     private Tab resultsTab;
-    private Tab optimizedTab;
-    private TreeTableView<CollisionEntry> optimizedTreeTable;
+
+
+    private OptimizeTab optimizeTab;
 
     // Flag to prevent infinite loops in sorting synchronization
     private boolean isUpdating = false;
@@ -125,6 +129,9 @@ public class ExamGUI extends Application {
         tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
+        // Initialize OptimizeTab
+        optimizeTab = new OptimizeTab(this);
+
         // Create input page
         inputTab = new Tab("Data Input");
         VBox inputContent = new VBox(20);
@@ -164,7 +171,7 @@ public class ExamGUI extends Application {
         resultsTab.setContent(resultsScrollPane);
 
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab, resultsTab, createOptimizedTab(), createStatisticsTab(), createRoomPlansTab());
+        tabPane.getTabs().addAll(inputTab, resultsTab,optimizeTab.getTab(), createStatisticsTab(), createRoomPlansTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -2420,286 +2427,32 @@ public class ExamGUI extends Application {
         }
     }
 
-    private Tab createOptimizedTab() {
-        optimizedTab = new Tab("Optimized Exams");
-        VBox optimizedContent = new VBox(20);
-        optimizedContent.setPadding(new Insets(20));
+    public MergedAssessment [] optimizeStart() {
+        if (assessments == null || assessments.length == 0) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Assessments");
+            alert.setHeaderText(null);
+            alert.setContentText("No assessments found. Please run Detect Collisions first.");
+            alert.showAndWait();
+            return null;
+        }
 
-        // Filter section - reuse the same structure
-        VBox filterSection = createFilterSection();
-        filterSection.setEffect(new DropShadow());
+        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
-        // Table section with modified columns
-        VBox tableSection = new VBox(15);
-        tableSection.setPadding(new Insets(20));
-        tableSection.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
-        tableSection.setMaxHeight(Double.MAX_VALUE);
-        VBox.setVgrow(tableSection, Priority.ALWAYS);
 
-        // Section title and description
-        Label sectionTitle = new Label("Optimized Exam Schedule");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(SECONDARY_COLOR));
+        // TODO: tmp
+        //MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+        //MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+        // return optimizedAssessments
 
-        Label sectionDescription = new Label("Optimized exam schedule to minimize collisions.");
-        sectionDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        // Create controls container for checkboxes and column visibility
-        HBox controlsContainer = new HBox(20);
-        controlsContainer.setAlignment(Pos.CENTER_LEFT);
-
-        // Add checkboxes with the same functionality as Collision Results
-        CheckBox optimHideNullTimesCheckbox = new CheckBox("Hide entries with no times");
-        optimHideNullTimesCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        CheckBox optimShowOnlyAssessmentsCheckbox = new CheckBox("Show only assessments");
-        optimShowOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        CheckBox optimShowOnlyWithCollisionsCheckbox = new CheckBox("Show only with collisions");
-        optimShowOnlyWithCollisionsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        // Create columns menu button
-        MenuButton columnsMenuButton = new MenuButton("Columns");
-        columnsMenuButton.setStyle(
-                "-fx-background-color: " + PRIMARY_COLOR + ";" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 5px 10px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-radius: 4px;"
-        );
-
-        controlsContainer.getChildren().addAll(
-            optimHideNullTimesCheckbox,
-            optimShowOnlyAssessmentsCheckbox,
-            optimShowOnlyWithCollisionsCheckbox,
-            columnsMenuButton
-        );
-
-        // Create the TreeTableView
-        optimizedTreeTable = new TreeTableView<>();
-        optimizedTreeTable.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
-        optimizedTreeTable.setShowRoot(false);
-        VBox.setVgrow(optimizedTreeTable, Priority.ALWAYS);
-
-        // Create columns
-        TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
-        exam1Col.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().exam1QualifiedName));
-
-        TreeTableColumn<CollisionEntry, String> exam2Col = new TreeTableColumn<>("Exam 2");
-        exam2Col.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().exam2QualifiedName));
-
-        TreeTableColumn<CollisionEntry, String> collisionCountCol = new TreeTableColumn<>("Collision Count");
-        collisionCountCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().collisionCount));
-
-        // Old timing columns
-        TreeTableColumn<CollisionEntry, String> oldBeginCol = new TreeTableColumn<>("Old Begin");
-        oldBeginCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().beginTime));
-
-        TreeTableColumn<CollisionEntry, String> oldEndCol = new TreeTableColumn<>("Old End");
-        oldEndCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().endTime));
-
-        TreeTableColumn<CollisionEntry, String> oldDistanceCol = new TreeTableColumn<>("Old Distance");
-        oldDistanceCol.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getValue().distance));
-
-        TreeTableColumn<CollisionEntry, String> oldAvgDistanceCol = new TreeTableColumn<>("Old Average Distance");
-        oldAvgDistanceCol.setCellValueFactory(param -> {
-            CollisionEntry entry = param.getValue().getValue();
-            return entry.isTitle() ? new SimpleStringProperty(entry.getAverageDistance()) : new SimpleStringProperty("");
-        });
-
-        TreeTableColumn<CollisionEntry, String> oldMinDistanceCol = new TreeTableColumn<>("Old Min Distance");
-        oldMinDistanceCol.setCellValueFactory(param -> {
-            CollisionEntry entry = param.getValue().getValue();
-            return entry.isTitle() ? new SimpleStringProperty(entry.getMinDistance()) : new SimpleStringProperty("");
-        });
-
-        // Optimized timing columns (placeholder data for now)
-        TreeTableColumn<CollisionEntry, String> optimBeginCol = new TreeTableColumn<>("Optim Begin");
-        optimBeginCol.setCellValueFactory(param -> new SimpleStringProperty(""));
-
-        TreeTableColumn<CollisionEntry, String> optimEndCol = new TreeTableColumn<>("Optim End");
-        optimEndCol.setCellValueFactory(param -> new SimpleStringProperty(""));
-
-        TreeTableColumn<CollisionEntry, String> optimDistanceCol = new TreeTableColumn<>("Optim Distance");
-        optimDistanceCol.setCellValueFactory(param -> new SimpleStringProperty(""));
-
-        TreeTableColumn<CollisionEntry, String> optimAvgDistanceCol = new TreeTableColumn<>("Optim Average Distance");
-        optimAvgDistanceCol.setCellValueFactory(param -> new SimpleStringProperty(""));
-
-        TreeTableColumn<CollisionEntry, String> optimMinDistanceCol = new TreeTableColumn<>("Optim Min Distance");
-        optimMinDistanceCol.setCellValueFactory(param -> new SimpleStringProperty(""));
-
-        // Style all columns
-        String columnStyle = "-fx-alignment: CENTER-LEFT; -fx-padding: 8px;";
-        exam1Col.setStyle(columnStyle);
-        exam2Col.setStyle(columnStyle);
-        collisionCountCol.setStyle(columnStyle);
-        oldBeginCol.setStyle(columnStyle);
-        oldEndCol.setStyle(columnStyle);
-        oldDistanceCol.setStyle(columnStyle);
-        oldAvgDistanceCol.setStyle(columnStyle);
-        oldMinDistanceCol.setStyle(columnStyle);
-        optimBeginCol.setStyle(columnStyle);
-        optimEndCol.setStyle(columnStyle);
-        optimDistanceCol.setStyle(columnStyle);
-        optimAvgDistanceCol.setStyle(columnStyle);
-        optimMinDistanceCol.setStyle(columnStyle);
-
-        // Create column visibility menu items
-        CheckMenuItem exam1Item = new CheckMenuItem("Exam 1");
-        exam1Item.setSelected(true);
-        exam1Item.setDisable(true);  // First column cannot be hidden
-
-        CheckMenuItem exam2Item = new CheckMenuItem("Exam 2");
-        exam2Item.setSelected(true);
-        exam2Item.setDisable(true);  // Second column cannot be hidden
-
-        CheckMenuItem collisionCountItem = new CheckMenuItem("Collision Count");
-        collisionCountItem.setSelected(true);
-
-        // Old columns menu items (initially hidden)
-        CheckMenuItem oldBeginItem = new CheckMenuItem("Old Begin");
-        oldBeginItem.setSelected(false);
-
-        CheckMenuItem oldEndItem = new CheckMenuItem("Old End");
-        oldEndItem.setSelected(false);
-
-        CheckMenuItem oldDistanceItem = new CheckMenuItem("Old Distance");
-        oldDistanceItem.setSelected(false);
-
-        CheckMenuItem oldAvgDistanceItem = new CheckMenuItem("Old Average Distance");
-        oldAvgDistanceItem.setSelected(false);
-
-        CheckMenuItem oldMinDistanceItem = new CheckMenuItem("Old Min Distance");
-        oldMinDistanceItem.setSelected(false);
-
-        // Optimized columns menu items (initially visible)
-        CheckMenuItem optimBeginItem = new CheckMenuItem("Optim Begin");
-        optimBeginItem.setSelected(true);
-
-        CheckMenuItem optimEndItem = new CheckMenuItem("Optim End");
-        optimEndItem.setSelected(true);
-
-        CheckMenuItem optimDistanceItem = new CheckMenuItem("Optim Distance");
-        optimDistanceItem.setSelected(true);
-
-        CheckMenuItem optimAvgDistanceItem = new CheckMenuItem("Optim Average Distance");
-        optimAvgDistanceItem.setSelected(true);
-
-        CheckMenuItem optimMinDistanceItem = new CheckMenuItem("Optim Min Distance");
-        optimMinDistanceItem.setSelected(true);
-
-        // Add visibility listeners to all column menu items
-        collisionCountItem.selectedProperty().addListener((obs, old, newValue) -> {
-            collisionCountCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        // Old columns visibility listeners
-        oldBeginItem.selectedProperty().addListener((obs, old, newValue) -> {
-            oldBeginCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        oldEndItem.selectedProperty().addListener((obs, old, newValue) -> {
-            oldEndCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        oldDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            oldDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        oldAvgDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            oldAvgDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        oldMinDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            oldMinDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        // Optimized columns visibility listeners
-        optimBeginItem.selectedProperty().addListener((obs, old, newValue) -> {
-            optimBeginCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        optimEndItem.selectedProperty().addListener((obs, old, newValue) -> {
-            optimEndCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        optimDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            optimDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        optimAvgDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            optimAvgDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        optimMinDistanceItem.selectedProperty().addListener((obs, old, newValue) -> {
-            optimMinDistanceCol.setVisible(newValue);
-            adjustColumnWidths();
-        });
-
-        // Add menu items to the columns menu with separators for better organization
-        columnsMenuButton.getItems().addAll(
-                exam1Item, exam2Item, collisionCountItem,
-                new SeparatorMenuItem(),
-                new CustomMenuItem(new Label("Original Times:")) {{ setHideOnClick(false); }},
-                oldBeginItem, oldEndItem, oldDistanceItem, oldAvgDistanceItem, oldMinDistanceItem,
-                new SeparatorMenuItem(),
-                new CustomMenuItem(new Label("Optimized Times:")) {{ setHideOnClick(false); }},
-                optimBeginItem, optimEndItem, optimDistanceItem, optimAvgDistanceItem, optimMinDistanceItem
-        );
-
-        // Add all columns to the table
-        optimizedTreeTable.getColumns().addAll(
-            exam1Col, exam2Col, collisionCountCol,
-            oldBeginCol, optimBeginCol,
-            oldEndCol, optimEndCol,
-            oldDistanceCol, optimDistanceCol,
-            oldAvgDistanceCol, optimAvgDistanceCol,
-            oldMinDistanceCol, optimMinDistanceCol
-        );
-
-        // Set initial visibility for old columns (hidden)
-        oldBeginCol.setVisible(false);
-        oldEndCol.setVisible(false);
-        oldDistanceCol.setVisible(false);
-        oldAvgDistanceCol.setVisible(false);
-        oldMinDistanceCol.setVisible(false);
-
-        // Add separator before table
-        Separator separator = new Separator();
-        separator.setPadding(new Insets(5, 0, 10, 0));
-
-        // Add components to the table section
-        tableSection.getChildren().addAll(
-            sectionTitle,
-            sectionDescription,
-            controlsContainer,
-            separator,
-            optimizedTreeTable
-        );
-
-        // Add sections to the content
-        optimizedContent.getChildren().addAll(filterSection, tableSection);
-
-        // Add scroll pane
-        ScrollPane optimizedScrollPane = new ScrollPane(optimizedContent);
-        optimizedScrollPane.setFitToWidth(true);
-        optimizedScrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-
-        optimizedTab.setContent(optimizedScrollPane);
-        return optimizedTab;
+        for (MergedAssessment ma : mergedAssessments) {
+            ((MergedAssessmentEditable)ma).setOptimizedBegin(ma.getBegin());
+            ((MergedAssessmentEditable)ma).setOptimizedEnd(ma.getEnd());
+        }
+        return mergedAssessments;
     }
+
+
 
     public static void run(){
         launch();

@@ -1,0 +1,117 @@
+Claude 3.5:
+
+1.Prompt: Create a new Java class called `OptimizeTab.java`.
+
+          This class will define a JavaFX Tab named "Optimize" for later integration into ExamGUI.
+
+          Instructions:
+          - Create a class called `OptimizeTab`.
+          - In the constructor, create a `Tab` object with the title "Optimize".
+          - Set its content to a basic VBox with a Label for now (placeholder for future content).
+          - Provide a public method `getTab()` that returns the created Tab.
+
+          Do not implement any data logic or TreeTableView yet. This is only the base UI scaffold.
+
+2.Prompt:In the main GUI class `ExamGUI.java`, add support for the new `OptimizeTab`.
+
+         Instructions:
+         - Import the `OptimizeTab` class.
+         - Instantiate `OptimizeTab` inside `ExamGUI`.
+         - Add the `Tab` from `OptimizeTab.getTab()` to the existing `TabPane` of the GUI.
+
+         Ensure this happens where other tabs (like the Detect Collisions tab) are added.
+
+         Do not remove or change existing tabs. Just append the OptimizeTab to the TabPane.
+
+3.Prompt: In the `OptimizeTab` class, add a new Button labeled "Optimize" at the top center of the layout (e.g., BorderPane or VBox with alignment CENTER).
+
+          When the button is clicked:
+          - Access the field `areaAssessment` from the `ExamGUI` class.
+          - If `areaAssessment` is null or empty:
+            - Show an alert dialog (e.g., `Alert(AlertType.WARNING)`) with the message:
+              "Please run collision detection first before optimizing."
+          - Otherwise:
+            - Call a method named `performOptimization()` (you can define this method later in `OptimizeTab`).
+            - The method will handle transforming the `MergedAssessment` data and populating the table.
+
+
+4.Prompt: In the `OptimizeTab` class, create the same two-sector layout used in the `DetectCollisionTab`:
+          1. The top sector should contain:
+             - Two ComboBoxes named `filterExam1` and `filterExam2` (filter by exam name, same behavior as in DetectCollisionTab).
+             - ComboBox `sortExam1`
+             - Dropdowns for sort direction (Ascending, Descending) for both sortExam1 and sortExam2.
+             - A `TextField` input for `MaxDistanceHours`. It should filter rows based on "Optimize Distance" column (e.g., if MaxDistanceHours is 100, only show rows with Optimize Distance ≤ 100).
+
+          2. The bottom sector should be the TreeTableView, placed in a VBox or other container labeled `collisionResult`, same as in DetectCollisionTab.
+
+          Make sure all filters, sorts, and MaxDistanceHours apply to the `MergedAssessment` data shown in the Optimize TreeTableView.
+
+          All filter and sort functionality should be reused or adapted from `DetectCollisionTab` with appropriate mapping to new column names (e.g., Old vs Optimize versions).
+
+5.Prompt: Update the OptimizeTab to support full sorting logic as follows:
+
+          1. **In `sortExam1` ComboBox**, add these sorting options:
+             - "Exam1 Name" → sort by exam1.getQualifiedName()
+             - "Old Begin"
+             - "Old End"
+             - "Old Average Distance"
+             - "Old Min Distance"
+             - "Optimize Begin"
+             - "Optimize End"
+             - "Optimize Average Distance"
+             - "Optimize Min Distance"
+
+          2. **In `sortExam2` ComboBox**, add these options:
+             - "Exam2 Name" → sort by exam2.getQualifiedName()
+             - "Collision Count"
+             - "Old Begin"
+             - "Old End"
+             - "Old Distance"
+             - "Optimize Begin"
+             - "Optimize End"
+             - "Optimize Distance"
+
+
+          3. **Fix the input field for `MaxDistanceHours`**:
+             - Its layout and width should match exactly the one from `DetectCollisionTab`
+             - Apply it to filter `MergedAssessment.getOptimizeDistance()` values (i.e., only show entries with `optimizeDistance <= MaxDistanceHours`)
+             - Ensure this input does not overflow UI and remains in line with surrounding filter/sort controls.
+
+          Ensure all these UI components and sorting/filtering logic are placed in the top sector of the OptimizeTab (above the TreeTableView).
+
+6.Prompt: In OptimizeTab.java, update the "Columns" ComboBox logic for the TreeTableView so that:
+
+          1. The visibility of the TreeTableView columns is always synchronized with the ComboBox state.
+             - If a column is unchecked in the ComboBox, it must be hidden in the TreeTableView.
+             - If a column is checked, it should become visible.
+             - On initialization, all columns starting with "Old" (e.g., OldBegin, OldDistance) must be unchecked and hidden by default.
+             - The columns "Exam 1" and "Exam 2" should always be visible and cannot be unchecked.
+
+          2. Prevent column reordering in the TreeTableView:
+             - Disable column drag-and-drop behavior.
+             - Set each TreeTableColumn so that it cannot be moved by the user (e.g., column.setReorderable(false) or equivalent).
+
+          Make sure that:
+          - The ComboBox reflects any visibility changes correctly.
+          - The TreeTableView updates immediately when the user changes the ComboBox selection.
+          - Column locking and initial visibility settings are correctly applied.
+
+7.Prompt: In OptimizeTab.java:
+
+          1. Add a Button to the top center of the OptimizeTab layout. Label it "Run Optimization".
+
+          2. When the button is clicked, call a method named `optimizeStart()` in the ExamGUI class (this is the main class managing application state and assessments).
+
+          3. In ExamGUI.java:
+             - Implement `optimizeStart()` method.
+             - Inside the method, check if the assessments list is null or empty.
+               - If it is null or empty, show an alert dialog saying:
+                 "No assessments found. Please run Detect Collisions first."
+                 Return null or an empty list.
+               - If it is not empty, return the list of assessments (or optimized assessments, depending on context).
+
+          4. Back in OptimizeTab.java:
+             - After calling `examGUI.optimizeStart()`, store the result in a local variable (e.g. `optimizedAssessments`).
+             - Use this result later to update the UI.
+
+
