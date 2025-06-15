@@ -48,11 +48,10 @@ public class AssessmentOptimizer {
 
     private static void getAssessmentGroupsRecursive(MergedAssessment assessment, List<MergedAssessment> assessmentGroup) {
         assessmentGroup.add(assessment);
-        for (Assessment a : assessment.getCollisionCountByAssessment().keySet()) {
-            MergedAssessment ma = MergedAssessment.getAssessmentToMergedAssessmentMap().get(a);
-            if (assessmentGroup.contains(ma))
+        for (MergedAssessment a : assessment.getCollisionCountByAssessment().keySet()) {
+            if (assessmentGroup.contains(a))
                 continue;
-            getAssessmentGroupsRecursive(ma, assessmentGroup);
+            getAssessmentGroupsRecursive(a, assessmentGroup);
         }
     }
 
