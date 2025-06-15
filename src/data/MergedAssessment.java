@@ -114,20 +114,22 @@ public abstract class MergedAssessment {
         return result;
     }
 
-    public Map<Assessment, Integer> getCollisionCountByAssessment() {
+    public Map<MergedAssessment, Integer> getCollisionCountByAssessment() {
         if (assessments == null)
             return null;
-        Map<Assessment, Integer> result = new HashMap<>();
+        Map<MergedAssessment, Integer> result = new HashMap<>();
         for (Assessment a : assessments) {
             if (a.getCollisionCountByAssessment() == null) {
                 continue;
             }
+
             for (Assessment b : a.getCollisionCountByAssessment().keySet()) {
-                if (!result.containsKey(b)) {
-                    result.put(b, a.getCollisionCountByAssessment().get(b));
+                MergedAssessment mb = assessmentToMergedAssessmentMap.get(b);
+                if (!result.containsKey(mb)) {
+                    result.put(mb, a.getCollisionCountByAssessment().get(b));
                     continue;
                 }
-                result.put(b, result.get(b) + a.getCollisionCountByAssessment().get(b));
+                result.put(mb, result.get(mb) + a.getCollisionCountByAssessment().get(b));
             }
         }
         return result;
@@ -149,9 +151,9 @@ public abstract class MergedAssessment {
     public String toString() {
         // create map with qualifiedName as string instead of object to print this instead because printing the actual Assessment object would create an infinite loop.
         Map<String, Integer> collisions = new HashMap<>();
-        Map<Assessment, Integer> collisionsRaw = getCollisionCountByAssessment();
+        Map<MergedAssessment, Integer> collisionsRaw = getCollisionCountByAssessment();
         if (collisionsRaw != null) {
-            for (Assessment p : collisionsRaw.keySet()) {
+            for (MergedAssessment p : collisionsRaw.keySet()) {
                 collisions.put(p.getQualifiedName(), collisionsRaw.get(p));
             }
         }
