@@ -1,4 +1,4 @@
-package optimizer;
+package manager.optimizer;
 
 import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import org.optaplanner.core.api.score.stream.Constraint;

@@ -1,5 +1,6 @@
 import data.*;
-import optimizer.*;
+import manager.*;
+import manager.optimizer.*;
 import java.util.*;
 
 class Test {

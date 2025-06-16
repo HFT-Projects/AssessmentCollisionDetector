@@ -1,7 +1,11 @@
-import data.Assessment;
+package gui;
 
+import data.Assessment;
 import data.MergedAssessment;
-import data.MergedAssessmentEditable;
+import manager.optimizer.AssessmentOptimizer;
+import manager.AssessmentsManager;
+import manager.SaveManager;
+
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -18,15 +22,13 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.effect.DropShadow;
 
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.prefs.Preferences;
-
-import javafx.scene.effect.DropShadow;
-import optimizer.AssessmentOptimizer;
 
 public class ExamGUI extends Application {
     // Style constants

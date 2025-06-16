@@ -1,4 +1,4 @@
-package optimizer;
+package manager.optimizer;
 
 import data.*;
 import org.optaplanner.core.api.solver.Solver;

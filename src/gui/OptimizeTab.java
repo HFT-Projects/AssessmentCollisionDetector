@@ -1,3 +1,5 @@
+package gui;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.scene.control.*;
@@ -7,8 +9,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
@@ -18,7 +18,6 @@ import java.util.function.BiConsumer;
 import javafx.collections.ListChangeListener;
 import java.text.Collator;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Tab for optimization functionalities in the exam scheduling application.

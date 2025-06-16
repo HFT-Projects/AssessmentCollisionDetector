@@ -1,15 +1,14 @@
-import data.Assessment;
-import optimizer.AssessmentOptimizer;
+import data.*;
+import manager.*;
+import manager.optimizer.*;
 
-import data.MergedAssessment;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AssessmentCollisionDetectorTest {

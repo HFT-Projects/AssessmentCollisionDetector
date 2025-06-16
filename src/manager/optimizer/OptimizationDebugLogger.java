@@ -1,4 +1,4 @@
-package optimizer;
+package manager.optimizer;
 
 public class OptimizationDebugLogger {
     private static final boolean ENABLE_DEBUG = true; // Set to false for production

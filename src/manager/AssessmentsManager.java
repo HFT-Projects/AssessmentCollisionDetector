@@ -1,3 +1,5 @@
+package manager;
+
 import data.Assessment;
 import data.AssessmentEditable;
 
