@@ -17,6 +17,7 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
                 studentConflict(factory), // hard constraint
+                tooLittleTimeConflict(factory), // medium constraint
                 minimizeExamsPerDay(factory), // soft constraint
                 maximizeTimeBetweenExams(factory) // soft constraint
         };
@@ -29,6 +30,37 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
                 .filter(this::haveSameStudents)
                 .penalize(HardMediumSoftLongScore.ONE_HARD)
                 .asConstraint("Student conflict");
+    }
+
+    Constraint tooLittleTimeConflict(ConstraintFactory factory) {
+        return factory
+                .forEach(AssessmentScheduleItem.class)
+                .join(AssessmentScheduleItem.class)
+                .filter(this::student1ContainsStudent2)
+                .penalizeLong(HardMediumSoftLongScore.ONE_MEDIUM, (exam1, exam2) -> {
+                    LocalDateTime begin1 = exam1.getScheduledTime();
+                    LocalDateTime begin2 = exam2.getScheduledTime();
+
+                    if (begin1 == null || begin2 == null) return 0;
+
+                    AssessmentScheduleItem first;
+                    AssessmentScheduleItem last;
+
+                    if (begin1.isBefore(begin2)) {
+                        first = exam1;
+                        last = exam2;
+                    } else {
+                        first = exam2;
+                        last = exam1;
+                    }
+
+                    double hoursBetween = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toHours();
+
+                    Integer collisions = exam1.getAssessment().getCollisionCountByAssessment().get(exam2.getAssessment());
+
+                    return (long) Math.ceil(Math.max(0, 3 - hoursBetween) * collisions);
+                })
+                .asConstraint("too little time conflict");
     }
 
     Constraint minimizeExamsPerDay(ConstraintFactory factory) {
