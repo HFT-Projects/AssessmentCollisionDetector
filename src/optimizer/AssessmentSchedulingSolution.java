@@ -4,15 +4,13 @@ import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
-import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
-import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @PlanningSolution
-public class ExamSchedulingSolution {
+public class AssessmentSchedulingSolution {
 
     @PlanningEntityCollectionProperty
     private List<AssessmentScheduleItem> assessmentList;
@@ -23,9 +21,9 @@ public class ExamSchedulingSolution {
     @PlanningScore
     private HardMediumSoftLongScore score;
 
-    public ExamSchedulingSolution() {}
+    public AssessmentSchedulingSolution() {}
 
-    public ExamSchedulingSolution(List<AssessmentScheduleItem> assessments, List<LocalDateTime> timeSlots) {
+    public AssessmentSchedulingSolution(List<AssessmentScheduleItem> assessments, List<LocalDateTime> timeSlots) {
         this.assessmentList = assessments;
         this.timeSlotList = timeSlots;
     }

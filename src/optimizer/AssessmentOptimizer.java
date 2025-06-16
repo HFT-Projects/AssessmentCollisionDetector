@@ -131,12 +131,12 @@ public class AssessmentOptimizer {
                 .map(AssessmentScheduleItem::new)
                 .toList();
 
-        ExamSchedulingSolution problem = new ExamSchedulingSolution(wrappers, timeSlots);
+        AssessmentSchedulingSolution problem = new AssessmentSchedulingSolution(wrappers, timeSlots);
 
         SolverConfig config = new SolverConfig()
-                .withSolutionClass(ExamSchedulingSolution.class)
+                .withSolutionClass(AssessmentSchedulingSolution.class)
                 .withEntityClasses(AssessmentScheduleItem.class)
-                .withConstraintProviderClass(ExamSchedulingConstraintProvider.class);
+                .withConstraintProviderClass(AssessmentSchedulingConstraintProvider.class);
 
         if (isLargeGroup) {
             config.withTerminationSpentLimit(LARGE_GROUP_TIMEOUT)
@@ -145,9 +145,9 @@ public class AssessmentOptimizer {
             config.withTerminationSpentLimit(SMALL_GROUP_TIMEOUT);
         }
 
-        SolverFactory<ExamSchedulingSolution> solverFactory = SolverFactory.create(config);
-        Solver<ExamSchedulingSolution> solver = solverFactory.buildSolver();
-        ExamSchedulingSolution solution = solver.solve(problem);
+        SolverFactory<AssessmentSchedulingSolution> solverFactory = SolverFactory.create(config);
+        Solver<AssessmentSchedulingSolution> solver = solverFactory.buildSolver();
+        AssessmentSchedulingSolution solution = solver.solve(problem);
 
         for (AssessmentScheduleItem item : solution.getAssessmentList()) {
             item.applyScheduleToAssessment();
@@ -198,8 +198,8 @@ public class AssessmentOptimizer {
             return new ArrayList<>();
         }
 
-        Set<LocalTime> actualExamTimes = collectActualExamTimes(assessments);
-        return createTimeSlotsFromActualTimes(timeRange, actualExamTimes);
+        Set<LocalTime> actualAssessmentTimes = collectActualAssessmentTimes(assessments);
+        return createTimeSlotsFromActualTimes(timeRange, actualAssessmentTimes);
     }
 
     private static TimeRange findTimeRange(MergedAssessment[] assessments) {
@@ -221,27 +221,27 @@ public class AssessmentOptimizer {
         return new TimeRange(earliest, latest);
     }
 
-    private static Set<LocalTime> collectActualExamTimes(MergedAssessment[] assessments) {
-        Set<LocalTime> examTimes = new HashSet<>();
+    private static Set<LocalTime> collectActualAssessmentTimes(MergedAssessment[] assessments) {
+        Set<LocalTime> AssessmentTimes = new HashSet<>();
         for (MergedAssessment assessment : assessments) {
             if (assessment.getBegin() != null) {
-                examTimes.add(assessment.getBegin().toLocalTime());
+                AssessmentTimes.add(assessment.getBegin().toLocalTime());
             }
         }
 
         int minTimesNeeded = Math.max(assessments.length, 5);
-        if (examTimes.size() < minTimesNeeded) {
+        if (AssessmentTimes.size() < minTimesNeeded) {
             for (int hour = DEFAULT_START_HOUR; hour <= DEFAULT_END_HOUR; hour++) {
-                examTimes.add(LocalTime.of(hour, 0));
-                examTimes.add(LocalTime.of(hour, 30));
-                if (examTimes.size() >= minTimesNeeded) break;
+                AssessmentTimes.add(LocalTime.of(hour, 0));
+                AssessmentTimes.add(LocalTime.of(hour, 30));
+                if (AssessmentTimes.size() >= minTimesNeeded) break;
             }
         }
 
-        return examTimes;
+        return AssessmentTimes;
     }
 
-    private static List<LocalDateTime> createTimeSlotsFromActualTimes(TimeRange timeRange, Set<LocalTime> examTimes) {
+    private static List<LocalDateTime> createTimeSlotsFromActualTimes(TimeRange timeRange, Set<LocalTime> assessmentTimes) {
         List<LocalDateTime> timeSlots = new ArrayList<>();
 
         LocalDate startDate = timeRange.earliest.toLocalDate();
@@ -249,7 +249,7 @@ public class AssessmentOptimizer {
 
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             if (date.getDayOfWeek().getValue() <= MAX_WEEKDAY) {
-                for (LocalTime time : examTimes) {
+                for (LocalTime time : assessmentTimes) {
                     timeSlots.add(LocalDateTime.of(date, time));
                 }
             }
