@@ -85,15 +85,15 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
     //helper mehtod minimizeExamsPerDay
     private boolean sameDayAndStudent(AssessmentScheduleItem exam1, AssessmentScheduleItem exam2) {
 
-        LocalDateTime temp1 = exam1.getScheduledTime();
-        LocalDateTime temp2 = exam2.getScheduledTime();
-        if (temp1 == null || temp2 == null) return false;
+        LocalDateTime time1 = exam1.getScheduledTime();
+        LocalDateTime time2 = exam2.getScheduledTime();
 
-        LocalDate time1 = temp1.toLocalDate();
-        LocalDate time2 = temp2.toLocalDate();
+        if (time1 == null || time2 == null) return false;
 
+        LocalDateTime day1 = LocalDateTime.of(time1.getYear(), time1.getMonth(), time1.getDayOfMonth(), 0, 0);
+        LocalDateTime day2 = LocalDateTime.of(time2.getYear(), time2.getMonth(), time2.getDayOfMonth(), 0, 0);
 
-        return student1ContainsStudent2(exam1, exam2) && Objects.equals(time1, time2);
+        return student1ContainsStudent2(exam1, exam2) && Objects.equals(day1, day2);
     }
 
     private boolean student1ContainsStudent2(AssessmentScheduleItem exam1, AssessmentScheduleItem exam2) {
