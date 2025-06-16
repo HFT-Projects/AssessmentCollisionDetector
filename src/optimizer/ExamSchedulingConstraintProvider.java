@@ -76,10 +76,23 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
 
         if (exam1 == exam2) return false;
 
-        LocalDateTime time1 = exam1.getScheduledTime();
-        LocalDateTime time2 = exam2.getScheduledTime();
+        LocalDateTime begin1 = exam1.getScheduledTime();
+        LocalDateTime begin2 = exam2.getScheduledTime();
 
-        return student1ContainsStudent2(exam1, exam2) && Objects.equals(time1, time2);
+        AssessmentScheduleItem first;
+        AssessmentScheduleItem last;
+
+        if (begin1.isBefore(begin2)) {
+            first = exam1;
+            last = exam2;
+        } else {
+            first = exam2;
+            last = exam1;
+        }
+
+        double distance = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toMinutes();
+
+        return student1ContainsStudent2(exam1, exam2) && distance < 0;
     }
 
     //helper mehtod minimizeExamsPerDay
