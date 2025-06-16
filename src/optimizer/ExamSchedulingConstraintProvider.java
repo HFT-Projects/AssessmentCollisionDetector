@@ -101,6 +101,8 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
         Set<String> student2 = exam2.getAssessment().getRegisteredStudents();
 
         if (student1 == null || student2 == null) return false;
+        if (exam1.equals(exam2))
+            return false;
 
         return student1.stream().anyMatch(student2::contains);
     }
