@@ -125,6 +125,8 @@ public abstract class MergedAssessment {
 
             for (Assessment b : a.getCollisionCountByAssessment().keySet()) {
                 MergedAssessment mb = assessmentToMergedAssessmentMap.get(b);
+                if (this.equals(mb))
+                    continue;
                 if (!result.containsKey(mb)) {
                     result.put(mb, a.getCollisionCountByAssessment().get(b));
                     continue;
