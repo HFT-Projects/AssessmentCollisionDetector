@@ -1,5 +1,6 @@
 package manager.optimizer;
 
+import data.Assessment;
 import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
@@ -7,6 +8,7 @@ import org.optaplanner.core.api.score.stream.ConstraintProvider;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -15,7 +17,8 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
-                studentAtTwoAssessmentsConflict(factory), // hard constraint
+                studentAtTwoAssessmentsConflict(factory), // hard constraint (1000)
+                roomConflict(factory),  // hard constraint (500)
                 wayTooLittleTimeConflict(factory), // hard constraint (1 per Hour per Student)
                 tooLittleTimeConflict(factory), // medium constraint
                 minimizeAssessmentsPerDay(factory), // soft constraint
@@ -30,6 +33,39 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .filter(this::checkStudentsAtTwoAssessmentsAtTheSameTime)
                 .penalize(HardMediumSoftLongScore.ofHard(1000))
                 .asConstraint("Student at two assessments conflict");
+    }
+
+    Constraint roomConflict(ConstraintFactory factory) {
+        return factory
+                .forEach(AssessmentScheduleItem.class)
+                .join(AssessmentScheduleItem.class)
+                .filter((assessment1, assessment2) -> {
+                            if (assessment1 == assessment2)
+                                return false;
+
+                            Duration distance = getDistance(assessment1, assessment2);
+                            if (distance == null || distance.toMinutes() >= 0)
+                                return false;
+
+                            Set<String> rooms1 = new HashSet<>();
+                            Set<String> rooms2 = new HashSet<>();
+
+                            for (Assessment a : assessment1.getAssessment().getAssessments()) {
+                                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                                    rooms1.add(ae.room());
+                                }
+                            }
+
+                            for (Assessment a : assessment2.getAssessment().getAssessments()) {
+                                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                                    rooms2.add(ae.room());
+                                }
+                            }
+
+                            return rooms1.stream().anyMatch(rooms2::contains);
+                        })
+                .penalize(HardMediumSoftLongScore.ofHard(500))
+                .asConstraint("room conflict");
     }
 
     Constraint wayTooLittleTimeConflict(ConstraintFactory factory) {
