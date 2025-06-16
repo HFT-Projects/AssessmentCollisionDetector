@@ -1,6 +1,7 @@
 package manager;
 
 import data.Assessment;
+import data.MergedAssessment;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -70,17 +71,17 @@ public class SaveManager {
         }
     }
 
-    public static void saveAssessments(String path, Assessment[] assessments) throws UncheckedIOException {
+    public static void saveAssessments(String path, MergedAssessment[] mergedAssessments) throws UncheckedIOException {
         List<String> lines = new LinkedList<>();
 
         // get date range for assessments (first & last)
         LocalDateTime first = null;
         LocalDateTime last = null;
-        for (Assessment assessment : assessments) {
-            if (assessment.getBegin() != null && (first == null || assessment.getBegin().isBefore(first)))
-                first = assessment.getBegin();
-            if (assessment.getEnd() != null && (last == null || assessment.getBegin().isAfter(last)))
-                last = assessment.getBegin();
+        for (MergedAssessment mergedAssessment : mergedAssessments) {
+            if (mergedAssessment.getBegin() != null && (first == null || mergedAssessment.getBegin().isBefore(first)))
+                first = mergedAssessment.getBegin();
+            if (mergedAssessment.getEnd() != null && (last == null || mergedAssessment.getBegin().isAfter(last)))
+                last = mergedAssessment.getBegin();
         }
 
         // create date columns
@@ -126,35 +127,22 @@ public class SaveManager {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("H:mm");
 
         // create the row for each Assessment
-        for (Assessment a : assessments) {
-            String duration = a.getBegin() == null ? "" : Long.toString(Duration.between(a.getBegin(), a.getEnd()).toMinutes());
+        for (MergedAssessment ma : mergedAssessments) {
+            for (Assessment a : ma.getAssessments()) {
+                String duration = ma.getOptimizedBegin() == null ? "" : Long.toString(Duration.between(ma.getOptimizedBegin(), ma.getOptimizedEnd()).toMinutes());
 
-            String day = a.getBegin() == null ? "" : Integer.toString(a.getBegin().getDayOfMonth());
-            int dayIndex = a.getBegin() == null ? 0 : dayToColumnIndex.indexOf(a.getBegin().withMinute(0).withHour(0));
+                String day = ma.getOptimizedBegin() == null ? "" : Integer.toString(ma.getOptimizedBegin().getDayOfMonth());
+                int dayIndex = ma.getOptimizedBegin() == null ? 0 : dayToColumnIndex.indexOf(ma.getOptimizedBegin().withMinute(0).withHour(0));
 
-            String beginFormatted = a.getBegin() == null ? "" : a.getBegin().format(formatter);
-            String endFormatted = a.getEnd() == null ? "" : a.getEnd().format(formatter);
+                String beginFormatted = ma.getOptimizedBegin() == null ? "" : ma.getOptimizedBegin().format(formatter);
+                String endFormatted = ma.getOptimizedEnd() == null ? "" : ma.getOptimizedEnd().format(formatter);
 
-            String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
+                String registeredStudents = a.getRegisteredStudents() != null ? Integer.toString(a.getRegisteredStudents().size()) : "";
 
-            // check if Assessment has AssessmentEntries. if not -> write only basic information, if yes -> write a line for each entry.
-            if (a.getAssessmentEntries() == null) {
-                String assessment = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";;;"
-                        + registeredStudents + ";" + duration + ";" + beginFormatted + ";" + endFormatted + ";" +
-
-                        //Leave the date columns empty if the assessment isn't on that day
-                        ";".repeat(Math.max(0, dayIndex)) +
-                        //Add day to the column
-                        day +
-                        //Leave the rest of the Date columns empty
-                        ";".repeat(Math.max(0, dayToColumnIndex.size() - dayIndex)) +
-
-                        ";;;;;;;";
-                lines.add(assessment);
-            } else {
-                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
-                    String assessment = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
-                            + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
+                // check if Assessment has AssessmentEntries. if not -> write only basic information, if yes -> write a line for each entry.
+                if (a.getAssessmentEntries() == null) {
+                    String assessment = ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";;" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";;;"
+                            + registeredStudents + ";" + duration + ";" + beginFormatted + ";" + endFormatted + ";" +
 
                             //Leave the date columns empty if the assessment isn't on that day
                             ";".repeat(Math.max(0, dayIndex)) +
@@ -163,8 +151,23 @@ public class SaveManager {
                             //Leave the rest of the Date columns empty
                             ";".repeat(Math.max(0, dayToColumnIndex.size() - dayIndex)) +
 
-                            ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";" + ae.wiSe();
+                            ";;;;;;;";
                     lines.add(assessment);
+                } else {
+                    for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                        String assessment = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
+                                + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
+
+                                //Leave the date columns empty if the assessment isn't on that day
+                                ";".repeat(Math.max(0, dayIndex)) +
+                                //Add day to the column
+                                day +
+                                //Leave the rest of the Date columns empty
+                                ";".repeat(Math.max(0, dayToColumnIndex.size() - dayIndex)) +
+
+                                ae.group() + ";" + ae.room() + ";" + ae.supervisor() + ";;" + ae.externalCourseOfStudy() + ";" + ae.externalExamName() + ";" + ae.externalExamId() + ";" + ae.wiSe();
+                        lines.add(assessment);
+                    }
                 }
             }
         }

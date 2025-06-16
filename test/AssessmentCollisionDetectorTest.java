@@ -41,7 +41,14 @@ class AssessmentCollisionDetectorTest {
     void testSavingAssessments() throws Exception {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
-        SaveManager.saveAssessments(PATH_OUTPUT_ASSESSMENTS, assessments);
+        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
+
+        for (MergedAssessment ma : mergedAssessments) {
+            ((MergedAssessmentEditable)ma).setOptimizedBegin(ma.getBegin());
+            ((MergedAssessmentEditable)ma).setOptimizedEnd(ma.getEnd());
+        }
+
+        SaveManager.saveAssessments(PATH_OUTPUT_ASSESSMENTS, mergedAssessments);
 
         String f1 = Files.readString(Paths.get(PATH_INPUT_EXAMS));
         String f2 = Files.readString(Paths.get(PATH_OUTPUT_ASSESSMENTS));
