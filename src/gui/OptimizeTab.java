@@ -37,7 +37,13 @@ public class OptimizeTab {
     private ComboBox<String> sortDirectionExam2Box;
     private TextField maxDistanceField;
 
+
     private MergedAssessment[] optimizedAssessments;
+
+    // Map to store expansion states before "Show Only Assessments" is activated//not working correctly-> need to be fix
+    //Wichtig, kann mit ExamGUI in andere seperate Klasse verelegt werden. REFACTOR
+    private final Map<String, Boolean> preCheckboxExpansionStates = new HashMap<>();
+    private final Map<String, Boolean> expansionStates = new HashMap<>();
 
     // Checkboxes for filtering
     private CheckBox hideNullTimesCheckbox;
@@ -46,11 +52,11 @@ public class OptimizeTab {
 
     // Column visibility controls
     private MenuButton columnsMenuButton;
-    private Map<String, CheckMenuItem> columnMenuItems = new HashMap<>();
-    private Map<String, Boolean> columnVisibilityStates = new HashMap<>();
+    private final Map<String, CheckMenuItem> columnMenuItems = new HashMap<>();
+    private final Map<String, Boolean> columnVisibilityStates = new HashMap<>();
 
-    // Map to store expansion states before "Show Only Assessments" is activated
-    private final Map<String, Boolean> preCheckboxExpansionStates = new HashMap<>();
+
+
 
     // Constants for column groups
     private static final List<String> LOCKED_COLUMNS = Arrays.asList("Exam 1", "Exam 2");
@@ -86,22 +92,62 @@ public class OptimizeTab {
 
         // Create optimize button section
         HBox buttonSection = new HBox();
-        buttonSection.setAlignment(Pos.CENTER);
+        buttonSection.setAlignment(Pos.BASELINE_LEFT);
         buttonSection.setPadding(new Insets(0, 0, 10, 0));
 
         Button optimizeButton = new Button("Run Optimization");
         optimizeButton.setStyle(
-            "-fx-background-color: #2ecc71;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 10px 20px;" +
-            "-fx-cursor: hand;" +
-            "-fx-border-radius: 4px;"
+                "-fx-background-color:  #2ecc71 ;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8px 15px;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-border-radius: 4px;"
+
         );
 
         optimizeButton.setOnAction(e -> onOptimizeButtonClicked());
 
-        buttonSection.getChildren().add(optimizeButton);
+        CheckBox considerRoom = new CheckBox("Consider Rooms in Optimization");
+        considerRoom.setStyle("-fx-text-fill: #2c3e50;");
+
+        CheckBox considerSupervisor = new CheckBox("Consider Supervisor in Optimization");
+        considerSupervisor.setStyle("-fx-text-fill: #2c3e50;");
+
+        Label optiLabelSave = new Label();
+        optiLabelSave.setText("Save the Optimized File");
+
+        TextField optimizedSavePath = new TextField();
+        optimizedSavePath.setPrefWidth(300);
+        optimizedSavePath.setPrefHeight(28);
+
+        Button optSave = new Button("Save Optimized");
+        optSave.setStyle(
+                        "-fx-background-color:  #3498db ;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8px 15px;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-border-radius: 4px;"
+
+        );
+        optSave.setOnAction(e -> {
+
+        });
+
+
+
+
+
+
+        //Distance between button and checkboxes
+        buttonSection.getChildren().addAll(optimizeButton, considerRoom, considerSupervisor, optiLabelSave, optimizedSavePath, optSave);
+        HBox.setMargin(considerRoom, new Insets(0, 0, 0, 20));
+        HBox.setMargin(considerSupervisor, new Insets(0, 0, 0, 10));
+        HBox.setMargin(optiLabelSave, new Insets(0, 0, 0, 30));
+        HBox.setMargin(optimizedSavePath, new Insets(0, 0, 0, 10));
+        HBox.setMargin(optSave, new Insets(0, 0, 0, 10));
+
 
         // Create filter section
         VBox filterSection = createFilterSection();
@@ -236,15 +282,93 @@ public class OptimizeTab {
         // Add checkboxes for filtering
         hideNullTimesCheckbox = new CheckBox("Hide Entries with No Times");
         hideNullTimesCheckbox.setStyle("-fx-text-fill: #2c3e50;");
-        hideNullTimesCheckbox.selectedProperty().addListener((obs, old, newValue) -> updateTable());
+        hideNullTimesCheckbox.selectedProperty().addListener((obs, old, newValue) -> {// Vor dem Filtern oder Neuaufbauen immer die Expansion-States speichern
+            if (optimizedTreeTable.getRoot() != null) {
+                saveExpansionStates(optimizedTreeTable.getRoot());
+            }
+
+            if (!showOnlyAssessmentsCheckbox.isSelected() || !newValue) {
+                updateTable();
+
+                // Nach dem Neuaufbau States wiederherstellen
+                if (optimizedTreeTable.getRoot() != null) {
+                    restoreExpansionStates(optimizedTreeTable.getRoot());
+
+                    // Wenn "Show Only Assessment" aktiv ist, immer wieder einklappen
+                    if (showOnlyAssessmentsCheckbox.isSelected()) {
+                        for (TreeItem<CollisionEntry> titleItem : optimizedTreeTable.getRoot().getChildren()) {
+                            titleItem.setExpanded(false);
+                        }
+                    }
+                }
+            } else {
+                TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
+                if (root != null) {
+                    updateTable();
+                }
+            }
+        });
 
         showOnlyAssessmentsCheckbox = new CheckBox("Show Only Assessments");
         showOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: #2c3e50;");
-        showOnlyAssessmentsCheckbox.selectedProperty().addListener((obs, old, newValue) -> updateTable());
+        showOnlyAssessmentsCheckbox.selectedProperty().addListener((obs, old, newValue) -> {
+                    TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
+                    if (root == null) return;
+
+                    if (newValue) {  // Checkbox wurde aktiviert - speichern und einklappen
+                        // Speichere aktuellen Zustand explizit in die dedizierte Map
+                        preCheckboxExpansionStates.clear();
+                        saveExpansionStatesToMap(root, preCheckboxExpansionStates);
+
+                        // Alle einklappen, keine Kinder entfernen
+                        for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
+                            titleItem.setExpanded(false);
+                        }
+                    } else {  // Checkbox wurde deaktiviert - wiederherstellen
+                        // Zuerst alle Einträge sichtbar machen falls nötig
+                        boolean wasHidingNullTimes = hideNullTimesCheckbox.isSelected();
+                        if (wasHidingNullTimes) {
+                            // Deaktivieren ohne Listener auszulösen
+                            hideNullTimesCheckbox.setSelected(false);
+                            // Baum neu aufbauen mit allen Einträgen
+                            updateTable();
+                        }
+
+                        // Jetzt auf den neuen root anwenden (könnte sich nach updateCollisionTreeTable geändert haben)
+                        root = optimizedTreeTable.getRoot();
+                        if (root != null) {
+                            restoreExpansionStatesFromMap(root, preCheckboxExpansionStates);
+                        }
+
+                        // Filter ggf. wieder einschalten
+                        if (wasHidingNullTimes) {
+                            hideNullTimesCheckbox.setSelected(true);
+                        }
+                    }
+                }
+        );
 
         showOnlyWithCollisionsCheckbox = new CheckBox("Show Only with Collisions");
         showOnlyWithCollisionsCheckbox.setStyle("-fx-text-fill: #2c3e50;");
-        showOnlyWithCollisionsCheckbox.selectedProperty().addListener((obs, old, newValue) -> updateTable());
+        showOnlyWithCollisionsCheckbox.selectedProperty().addListener((obs, old, newValue) -> { // Save expansion states before updating
+            if (optimizedTreeTable.getRoot() != null) {
+                saveExpansionStates(optimizedTreeTable.getRoot());
+            }
+
+            // Update the table with the new filter
+            updateTable();
+
+            // Restore expansion states
+            if (optimizedTreeTable.getRoot() != null) {
+                restoreExpansionStates(optimizedTreeTable.getRoot());
+
+                // Keep items collapsed if "Show Only Assessments" is checked
+                if (showOnlyAssessmentsCheckbox.isSelected()) {
+                    for (TreeItem<CollisionEntry> titleItem : optimizedTreeTable.getRoot().getChildren()) {
+                        titleItem.setExpanded(false);
+                    }
+                }
+            }});
 
         // Create columns menu button
         columnsMenuButton = new MenuButton("Columns");
@@ -376,7 +500,7 @@ public class OptimizeTab {
                 return;
             }
 
-            if (!newVal.equals(".") && !newVal.endsWith(".")) {
+            if (!newVal.endsWith(".")) {
                 updateTable();
             }
         });
@@ -398,6 +522,7 @@ public class OptimizeTab {
                 if (column != null) {
                     column.setSortType(sortDirectionExam1Box.getValue().equals(ASCENDING) ?
                         TreeTableColumn.SortType.ASCENDING : TreeTableColumn.SortType.DESCENDING);
+                    //noinspection unchecked
                     optimizedTreeTable.getSortOrder().setAll(column);
                 }
             }
@@ -409,6 +534,7 @@ public class OptimizeTab {
                 if (column != null) {
                     column.setSortType(sortDirectionExam2Box.getValue().equals(ASCENDING) ?
                         TreeTableColumn.SortType.ASCENDING : TreeTableColumn.SortType.DESCENDING);
+                    //noinspection unchecked
                     optimizedTreeTable.getSortOrder().setAll(column);
                 }
             }
@@ -437,20 +563,14 @@ public class OptimizeTab {
     }
 
     private void updateTable() {
+
         // Get root and check for null assessments
         TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
         if (root == null || optimizedAssessments == null) return;
 
         // Store current expansion states differently based on checkbox state change
-        Map<String, Boolean> expansionStates;
-        if (showOnlyAssessmentsCheckbox.isSelected()) {
-            // Save to preCheckbox states when enabling the checkbox
-            preCheckboxExpansionStates.clear();
-            preCheckboxExpansionStates.putAll(saveExpansionStates());
-            expansionStates = preCheckboxExpansionStates;
-        } else {
-            // Use preCheckbox states when disabling the checkbox
-            expansionStates = new HashMap<>(preCheckboxExpansionStates);
+        if (optimizedTreeTable.getRoot() != null) {
+            saveExpansionStates(optimizedTreeTable.getRoot());
         }
 
         List<TreeTableColumn<CollisionEntry, ?>> sortOrder = new ArrayList<>(optimizedTreeTable.getSortOrder());
@@ -461,7 +581,7 @@ public class OptimizeTab {
         // Get filter values
         String exam1Filter = filterExam1Field.getText().toLowerCase();
         String exam2Filter = filterExam2Field.getText().toLowerCase();
-        String maxDistanceText = maxDistanceField.getText();
+        String maxDistance = maxDistanceField.getText();
 
         // Process each assessment
         for (MergedAssessment assessment : optimizedAssessments) {
@@ -482,7 +602,7 @@ public class OptimizeTab {
             Duration totalOptDistance = Duration.ZERO;
             int validDistanceCount = 0;
 
-            // Process each colliding assessment
+            // Process each colliding assessment//Same as the one in ExamGUI.java
             Map<MergedAssessment, Integer> collisions = assessment.getCollisionCountByAssessment();
             if (collisions != null) {
                 for (Map.Entry<MergedAssessment, Integer> collision : collisions.entrySet()) {
@@ -493,32 +613,32 @@ public class OptimizeTab {
                     boolean matchesExam2 = exam2Filter.isEmpty() ||
                         childAssessment.getQualifiedName().toLowerCase().contains(exam2Filter);
 
-                    // Check if entry should be hidden due to missing times
-                    boolean hasValidTimes = !hideNullTimesCheckbox.isSelected() ||
-                        (assessment.getBegin() != null && assessment.getEnd() != null &&
-                         childAssessment.getBegin() != null && childAssessment.getEnd() != null &&
-                         assessment.getOptimizedBegin() != null && assessment.getOptimizedEnd() != null &&
-                         childAssessment.getOptimizedBegin() != null && childAssessment.getOptimizedEnd() != null);
-
                     // Calculate distances for filtering and aggregation
                     Duration optDistance = calculateOptimizedTimeDifference(assessment, childAssessment);
                     Duration oldDistance = calculateTimeDifference(assessment, childAssessment);
 
                     // Check distance filter
                     boolean matchesDistance = true;
-                    if (!maxDistanceText.isEmpty()) {
+                    if (!maxDistance.isEmpty()) {
                         try {
-                            double maxHours = Double.parseDouble(maxDistanceText);
+                            double maxHours = Double.parseDouble(maxDistance);
                             // Only filter by OptDistance, and only if it's valid (non-zero and non-negative)
                             if (optDistance != null && !optDistance.isZero() && !optDistance.isNegative()) {
                                 double distanceHours = optDistance.toMinutes() / 60.0;
                                 matchesDistance = distanceHours <= maxHours;
                             }
                             // If OptDistance is null, zero, or negative, include the item (treated as no distance)
-                        } catch (NumberFormatException e) {
-                            matchesDistance = true;
+                        } catch (NumberFormatException ignored) {
                         }
                     }
+
+                    // Check if entry should be hidden due to missing times
+                    boolean hasValidTimes = !hideNullTimesCheckbox.isSelected() ||
+                            (assessment.getBegin() != null && assessment.getEnd() != null &&
+                                    childAssessment.getBegin() != null && childAssessment.getEnd() != null &&
+                                    assessment.getOptimizedBegin() != null && assessment.getOptimizedEnd() != null &&
+                                    childAssessment.getOptimizedBegin() != null && childAssessment.getOptimizedEnd() != null);
+
 
                     // If entry passes all filters, add it and update statistics
                     if (matchesExam2 && matchesDistance && hasValidTimes) {
@@ -555,10 +675,10 @@ public class OptimizeTab {
             // Create parent item with updated statistics, excluding zero distances from averages
             TreeItem<CollisionEntry> parentItem = new TreeItem<>(new CollisionEntry(assessment));
             parentItem.getValue().setDynamicStats(new DistanceStats(
-                validDistanceCount > 0 ? totalOldDistance.dividedBy(validDistanceCount) : Duration.ZERO,
-                validDistanceCount > 0 ? totalOptDistance.dividedBy(validDistanceCount) : Duration.ZERO,
-                minOldDistance != null ? minOldDistance : Duration.ZERO,
-                minOptDistance != null ? minOptDistance : Duration.ZERO
+                validDistanceCount > 0 ? totalOldDistance.dividedBy(validDistanceCount) : null,
+                validDistanceCount > 0 ? totalOptDistance.dividedBy(validDistanceCount) : null,
+                    minOldDistance,
+                    minOptDistance
             ));
             parentItem.getValue().setDynamicCollisionCount(validCollisionCount);
 
@@ -566,28 +686,19 @@ public class OptimizeTab {
             parentItem.getChildren().addAll(validChildren);
 
             // Add parent if it matches criteria
+            // Add the title item to the root if:
+            // 1. No exam2 filter is active, or
+            // 2. It has matching children, or
+            // 3. We're showing only assessments
             if (exam2Filter.isEmpty() || !validChildren.isEmpty() || showOnlyAssessmentsCheckbox.isSelected()) {
                 newRoot.getChildren().add(parentItem);
             }
         }
-
-        // Apply Exam1 sorting if specified
-        String sortCriteria = sortExam1Box.getValue();
-        String sortDirection = sortDirectionExam1Box.getValue();
-        if (sortCriteria != null && !sortCriteria.isEmpty()) {
-            sortItems(newRoot.getChildren(), sortCriteria, sortDirection);
-        }
-
-        // Sort children if Exam2 sorting is active
-        String exam2SortCriteria = sortExam2Box.getValue();
-        String exam2SortDirection = sortDirectionExam2Box.getValue();
-        if (exam2SortCriteria != null && !exam2SortCriteria.isEmpty()) {
-            newRoot.getChildren().forEach(parent ->
-                sortItems(parent.getChildren(), exam2SortCriteria, exam2SortDirection));
-        }
-
         // Update table with new data
         optimizedTreeTable.setRoot(newRoot);
+
+        sortTreeItems(newRoot);
+
 
         // Restore sort order if any was active
         if (!sortOrder.isEmpty()) {
@@ -602,59 +713,380 @@ public class OptimizeTab {
 
             if (showOnlyAssessmentsCheckbox.isSelected()) {
                 titleItem.setExpanded(false);
-            } else if (wasExpanded != null) {
-                titleItem.setExpanded(wasExpanded);
-            } else {
-                titleItem.setExpanded(!showOnlyAssessmentsCheckbox.isSelected());
-            }
+            } else
+                titleItem.setExpanded(Objects.requireNonNullElseGet(wasExpanded, () -> !showOnlyAssessmentsCheckbox.isSelected()));
         }
 
         // Update parent aggregates
         updateAllParentAggregates();
     }
+    private void sortTreeItems(TreeItem<CollisionEntry> root) {
+        String exam1SortColumn = sortExam1Box.getValue();
+        String exam1SortDirection = sortDirectionExam1Box.getValue();
+        String exam2SortColumn = sortExam2Box.getValue();
+        String exam2SortDirection = sortDirectionExam2Box.getValue();
 
-    private Map<String, Boolean> saveExpansionStates() {
-        Map<String, Boolean> states = new HashMap<>();
-        TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
-        if (root != null) {
-            saveExpansionStatesToMap(root, states);
+        // Use ascending as default direction if none selected
+        boolean exam1Ascending = exam1SortDirection == null || ASCENDING.equals(exam1SortDirection);
+        boolean exam2Ascending = exam2SortDirection == null || ASCENDING.equals(exam2SortDirection);
+
+        // Only sort if a column is selected
+        if (exam1SortColumn != null) {
+            // Sort the title rows (Exam 1) using primary sort
+            root.getChildren().sort((item1, item2) -> {
+                int result = compareCollisionEntries(item1.getValue(), item2.getValue(), exam1SortColumn);
+                return exam1Ascending ? result : -result; // Reverse order for descending
+            });
         }
-        return states;
+
+        // Sort children of each title row (Exam 2) if a column is selected
+        if (exam2SortColumn != null) {
+            for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
+                titleItem.getChildren().sort((item1, item2) -> {
+                    int result = compareCollisionEntries(item1.getValue(), item2.getValue(), exam2SortColumn);
+                    return exam2Ascending ? result : -result; // Reverse order for descending
+                });
+            }
+        }
+    }
+    private int compareCollisionEntries(CollisionEntry entry1, CollisionEntry entry2, String property) {
+        if (entry1 == null || entry2 == null) return 0;
+        if (entry1.isTitle() && !entry2.isTitle()) return -1;
+        if (!entry1.isTitle() && entry2.isTitle()) return 1;
+
+        MergedAssessment a1 = entry1.getParentAssessment();
+        MergedAssessment a2 = entry2.getParentAssessment();
+
+        if (a1 == null || a2 == null) return 0;
+
+        return switch (property) {
+            case "Exam 1 Name", "Exam Name" -> {
+                if (entry1.isTitle()) {
+                    // For title rows (Exam 1), sort by primary exam
+                    yield compareGermanStrings(a1.getQualifiedName(), a2.getQualifiedName());
+                } else {
+                    // For child rows (Exam 2), sort by the colliding assessment
+                    MergedAssessment c1 = entry1.getParentAssessment();
+                    MergedAssessment c2 = entry1.getParentAssessment();
+                    if (c2 != null) {
+                        yield compareGermanStrings(c1.getQualifiedName(), c2.getQualifiedName());
+                    }
+                    yield 0;
+                }
+            }
+            case "Exam 2 Name" -> {
+                // This is only for child rows (Exam 2)
+                if (!entry1.isTitle()) {
+                    MergedAssessment c1 = entry1.getChildAssessment();
+                    MergedAssessment c2 = entry2.getChildAssessment();
+                    if (c1 != null && c2 != null) {
+                        yield compareGermanStrings(c1.getQualifiedName(), c2.getQualifiedName());
+                    }
+                }
+                yield 0;
+            }
+            case "Collision Count" -> Integer.compare(
+                    entry1.getCollisionCount(),
+                    entry2.getCollisionCount()
+            );
+            case "Old Begin" -> {
+                MergedAssessment compareA1 = entry1.isTitle() ? a1 : entry1.getChildAssessment();
+                MergedAssessment compareA2 = entry2.isTitle() ? a2 : entry2.getChildAssessment();
+
+                if (compareA1.getBegin() == null && compareA2.getBegin() == null) yield 0;
+                if (compareA1.getBegin() == null) yield -1;
+                if (compareA2.getBegin() == null) yield 1;
+
+                yield compareA1.getBegin().compareTo(compareA2.getBegin());
+            }
+            case "Old End" -> {
+                MergedAssessment compareA1 = entry1.isTitle() ? a1 : entry1.getChildAssessment();
+                MergedAssessment compareA2 = entry2.isTitle() ? a2 : entry2.getChildAssessment();
+
+                if (compareA1.getEnd() == null && compareA2.getEnd() == null) yield 0;
+                if (compareA1.getEnd() == null) yield -1;
+                if (compareA2.getEnd() == null) yield 1;
+
+                yield compareA1.getEnd().compareTo(compareA2.getEnd());
+            }
+            case "Opt Begin" -> {
+                MergedAssessment compareA1 = entry1.isTitle() ? a1 : entry1.getChildAssessment();
+                MergedAssessment compareA2 = entry2.isTitle() ? a2 : entry2.getChildAssessment();
+
+                if (compareA1.getOptimizedBegin() == null && compareA2.getOptimizedBegin() == null) yield 0;
+                if (compareA1.getOptimizedBegin() == null) yield -1;
+                if (compareA2.getOptimizedBegin() == null) yield 1;
+
+                yield compareA1.getOptimizedBegin().compareTo(compareA2.getOptimizedBegin());
+            }
+            case "Opt End" -> {
+                MergedAssessment compareA1 = entry1.isTitle() ? a1 : entry1.getChildAssessment();
+                MergedAssessment compareA2 = entry2.isTitle() ? a2 : entry2.getChildAssessment();
+
+                if (compareA1.getOptimizedEnd() == null && compareA2.getOptimizedEnd() == null) yield 0;
+                if (compareA1.getOptimizedEnd() == null) yield -1;
+                if (compareA2.getOptimizedEnd() == null) yield 1;
+
+                yield compareA1.getOptimizedEnd().compareTo(compareA2.getOptimizedEnd());
+            }
+            case "Old Distance" -> {
+                if (!entry1.isTitle()) {
+                    // Extract numeric values from distance strings (format: "Xh Ym")
+                    String dist1 = entry1.getOldDistance();
+                    String dist2 = entry2.getOldDistance();
+
+                    if (dist1.isEmpty() && dist2.isEmpty()) yield 0;
+                    if (dist1.isEmpty()) yield -1;
+                    if (dist2.isEmpty()) yield 1;
+
+                    // Parse hours and minutes to comparable value
+                    try {
+                        // Extract hours
+                        int h1 = Integer.parseInt(dist1.substring(0, dist1.indexOf('h')).trim());
+                        int h2 = Integer.parseInt(dist2.substring(0, dist2.indexOf('h')).trim());
+
+                        if (h1 != h2) yield Integer.compare(h1, h2);
+
+                        // Extract minutes
+                        int m1 = Integer.parseInt(dist1.substring(dist1.indexOf('h') + 1, dist1.indexOf('m')).trim());
+                        int m2 = Integer.parseInt(dist2.substring(dist2.indexOf('h') + 1, dist2.indexOf('m')).trim());
+
+                        yield Integer.compare(m1, m2);
+                    } catch (Exception e) {
+                        yield dist1.compareTo(dist2);
+                    }
+                }
+                yield 0;
+            }
+            case "Opt Distance" -> {
+                if (!entry1.isTitle()) {
+                    // Extract numeric values from distance strings (format: "Xh Ym")
+                    String dist1 = entry1.getOptimizedDistance();
+                    String dist2 = entry2.getOptimizedDistance();
+
+                    if (dist1.isEmpty() && dist2.isEmpty()) yield 0;
+                    if (dist1.isEmpty()) yield -1;
+                    if (dist2.isEmpty()) yield 1;
+
+                    // Parse hours and minutes to comparable value
+                    try {
+                        // Extract hours
+                        int h1 = Integer.parseInt(dist1.substring(0, dist1.indexOf('h')).trim());
+                        int h2 = Integer.parseInt(dist2.substring(0, dist2.indexOf('h')).trim());
+
+                        if (h1 != h2) yield Integer.compare(h1, h2);
+
+                        // Extract minutes
+                        int m1 = Integer.parseInt(dist1.substring(dist1.indexOf('h') + 1, dist1.indexOf('m')).trim());
+                        int m2 = Integer.parseInt(dist2.substring(dist2.indexOf('h') + 1, dist2.indexOf('m')).trim());
+
+                        yield Integer.compare(m1, m2);
+                    } catch (Exception e) {
+                        yield dist1.compareTo(dist2);
+                    }
+                }
+                yield 0;
+            }
+            case "Old Avg. Distance" -> {
+                if (entry1.isTitle()) {
+                    String avg1 = entry1.getOldAverageDistance();
+                    String avg2 = entry2.getOldAverageDistance();
+
+                    if (avg1.isEmpty() && avg2.isEmpty()) yield 0;
+                    if (avg1.isEmpty()) yield -1;
+                    if (avg2.isEmpty()) yield 1;
+
+                    try {
+                        // Convert to minutes for comparison
+                        int h1 = Integer.parseInt(avg1.substring(0, avg1.indexOf('h')).trim());
+                        int m1 = Integer.parseInt(avg1.substring(avg1.indexOf('h') + 1, avg1.indexOf('m')).trim());
+                        int totalMinutes1 = h1 * 60 + m1;
+
+                        int h2 = Integer.parseInt(avg2.substring(0, avg2.indexOf('h')).trim());
+                        int m2 = Integer.parseInt(avg2.substring(avg2.indexOf('h') + 1, avg2.indexOf('m')).trim());
+                        int totalMinutes2 = h2 * 60 + m2;
+
+                        yield Integer.compare(totalMinutes1, totalMinutes2);
+                    } catch (Exception e) {
+                        yield avg1.compareTo(avg2);
+                    }
+                }
+                yield 0;
+            }
+            case "Opt Avg. Distance" -> {
+                if (entry1.isTitle()) {
+                    String avg1 = entry1.getOptimizedAverageDistance();
+                    String avg2 = entry2.getOptimizedAverageDistance();
+
+                    if (avg1.isEmpty() && avg2.isEmpty()) yield 0;
+                    if (avg1.isEmpty()) yield -1;
+                    if (avg2.isEmpty()) yield 1;
+
+                    try {
+                        // Convert to minutes for comparison
+                        int h1 = Integer.parseInt(avg1.substring(0, avg1.indexOf('h')).trim());
+                        int m1 = Integer.parseInt(avg1.substring(avg1.indexOf('h') + 1, avg1.indexOf('m')).trim());
+                        int totalMinutes1 = h1 * 60 + m1;
+
+                        int h2 = Integer.parseInt(avg2.substring(0, avg2.indexOf('h')).trim());
+                        int m2 = Integer.parseInt(avg2.substring(avg2.indexOf('h') + 1, avg2.indexOf('m')).trim());
+                        int totalMinutes2 = h2 * 60 + m2;
+
+                        yield Integer.compare(totalMinutes1, totalMinutes2);
+                    } catch (Exception e) {
+                        yield avg1.compareTo(avg2);
+                    }
+                }
+                yield 0;
+            }
+            case "Old Min. Distance" -> {
+                if (entry1.isTitle()) {
+                    String min1 = entry1.getOldMinDistance();
+                    String min2 = entry2.getOldMinDistance();
+
+                    if (min1.isEmpty() && min2.isEmpty()) yield 0;
+                    if (min1.isEmpty()) yield -1;
+                    if (min2.isEmpty()) yield 1;
+
+                    try {
+                        // Convert to minutes for comparison
+                        int h1 = Integer.parseInt(min1.substring(0, min1.indexOf('h')).trim());
+                        int m1 = Integer.parseInt(min1.substring(min1.indexOf('h') + 1, min1.indexOf('m')).trim());
+                        int totalMinutes1 = h1 * 60 + m1;
+
+                        int h2 = Integer.parseInt(min2.substring(0, min2.indexOf('h')).trim());
+                        int m2 = Integer.parseInt(min2.substring(min2.indexOf('h') + 1, min2.indexOf('m')).trim());
+                        int totalMinutes2 = h2 * 60 + m2;
+
+                        yield Integer.compare(totalMinutes1, totalMinutes2);
+                    } catch (Exception e) {
+                        yield min1.compareTo(min2);
+                    }
+                }
+                yield 0;
+            }
+            case "Opt Min. Distance" -> {
+                if (entry1.isTitle()) {
+                    String min1 = entry1.getOptimizedMinDistance();
+                    String min2 = entry2.getOptimizedMinDistance();
+
+                    if (min1.isEmpty() && min2.isEmpty()) yield 0;
+                    if (min1.isEmpty()) yield -1;
+                    if (min2.isEmpty()) yield 1;
+
+                    try {
+                        // Convert to minutes for comparison
+                        int h1 = Integer.parseInt(min1.substring(0, min1.indexOf('h')).trim());
+                        int m1 = Integer.parseInt(min1.substring(min1.indexOf('h') + 1, min1.indexOf('m')).trim());
+                        int totalMinutes1 = h1 * 60 + m1;
+
+                        int h2 = Integer.parseInt(min2.substring(0, min2.indexOf('h')).trim());
+                        int m2 = Integer.parseInt(min2.substring(min2.indexOf('h') + 1, min2.indexOf('m')).trim());
+                        int totalMinutes2 = h2 * 60 + m2;
+
+                        yield Integer.compare(totalMinutes1, totalMinutes2);
+                    } catch (Exception e) {
+                        yield min1.compareTo(min2);
+                    }
+                }
+                yield 0;
+            }
+            default -> 0;
+        };
     }
 
-    private void saveExpansionStatesToMap(TreeItem<CollisionEntry> item, Map<String, Boolean> states) {
-        if (item == null || item.getValue() == null) return;
+    //REFACTOR
+    private void saveExpansionStates(TreeItem<CollisionEntry> item) {
+        if (item == null) return;
 
-        String key = getItemKey(item.getValue());
-        if (key != null) {
-            states.put(key, item.isExpanded());
-        }
-
-        for (TreeItem<CollisionEntry> child : item.getChildren()) {
-            saveExpansionStatesToMap(child, states);
-        }
-    }
-
-    private void restoreExpansionStates(Map<String, Boolean> states) {
-        TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
-        if (root != null) {
-            restoreExpansionStatesFromMap(root, states);
-        }
-    }
-
-    private void restoreExpansionStatesFromMap(TreeItem<CollisionEntry> item, Map<String, Boolean> states) {
-        if (item == null || item.getValue() == null) return;
-
-        String key = getItemKey(item.getValue());
-        if (key != null) {
-            Boolean wasExpanded = states.get(key);
-            if (wasExpanded != null) {
-                item.setExpanded(wasExpanded);
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                expansionStates.put(key, item.isExpanded());
             }
         }
 
         for (TreeItem<CollisionEntry> child : item.getChildren()) {
-            restoreExpansionStatesFromMap(child, states);
+            saveExpansionStates(child);
+        }
+    }
+
+    //REFACTOR
+    private void saveExpansionStatesToMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
+        if (item == null) return;
+
+        // Nur speichern wenn Item einen Wert hat (nicht für Root)
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                stateMap.put(key, item.isExpanded());
+            }
+        }
+
+        // Für alle Kinder rekursiv
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            saveExpansionStatesToMap(child, stateMap);
+        }
+    }
+
+    /*private void restoreExpansionStates(Map<String, Boolean> states) {
+        TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
+        if (root != null) {
+            restoreExpansionStatesFromMap(root, states);
+        }
+    }*/
+
+    //REFACTOR
+    private void restoreExpansionStates(TreeItem<CollisionEntry> item) {
+        if (item == null) return;
+
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                Boolean wasExpanded = expansionStates.get(key);
+                // When unchecking "Show Only Assessments", we want to restore previous
+                // expansion states or expand by default for better usability
+                if (wasExpanded != null) {
+                    item.setExpanded(wasExpanded);
+                } else if (item.getValue().isTitle()) {
+                    // For assessment items without saved state, expand by default when
+                    // showing children is allowed
+                    item.setExpanded(true);
+                }
+            }
+        }
+
+        // Process children recursively
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            restoreExpansionStates(child);
+        }
+
+        // Force a layout refresh to ensure expansion state is visually updated
+        optimizedTreeTable.refresh();
+    }
+
+    //REFACTOR
+    private void restoreExpansionStatesFromMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
+        if (item == null) return;
+
+        // Status aus Map wiederherstellen für diesen Item
+        if (item.getValue() != null) {
+            String key = getItemKey(item.getValue());
+            if (key != null) {
+                Boolean wasExpanded = stateMap.get(key);
+                if (wasExpanded != null) {
+                    item.setExpanded(wasExpanded);
+                } else if (item.getValue().isTitle()) {
+                    // Wenn kein Status gespeichert ist und es ein Titel ist,
+                    // default auf expanded für bessere Benutzbarkeit
+                    item.setExpanded(true);
+                }
+            }
+        }
+
+        // Für alle Kinder rekursiv
+        for (TreeItem<CollisionEntry> child : item.getChildren()) {
+            restoreExpansionStatesFromMap(child, stateMap);
         }
     }
 
@@ -671,22 +1103,15 @@ public class OptimizeTab {
     }
 
     private int compareItems(CollisionEntry e1, CollisionEntry e2, String criteria) {
-        switch (criteria) {
-            case "Exam1 Name":
-                return germanCollator.compare(e1.getExam1QualifiedName(), e2.getExam1QualifiedName());
-            case "Collision Count":
-                return Integer.compare(e1.getCollisionCount(), e2.getCollisionCount());
-            case "Old Begin":
-                return compareTimes(e1.getOldBeginTime(), e2.getOldBeginTime());
-            case "Old End":
-                return compareTimes(e1.getOldEndTime(), e2.getOldEndTime());
-            case "Optimized Begin":
-                return compareTimes(e1.getOptimizedBeginTime(), e2.getOptimizedBeginTime());
-            case "Optimized End":
-                return compareTimes(e1.getOptimizedEndTime(), e2.getOptimizedEndTime());
-            default:
-                return 0;
-        }
+        return switch (criteria) {
+            case "Exam1 Name" -> germanCollator.compare(e1.getExam1QualifiedName(), e2.getExam1QualifiedName());
+            case "Collision Count" -> Integer.compare(e1.getCollisionCount(), e2.getCollisionCount());
+            case "Old Begin" -> compareTimes(e1.getOldBeginTime(), e2.getOldBeginTime());
+            case "Old End" -> compareTimes(e1.getOldEndTime(), e2.getOldEndTime());
+            case "Optimized Begin" -> compareTimes(e1.getOptimizedBeginTime(), e2.getOptimizedBeginTime());
+            case "Optimized End" -> compareTimes(e1.getOptimizedEndTime(), e2.getOptimizedEndTime());
+            default -> 0;
+        };
     }
 
     private int compareTimes(String time1, String time2) {
@@ -853,6 +1278,7 @@ public class OptimizeTab {
         setupTimeColumn.accept(optimizedMinDistanceCol, true);
 
         // Add all columns to the TreeTableView
+        //noinspection unchecked
         optimizedTreeTable.getColumns().addAll(
             exam1Col, exam2Col, collisionCountCol,
             oldBeginCol, optimizedBeginCol,
@@ -870,8 +1296,8 @@ public class OptimizeTab {
         optimizedEndCol.setSortable(false);
 
         // Implement custom sorting for exam columns
-        exam1Col.setComparator((s1, s2) -> germanCollator.compare(s1, s2));
-        exam2Col.setComparator((s1, s2) -> germanCollator.compare(s1, s2));
+        exam1Col.setComparator(germanCollator::compare);
+        exam2Col.setComparator(germanCollator::compare);
 
         // Add listener to handle column width adjustments when visibility changes
         optimizedTreeTable.getColumns().addListener((ListChangeListener<TreeTableColumn<CollisionEntry, ?>>) c -> {
@@ -1179,6 +1605,8 @@ public class OptimizeTab {
             this.distanceStats = null; // No distance stats for child rows
         }
 
+        public MergedAssessment getParentAssessment() {return parentAssessment;}
+        public MergedAssessment getChildAssessment(){ return childAssessment;}
         public String getExam1QualifiedName() {
             return exam1QualifiedName;
         }
@@ -1315,6 +1743,37 @@ public class OptimizeTab {
     }
 
     /**
+     * Compares two strings with proper handling of German umlauts
+     * Replaces "Ä" → "AE", "Ö" → "OE", "Ü" → "UE", and "ß" → "SS" before comparing
+     */
+    private int compareGermanStrings(String s1, String s2) {
+        if (s1 == null && s2 == null) return 0;
+        if (s1 == null) return -1;
+        if (s2 == null) return 1;
+
+        // Normalize German umlauts for comparison
+        String normalized1 = normalizeGermanString(s1);
+        String normalized2 = normalizeGermanString(s2);
+
+        return normalized1.compareTo(normalized2);
+    }
+
+    /**
+     * Normalizes German umlauts in a string for proper sorting
+     */
+    private String normalizeGermanString(String input) {
+        if (input == null) return "";
+
+        return input.replace("Ä", "AE")
+                .replace("ä", "ae")
+                .replace("Ö", "OE")
+                .replace("ö", "oe")
+                .replace("Ü", "UE")
+                .replace("ü", "ue")
+                .replace("ß", "SS");
+    }
+
+    /**
      * Updates the TreeTableView after optimization
      */
     public void updateOptimizedTreeTable(MergedAssessment[] assessments) {
@@ -1371,6 +1830,24 @@ public class OptimizeTab {
         } else if ("Exam 2".equals(columnName)) {
             sortExam2Box.setValue("Exam2 Name");
             sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        }  else if ("Old Distance".equals(columnName)) {
+            sortExam2Box.setValue("Old Distance");
+            sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        }else if ("Opt Distance".equals(columnName)) {
+            sortExam2Box.setValue("Opt Distance");
+            sortDirectionExam2Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        } else if ("Old Avg Distance".equals(columnName)) {
+            sortExam1Box.setValue("Old Avg. Distance");
+            sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        } else if ("Opt Avg Distance".equals(columnName)) {
+            sortExam1Box.setValue("Opt Avg Distance");
+            sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        } else if ("Old Min Distance".equals(columnName)) {
+            sortExam1Box.setValue("Old Min Distance");
+            sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
+        } else if ("Opt Min Distance".equals(columnName)) {
+            sortExam1Box.setValue("Opt Min Distance");
+            sortDirectionExam1Box.setValue(sortType == TreeTableColumn.SortType.ASCENDING ? ASCENDING : DESCENDING);
         }
     }
 
@@ -1390,6 +1867,8 @@ public class OptimizeTab {
         optimizedAssessments = examGUI.optimizeStart();
         if (optimizedAssessments != null) {
             updateOptimizedTreeTable(optimizedAssessments);
+        } else {
+            System.out.println("Da stimmt doch irgendwas nicht");
         }
     }
 }

@@ -84,10 +84,7 @@ public class ExamGUI extends Application {
     // Page management
     private TabPane tabPane;
     private Tab inputTab;
-    private Tab resultsTab;
 
-
-    private OptimizeTab optimizeTab;
 
     // Flag to prevent infinite loops in sorting synchronization
     private boolean isUpdating = false;
@@ -132,7 +129,7 @@ public class ExamGUI extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // Initialize OptimizeTab
-        optimizeTab = new OptimizeTab(this);
+        OptimizeTab optimizeTab = new OptimizeTab(this);
 
         // Create input page
         inputTab = new Tab("Data Input");
@@ -152,7 +149,7 @@ public class ExamGUI extends Application {
         inputTab.setContent(inputScrollPane);
 
         // Create results page
-        resultsTab = new Tab("Collision Results");
+        Tab resultsTab = new Tab("Collision Results");
         VBox resultsContent = new VBox(20);
         resultsContent.setPadding(new Insets(20));
 
@@ -173,7 +170,7 @@ public class ExamGUI extends Application {
         resultsTab.setContent(resultsScrollPane);
 
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab, resultsTab,optimizeTab.getTab(), createStatisticsTab(), createRoomPlansTab());
+        tabPane.getTabs().addAll(inputTab, resultsTab, optimizeTab.getTab(), createStatisticsTab(), createRoomPlansTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -315,6 +312,7 @@ public class ExamGUI extends Application {
 
         optionalYearField = createStyledTextField("");
         optionalYearField.setPromptText("YYYY");
+        //optionalYearField.setPadding(new Insets(0,1,0,0));
         optionalYearField.setPrefWidth(100);
 
         optionalYearBox.getChildren().addAll(optionalYearLabel, optionalYearField);
@@ -472,6 +470,7 @@ public class ExamGUI extends Application {
         return section;
     }
 
+    //REFACTOR
     private void saveExpansionStatesToMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
         if (item == null) return;
 
@@ -489,6 +488,7 @@ public class ExamGUI extends Application {
         }
     }
 
+    //REFACTOR
     private void restoreExpansionStatesFromMap(TreeItem<CollisionEntry> item, Map<String, Boolean> stateMap) {
         if (item == null) return;
 
@@ -990,6 +990,7 @@ public class ExamGUI extends Application {
         }
     }
 
+    //REFACTOR
     private void saveExpansionStates(TreeItem<CollisionEntry> item) {
         if (item == null) return;
 
@@ -1005,6 +1006,7 @@ public class ExamGUI extends Application {
         }
     }
 
+    //REFACTOR
     private void restoreExpansionStates(TreeItem<CollisionEntry> item) {
         if (item == null) return;
 
@@ -1250,7 +1252,7 @@ public class ExamGUI extends Application {
         return footer;
     }
 
-    private TextField createStyledTextField(String initialText) {
+    private static TextField createStyledTextField(String initialText) {
         TextField textField = new TextField(initialText);
         textField.setStyle(
                 "-fx-background-color: white;" +
@@ -1277,7 +1279,7 @@ public class ExamGUI extends Application {
         return comboBox;
     }
 
-    private Button createStyledButton(String text, String bgColor) {
+    private static Button createStyledButton(String text, String bgColor) {
         Button button = new Button(text);
         button.setStyle(
                 "-fx-background-color: " + bgColor + ";" +
@@ -1466,6 +1468,7 @@ public class ExamGUI extends Application {
         tabPane.getSelectionModel().select(RESULTS_PAGE);
     }
 
+    //Wenn man einen Speicherpfad angibt und auf dem Button Save klickt
     private void saveCollisions() {
         String collisionsPath = collisionPathField.getText();
 
@@ -1525,6 +1528,7 @@ public class ExamGUI extends Application {
         setupColumnSort();
     }
 
+    //REFACTOR
     private void updateCollisionTreeTable() {
         if (assessments == null) return;
 
@@ -1588,7 +1592,7 @@ public class ExamGUI extends Application {
                             matchesDistance = distanceHours <= maxHours;
                         }
                     } catch (NumberFormatException e) {
-                        matchesDistance = true;
+
                     }
                 }
 
@@ -1645,6 +1649,7 @@ public class ExamGUI extends Application {
             // Add the valid children
             titleItem.getChildren().addAll(validChildren);
 
+            // Add parent if it matches criteria
             // Add the title item to the root if:
             // 1. No exam2 filter is active, or
             // 2. It has matching children, or
@@ -2419,5 +2424,6 @@ public class ExamGUI extends Application {
         launch();
     }
 }
+
 
 
