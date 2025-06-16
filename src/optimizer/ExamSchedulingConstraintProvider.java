@@ -1,6 +1,6 @@
 package optimizer;
 
-import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
+import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
 import org.optaplanner.core.api.score.stream.ConstraintProvider;
@@ -27,7 +27,7 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter(this::haveSameStudents)
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardMediumSoftLongScore.ONE_HARD)
                 .asConstraint("Student conflict");
     }
 
@@ -36,7 +36,7 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter(this::sameDayAndStudent)
-                .penalize(HardSoftScore.ONE_SOFT)
+                .penalize(HardMediumSoftLongScore.ONE_SOFT)
                 .asConstraint("Multiple exams per day");
     }
 
@@ -45,7 +45,7 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter(this::student1ContainsStudent2)
-                .reward(HardSoftScore.ONE_SOFT, (exam1, exam2) -> {
+                .rewardLong(HardMediumSoftLongScore.ONE_SOFT, (exam1, exam2) -> {
                     LocalDateTime begin1 = exam1.getScheduledTime();
                     LocalDateTime begin2 = exam2.getScheduledTime();
 
@@ -66,7 +66,7 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
 
                     Integer collisions = exam1.getAssessment().getCollisionCountByAssessment().get(exam2.getAssessment());
 
-                    return (int) Math.round(Math.sqrt(Math.min(hoursBetween, 36)) * Math.sqrt(collisions));
+                    return Math.round(Math.sqrt(Math.min(hoursBetween, 36)) * Math.sqrt(collisions));
                 })
                 .asConstraint("Time between exams");
     }
