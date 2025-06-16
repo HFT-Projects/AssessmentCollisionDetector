@@ -38,23 +38,12 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .join(AssessmentScheduleItem.class)
                 .filter(this::checkAssessmentsCollide)
                 .penalizeLong(HardMediumSoftLongScore.ONE_HARD, (assessment1, assessment2) -> {
-                    LocalDateTime begin1 = assessment1.getScheduledTime();
-                    LocalDateTime begin2 = assessment2.getScheduledTime();
+                    Duration distance = getDistance(assessment1, assessment2);
 
-                    if (begin1 == null || begin2 == null) return 0;
+                    if (distance == null)
+                        return 0;
 
-                    AssessmentScheduleItem first;
-                    AssessmentScheduleItem last;
-
-                    if (begin1.isBefore(begin2)) {
-                        first = assessment1;
-                        last = assessment2;
-                    } else {
-                        first = assessment2;
-                        last = assessment1;
-                    }
-
-                    double hoursBetween = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toHours();
+                    double hoursBetween = distance.toHours();
 
                     Integer collisions = assessment1.getAssessment().getCollisionCountByAssessment().get(assessment2.getAssessment());
 
@@ -69,23 +58,12 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .join(AssessmentScheduleItem.class)
                 .filter(this::checkAssessmentsCollide)
                 .penalizeLong(HardMediumSoftLongScore.ONE_MEDIUM, (assessment1, assessment2) -> {
-                    LocalDateTime begin1 = assessment1.getScheduledTime();
-                    LocalDateTime begin2 = assessment2.getScheduledTime();
+                    Duration distance = getDistance(assessment1, assessment2);
 
-                    if (begin1 == null || begin2 == null) return 0;
+                    if (distance == null)
+                        return 0;
 
-                    AssessmentScheduleItem first;
-                    AssessmentScheduleItem last;
-
-                    if (begin1.isBefore(begin2)) {
-                        first = assessment1;
-                        last = assessment2;
-                    } else {
-                        first = assessment2;
-                        last = assessment1;
-                    }
-
-                    double hoursBetween = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toHours();
+                    double hoursBetween = distance.toHours();
 
                     Integer collisions = assessment1.getAssessment().getCollisionCountByAssessment().get(assessment2.getAssessment());
 
@@ -109,23 +87,12 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .join(AssessmentScheduleItem.class)
                 .filter(this::checkAssessmentsCollide)
                 .rewardLong(HardMediumSoftLongScore.ONE_SOFT, (assessment1, assessment2) -> {
-                    LocalDateTime begin1 = assessment1.getScheduledTime();
-                    LocalDateTime begin2 = assessment2.getScheduledTime();
+                    Duration distance = getDistance(assessment1, assessment2);
 
-                    if (begin1 == null || begin2 == null) return 0;
+                    if (distance == null)
+                        return 0;
 
-                    AssessmentScheduleItem first;
-                    AssessmentScheduleItem last;
-
-                    if (begin1.isBefore(begin2)) {
-                        first = assessment1;
-                        last = assessment2;
-                    } else {
-                        first = assessment2;
-                        last = assessment1;
-                    }
-
-                    double hoursBetween = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toHours();
+                    double hoursBetween = distance.toHours();
 
                     Integer collisions = assessment1.getAssessment().getCollisionCountByAssessment().get(assessment2.getAssessment());
 
@@ -136,26 +103,11 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
 
     //helper method studentAtTwoAssessmentsConflict
     private boolean checkStudentsAtTwoAssessmentsAtTheSameTime(AssessmentScheduleItem assessment1, AssessmentScheduleItem assessment2) {
-
         if (assessment1 == assessment2) return false;
 
-        LocalDateTime begin1 = assessment1.getScheduledTime();
-        LocalDateTime begin2 = assessment2.getScheduledTime();
+        Duration distance = getDistance(assessment1, assessment2);
 
-        AssessmentScheduleItem first;
-        AssessmentScheduleItem last;
-
-        if (begin1.isBefore(begin2)) {
-            first = assessment1;
-            last = assessment2;
-        } else {
-            first = assessment2;
-            last = assessment1;
-        }
-
-        double distance = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toMinutes();
-
-        return checkAssessmentsCollide(assessment1, assessment2) && distance < 0;
+        return checkAssessmentsCollide(assessment1, assessment2) && distance != null && distance.toMinutes() < 0;
     }
 
     //helper method for minimizeAssessmentsPerDay
@@ -181,5 +133,26 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
             return false;
 
         return student1.stream().anyMatch(student2::contains);
+    }
+
+    private Duration getDistance(AssessmentScheduleItem assessment1, AssessmentScheduleItem assessment2) {
+        LocalDateTime begin1 = assessment1.getScheduledTime();
+        LocalDateTime begin2 = assessment2.getScheduledTime();
+
+        if (begin1 == null || begin2 == null)
+            return null;
+
+        AssessmentScheduleItem first;
+        AssessmentScheduleItem last;
+
+        if (begin1.isBefore(begin2)) {
+            first = assessment1;
+            last = assessment2;
+        } else {
+            first = assessment2;
+            last = assessment1;
+        }
+
+        return Duration.between(first.getScheduledEndTime(), last.getScheduledTime());
     }
 }
