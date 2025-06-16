@@ -46,13 +46,27 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
                 .join(AssessmentScheduleItem.class)
                 .filter(this::student1ContainsStudent2)
                 .reward(HardSoftScore.ONE_SOFT, (exam1, exam2) -> {
-                    LocalDateTime time1 = exam1.getScheduledTime();
-                    LocalDateTime time2 = exam2.getScheduledTime();
+                    LocalDateTime begin1 = exam1.getScheduledTime();
+                    LocalDateTime begin2 = exam2.getScheduledTime();
 
-                    if (time1 == null || time2 == null) return 0;
+                    if (begin1 == null || begin2 == null) return 0;
 
-                    long hoursBetween = Math.abs(Duration.between(time1, time2).toHours());
-                    return (int) Math.min(hoursBetween, 168); // Max 1 Woche
+                    AssessmentScheduleItem first;
+                    AssessmentScheduleItem last;
+
+                    if (begin1.isBefore(begin2)) {
+                        first = exam1;
+                        last = exam2;
+                    } else {
+                        first = exam2;
+                        last = exam1;
+                    }
+
+                    double hoursBetween = Duration.between(first.getScheduledEndTime(), last.getScheduledTime()).toHours();
+
+                    Integer collisions = exam1.getAssessment().getCollisionCountByAssessment().get(exam2.getAssessment());
+
+                    return (int) Math.round(Math.sqrt(Math.min(hoursBetween, 36)) * Math.sqrt(collisions));
                 })
                 .asConstraint("Time between exams");
     }
