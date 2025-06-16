@@ -17,8 +17,9 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
-                studentAtTwoAssessmentsConflict(factory), // hard constraint (1000)
+                studentAtTwoAssessmentsConflict(factory), // hard constraint (100000)
                 roomConflict(factory),  // hard constraint (500)
+                supervisorConflict(factory), // hard constraint (500)
                 wayTooLittleTimeConflict(factory), // hard constraint (1 per Hour per Student)
                 tooLittleTimeConflict(factory), // medium constraint
                 minimizeAssessmentsPerDay(factory), // soft constraint
@@ -31,7 +32,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter(this::checkStudentsAtTwoAssessmentsAtTheSameTime)
-                .penalize(HardMediumSoftLongScore.ofHard(1000))
+                .penalize(HardMediumSoftLongScore.ofHard(100000))
                 .asConstraint("Student at two assessments conflict");
     }
 
@@ -66,6 +67,39 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                         })
                 .penalize(HardMediumSoftLongScore.ofHard(500))
                 .asConstraint("room conflict");
+    }
+
+    Constraint supervisorConflict(ConstraintFactory factory) {
+        return factory
+                .forEach(AssessmentScheduleItem.class)
+                .join(AssessmentScheduleItem.class)
+                .filter((assessment1, assessment2) -> {
+                    if (assessment1 == assessment2)
+                        return false;
+
+                    Duration distance = getDistance(assessment1, assessment2);
+                    if (distance == null || distance.toMinutes() >= 0)
+                        return false;
+
+                    Set<String> supervisors1 = new HashSet<>();
+                    Set<String> supervisors2 = new HashSet<>();
+
+                    for (Assessment a : assessment1.getAssessment().getAssessments()) {
+                        for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                            supervisors1.add(ae.supervisor());
+                        }
+                    }
+
+                    for (Assessment a : assessment2.getAssessment().getAssessments()) {
+                        for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                            supervisors2.add(ae.supervisor());
+                        }
+                    }
+
+                    return supervisors1.stream().anyMatch(supervisors2::contains);
+                })
+                .penalize(HardMediumSoftLongScore.ofHard(500))
+                .asConstraint("supervisor conflict");
     }
 
     Constraint wayTooLittleTimeConflict(ConstraintFactory factory) {
