@@ -16,9 +16,9 @@ public class ExamSchedulingConstraintProvider implements ConstraintProvider {
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
-                studentConflict(factory),
-                minimizeExamsPerDay(factory),
-                maximizeTimeBetweenExams(factory)
+                studentConflict(factory), // hard constraint
+                minimizeExamsPerDay(factory), // soft constraint
+                maximizeTimeBetweenExams(factory) // soft constraint
         };
     }
 
