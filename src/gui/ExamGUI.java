@@ -72,6 +72,7 @@ public class ExamGUI extends Application {
     private CheckBox showOnlyAssessmentsCheckbox; // Add this field
     private CheckBox showOnlyWithCollisionsCheckbox; // Add checkbox to show only assessments with collisions
     private Assessment[] assessments;
+    private MergedAssessment[] mergedAssessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
 
@@ -2077,7 +2078,7 @@ public class ExamGUI extends Application {
 
         // Create the statistics selector
         ComboBox<String> selectStatistic = new ComboBox<>();
-        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Zeitverteilung", "Kollisionsschwere");
+        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Zeitverteilung");
         selectStatistic.setPromptText("Wählen Sie eine Statistik.");
 
         selectorContainer.getChildren().add(selectStatistic);
@@ -2114,7 +2115,7 @@ public class ExamGUI extends Application {
                 chartBox.getChildren().clear();
 
                 // Create new chart with the selected course
-                PieChart pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
+                Node pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
                 chartBox.getChildren().add(pieChart);
             }
         });
@@ -2148,8 +2149,11 @@ public class ExamGUI extends Application {
             switch(selectedStatistic) {
                 case "Fakultäten" -> {
                     if(assessments != null){
+                        ScrollPane sp = new ScrollPane();
+                        sp.setMinWidth(500);
+                        sp.setContent(CollisionPieChartView.createCollisionPieChartByFaculty(assessments));
                         courseChartContainer.setVisible(false);
-                        contentArea.getChildren().add(createFakContent());
+                        contentArea.getChildren().add(sp);
                     }else{
                         showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
                     }
@@ -2182,14 +2186,6 @@ public class ExamGUI extends Application {
                         showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
                     }
                 }
-                case "Kollisionsschwere" -> {
-                    if(assessments!=null){
-                        courseChartContainer.setVisible(false);
-                        contentArea.getChildren().add(createColSchwereContent());
-                    }else{
-                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
-                    }
-                }
                 default -> System.out.println("No statistic selected");
             }
         });
@@ -2197,65 +2193,9 @@ public class ExamGUI extends Application {
         statisticsTab.setContent(mainContainer);
         return statisticsTab;
     }
-    private Node createFakContent(){
-        long facultyACount = 0;
-        long facultyBCount = 0;
-        long facultyCCount = 0;
 
-        for(Assessment a : assessments) {
-            if (!(a.getAssessmentEntries() == null)) {
-                for (Assessment.AssessmentEntry assessmentEntry : a.getAssessmentEntries()) {
-                    Map<Assessment, Integer> collisions = a.getCollisionCountByAssessment();
-                    for (Map.Entry<Assessment, Integer> entry : collisions.entrySet()) {
-                        Assessment collidingAssessment = entry.getKey();
-                        int count = entry.getValue();
-                        if (assessmentEntry.faculty().equals("A")) {
-                            facultyACount += count;
-                        } else if (assessmentEntry.faculty().equals("B")) {
-                            facultyBCount += count;
-                        } else {
-                            facultyCCount += count;
-                        }
-
-                    }
-                }
-            }
-        }
-        CategoryAxis facultyAxis = new CategoryAxis();
-        facultyAxis.setLabel("Fakultät");
-
-        NumberAxis collisionByFacultyAxis = new NumberAxis();
-        collisionByFacultyAxis.setLabel("Kollisionen");
-
-        BarChart<String, Number> facultyBarChart = new BarChart<>(facultyAxis, collisionByFacultyAxis);
-        facultyBarChart.setTitle("Fakultät Säulendiagramm");
-
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Fakultät Daten");
-        series.getData().add(new XYChart.Data<>("Fakultät A: "+facultyACount, facultyACount));
-        series.getData().add(new XYChart.Data<>("Fakultät B: "+facultyBCount, facultyBCount));
-        series.getData().add(new XYChart.Data<>("Fakultät C: "+facultyCCount, facultyCCount));
-
-        facultyBarChart.getData().add(series);
-        return facultyBarChart;
-    }
     private Node createTimeContent() {
         return CollisionPieChartView.createCollisionPieChartByTime(assessments);
-    }
-    private Node createColSchwereContent(){
-        VBox content = new VBox(20);
-        content.setPadding(new Insets(20));
-        content.setAlignment(Pos.CENTER);
-
-        Label inProgressLabel = new Label("Kollisionsschwerestatistik - In Progress");
-        inProgressLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
-        inProgressLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Label descriptionLabel = new Label("This feature is currently under development.");
-        descriptionLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        content.getChildren().addAll(inProgressLabel, descriptionLabel);
-        return content;
     }
 
 
@@ -2445,6 +2385,9 @@ public class ExamGUI extends Application {
         // TODO: tmp
         MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
+
+        this.mergedAssessments = optimizedAssessments;
+
         return optimizedAssessments;
 
         /*for (MergedAssessment ma : mergedAssessments) {
