@@ -8,11 +8,11 @@ import org.optaplanner.core.api.score.stream.ConstraintProvider;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class AssessmentSchedulingConstraintProvider implements ConstraintProvider {
+    public static boolean respect_rooms;
+    public static boolean respect_supervisors;
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
@@ -37,6 +37,12 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     }
 
     Constraint roomConflict(ConstraintFactory factory) {
+        if (!respect_rooms)
+            return factory
+                    .forEach(AssessmentScheduleItem.class)
+                    .filter(a -> false)
+                    .penalize(HardMediumSoftLongScore.ONE_HARD, a -> 0)
+                    .asConstraint("room conflict no_op");
         return factory
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
@@ -70,6 +76,12 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     }
 
     Constraint supervisorConflict(ConstraintFactory factory) {
+        if (!respect_rooms)
+            return factory
+                    .forEach(AssessmentScheduleItem.class)
+                    .filter(a -> false)
+                    .penalize(HardMediumSoftLongScore.ONE_HARD, a -> 0)
+                    .asConstraint("supervisor conflict no_op");
         return factory
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)

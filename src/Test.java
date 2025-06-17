@@ -24,7 +24,7 @@ class Test {
         AssessmentOptimizer.logGroupStatistics(assessmentGroups);
 
         // call to optimizer here
-        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
 
         // print optimizedAssessments
         //System.out.println(Arrays.toString(optimizedAssessments));

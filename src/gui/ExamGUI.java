@@ -2444,7 +2444,7 @@ public class ExamGUI extends Application {
 
         // TODO: tmp
         MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
         return optimizedAssessments;
 
         /*for (MergedAssessment ma : mergedAssessments) {

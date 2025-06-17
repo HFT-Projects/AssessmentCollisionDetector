@@ -73,7 +73,10 @@ public class AssessmentOptimizer {
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
 
-    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups) {
+    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups, boolean respect_rooms, boolean respect_supervisors) {
+        AssessmentSchedulingConstraintProvider.respect_rooms = respect_rooms;
+        AssessmentSchedulingConstraintProvider.respect_supervisors = respect_supervisors;
+
         List<MergedAssessment[]> largeGroups = new ArrayList<>();
         List<MergedAssessment[]> smallGroups = new ArrayList<>();
 
