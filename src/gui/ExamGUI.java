@@ -2113,20 +2113,9 @@ public class ExamGUI extends Application {
                 chartBox.getChildren().clear();
 
                 // Create new chart with the selected course
-                VBox pieChart = new VBox();
-                pieChart.setAlignment(Pos.CENTER_LEFT);
-                pieChart.setMinHeight(300);
-                pieChart.getChildren().add(CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments));
+                Node pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
+                Node pieChartOptimized = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByCourseOfStudy(selectedCourse, optimizedStatAssessments);
 
-                VBox pieChartOptimized = new VBox();
-                pieChartOptimized.setAlignment(Pos.CENTER_RIGHT);
-                pieChartOptimized.setMinHeight(300);
-
-                if(optimizedStatAssessments!=null){
-                    pieChartOptimized.getChildren().add(CollisionPieChartView.createOptimizedCollisionPieChartByCourseOfStudy(selectedCourse, optimizedStatAssessments));
-                }else{
-                    showAlert("Bitte lassen Sie die Optimierung zuerst laufen!", Alert.AlertType.WARNING);
-                }
                 chartBox.getChildren().addAll(pieChart, pieChartOptimized);
 
             }

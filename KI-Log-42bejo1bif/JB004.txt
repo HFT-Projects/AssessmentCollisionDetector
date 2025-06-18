@@ -1,0 +1,2 @@
+Prompt: The methods createOptimizedCollisionPieChartByFaculty() and createCollisionPieChartByFaculty() both should show a pie chart visualizing the collisions by faculty. However the createOptimizedCollisionPieChartByFaculty() shows vastly more collisions than the other method, which shouldn't be possible. If anything there should be less collisions, since some Assessments, that have the same number get combined as MergedAssessments. How can this be?
+Model: Claude Sonnet 3.5

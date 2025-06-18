@@ -67,7 +67,7 @@ public class CollisionPieChartView {
     }
 
     public static Node createOptimizedCollisionPieChartByTime(MergedAssessment[] mergedAssessments) {
-        return visualizePieChart(mergedAssessments, "alle optimierte Prüfungen");
+        return visualizePieChart(mergedAssessments, "alle optimierten Prüfungen");
     }
 
     public static Node createCollisionPieChartByTime(Assessment[] assessments) {
@@ -80,24 +80,32 @@ public class CollisionPieChartView {
         facultyStatistics.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
         facultyStatistics.setAlignment(Pos.CENTER_RIGHT);
         facultyStatistics.setMinHeight(1500);
-        facultyStatistics.setMinWidth(600);
+        facultyStatistics.setMinWidth(400);
 
         List<MergedAssessment> facultyAAssessments = new ArrayList<>();
         List<MergedAssessment> facultyBAssessments = new ArrayList<>();
         List<MergedAssessment> facultyCAssessments = new ArrayList<>();
 
         for (MergedAssessment ma : mergedAssessments) {
-            if (!(ma.getAssessmentEntries() == null)) {
+            if (ma.getAssessmentEntries() != null) {
+                boolean hasA = false;
+                boolean hasB = false;
+                boolean hasC = false;
+
+                // First check which faculties this assessment belongs to
                 for (AssessmentBase.AssessmentEntry assessmentEntry : ma.getAssessmentEntries()) {
                     if (assessmentEntry.faculty().equals("A")) {
-                        facultyAAssessments.add(ma);
+                        hasA = true;
                     } else if (assessmentEntry.faculty().equals("B")) {
-                        facultyBAssessments.add(ma);
+                        hasB = true;
                     } else {
-                        facultyCAssessments.add(ma);
+                        hasC = true;
                     }
-
                 }
+
+                if (hasA) facultyAAssessments.add(ma);
+                if (hasB) facultyBAssessments.add(ma);
+                if (hasC) facultyCAssessments.add(ma);
             }
         }
         MergedAssessment[] facultyAArray = facultyAAssessments.toArray(new MergedAssessment[0]);
@@ -119,7 +127,7 @@ public class CollisionPieChartView {
         facultyStatistics.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
         facultyStatistics.setAlignment(Pos.CENTER_LEFT);
         facultyStatistics.setMinHeight(1500);
-        facultyStatistics.setMinWidth(600);
+        facultyStatistics.setMinWidth(400);
 
         List<Assessment> facultyAAssessments = new ArrayList<>();
         List<Assessment> facultyBAssessments = new ArrayList<>();
