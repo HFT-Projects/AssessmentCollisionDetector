@@ -1,5 +1,6 @@
 package manager;
 
+import data.AssessmentBase;
 import data.Assessment;
 import data.AssessmentEditable;
 
@@ -183,9 +184,9 @@ public class LoadManager {
             // file contains duplicates because sometimes exams are in multiple rooms (-> ignore)
             if (existingExams.containsKey(qualifiedName)) {
                 AssessmentEditable a = existingExams.get(qualifiedName);
-                Set<Assessment.AssessmentEntry> assessmentEntries = a.getAssessmentEntries();
+                Set<AssessmentBase.AssessmentEntry> assessmentEntries = a.getAssessmentEntries();
                 int last = columns.length - 1;
-                assessmentEntries.add(new Assessment.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
+                assessmentEntries.add(new AssessmentBase.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
                 a.setAssessmentEntries(assessmentEntries);
                 continue;
             }
@@ -217,8 +218,8 @@ public class LoadManager {
             int last = columns.length - 1;
             AssessmentEditable p = new AssessmentEditable(no, name, columns[1], columns[2], begin, end);
 
-            Set<Assessment.AssessmentEntry> assessmentEntries = new HashSet<>();
-            assessmentEntries.add(new Assessment.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
+            Set<AssessmentBase.AssessmentEntry> assessmentEntries = new HashSet<>();
+            assessmentEntries.add(new AssessmentBase.AssessmentEntry(columns[0], columns[3], columns[6], columns[7], columns[8], columns[9], columns[last - 7], columns[last - 6], columns[last - 5], columns[last - 3], columns[last - 2], columns[last - 1], columns[last]));
             p.setAssessmentEntries(assessmentEntries);
 
             exams.add(p);

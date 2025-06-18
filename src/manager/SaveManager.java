@@ -1,5 +1,6 @@
 package manager;
 
+import data.AssessmentBase;
 import data.Assessment;
 import data.MergedAssessment;
 
@@ -154,7 +155,7 @@ public class SaveManager {
                             ";;;;;;;";
                     lines.add(assessment);
                 } else {
-                    for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                    for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
                         String assessment = ae.faculty() + ";" + a.getCourseOfStudy() + ";" + a.getAssessmentVersion() + ";" + ae.vert() + ";" + (a.getNumber() != null ? a.getNumber() : "") + ";" + a.getName() + ";" + ae.examiner1() + ";" + ae.examiner2() + ";"
                                 + ae.externalRegistrationCount() + ";" + ae.externalDuration() + ";" + beginFormatted + ";" + endFormatted + ";" +
 

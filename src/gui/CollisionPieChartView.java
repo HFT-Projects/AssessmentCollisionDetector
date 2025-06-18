@@ -1,5 +1,6 @@
 package gui;
 
+import data.AssessmentBase;
 import data.Assessment;
 
 import javafx.collections.FXCollections;
@@ -61,7 +62,7 @@ public class CollisionPieChartView {
 
         for(Assessment a : assessments){
             if (!(a.getAssessmentEntries() == null)) {
-                for (Assessment.AssessmentEntry assessmentEntry : a.getAssessmentEntries()) {
+                for (AssessmentBase.AssessmentEntry assessmentEntry : a.getAssessmentEntries()) {
                     Map<Assessment, Integer> collisions = a.getCollisionCountByAssessment();
                     for (Map.Entry<Assessment, Integer> entry : collisions.entrySet()) {
                         if (assessmentEntry.faculty().equals("A")) {

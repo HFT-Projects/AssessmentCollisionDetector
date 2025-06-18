@@ -21,11 +21,11 @@ public class MergedAssessmentEditable extends MergedAssessment {
             LocalDateTime begin = assessments[0].getBegin();
             LocalDateTime end = assessments[0].getEnd();
 
-            for (int i = 1; i<assessments.length; i++) {
+            for (int i = 1; i < assessments.length; i++) {
                 Assessment a = assessments[i];
                 if (!Objects.equals(name, a.getName()) ||
                         !Objects.equals(begin, a.getBegin()) ||
-                        !Objects.equals(end, a.getEnd()) )
+                        !Objects.equals(end, a.getEnd()))
                     throw new AssertionError("Assessments must have same name, begin & end"); // TODO: specify which one is wrong
             }
         }

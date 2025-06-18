@@ -6,14 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @SuppressWarnings("unused")
-public abstract class Assessment {
-    public record AssessmentEntry(String faculty, String vert, String examiner1, String examiner2,
-                                  String externalRegistrationCount, String externalDuration, String group, String room,
-                                  String supervisor, String externalCourseOfStudy, String externalExamName,
-                                  String externalExamId,
-                                  String wiSe) {
-    } //TODO: wiSe?!
-
+public abstract class Assessment extends AssessmentBase {
     protected final Long number;
     protected final String name;
     protected final String courseOfStudy;
@@ -34,26 +27,27 @@ public abstract class Assessment {
         this.end = end;
     }
 
+    @Override
     public Long getNumber() {
         return number;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCourseOfStudy() {
         return courseOfStudy;
     }
 
+    @Override
     public String getAssessmentVersion() {
         return assessmentVersion;
     }
 
-    public static String calculateQualifiedName(String stg, String courseOfStudy, Long no, String name) {
-        return name + ".--." + (no == null ? "" : no) + ".--." + (courseOfStudy == null ? "" : courseOfStudy) + ".--." + (stg == null ? "" : stg);
-    }
-
+    @Override
     public String getQualifiedName() {
         return calculateQualifiedName(courseOfStudy, assessmentVersion, number, name);
     }
@@ -66,45 +60,40 @@ public abstract class Assessment {
         return end;
     }
 
-    // calculate distance between the end of the first assessment (in time, not necessarily a) and the beginning of the second (negative -> overlap)
-    public static Duration getDistance(Assessment a, Assessment b) {
-        if (a.begin == null || b.begin == null) {
-            return null;
-        } else {
-            // calculate time distance between colliding assessments (end to begin)
-            Assessment first;
-            Assessment last;
-            if (a.begin.isBefore(b.begin)) {
-                first = a;
-                last = b;
-            } else {
-                first = b;
-                last = a;
-            }
-            return Duration.between(first.getEnd(), last.getBegin());
-        }
-    }
-
     public Duration getDistance(Assessment b) {
-        return getDistance(this, b);
+        return calculateDistance(this.begin, this.end, b.begin, b.end);
     }
 
+    @Override
+    public LocalDateTime getPrevailingBegin() {
+        return begin;
+    }
+
+    @Override
+    public LocalDateTime getPrevailingEnd() {
+        return end;
+    }
+
+    @Override
     public Set<AssessmentEntry> getAssessmentEntries() {
         if (assessmentEntries == null)
             return null;
         return new HashSet<>(assessmentEntries);
     }
 
+    @Override
     public Set<String> getRegisteredStudents() {
         if (registeredStudents == null)
             return null;
         return new HashSet<>(registeredStudents);
     }
 
+    @Override
     public Integer getCollisionSum() {
         return collisionSum;
     }
 
+    @Override
     public Map<Assessment, Integer> getCollisionCountByAssessment() {
         if (collisionCountByAssessment == null)
             return null;

@@ -1,6 +1,8 @@
 package manager.optimizer;
 
+import data.AssessmentBase;
 import data.Assessment;
+
 import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
@@ -58,13 +60,13 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                             Set<String> rooms2 = new HashSet<>();
 
                             for (Assessment a : assessment1.getAssessment().getAssessments()) {
-                                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                                for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
                                     rooms1.add(ae.room());
                                 }
                             }
 
                             for (Assessment a : assessment2.getAssessment().getAssessments()) {
-                                for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                                for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
                                     rooms2.add(ae.room());
                                 }
                             }
@@ -97,13 +99,13 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                     Set<String> supervisors2 = new HashSet<>();
 
                     for (Assessment a : assessment1.getAssessment().getAssessments()) {
-                        for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                        for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
                             supervisors1.add(ae.supervisor());
                         }
                     }
 
                     for (Assessment a : assessment2.getAssessment().getAssessments()) {
-                        for (Assessment.AssessmentEntry ae : a.getAssessmentEntries()) {
+                        for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
                             supervisors2.add(ae.supervisor());
                         }
                     }

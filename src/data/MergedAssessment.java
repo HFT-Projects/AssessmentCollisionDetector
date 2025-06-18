@@ -1,12 +1,13 @@
 package data;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
 @SuppressWarnings("unused")
-public abstract class MergedAssessment {
+public abstract class MergedAssessment extends AssessmentBase {
     static protected Map<Assessment, MergedAssessment> assessmentToMergedAssessmentMap = new HashMap<>();
     protected Assessment[] assessments;
     protected LocalDateTime optimizedBegin;
@@ -35,14 +36,16 @@ public abstract class MergedAssessment {
         return assessments.clone();
     }
 
+    @Override
     public String getName() {
         if (assessments == null || assessments.length == 0)
             return null;
         return assessments[0].getName();
     }
 
+    @Override
     public String getQualifiedName() {
-        return Assessment.calculateQualifiedName(getCourseOfStudy(), getAssessmentVersion(), getNumber(), getName());
+        return calculateQualifiedName(getCourseOfStudy(), getAssessmentVersion(), getNumber(), getName());
     }
 
     public LocalDateTime getBegin() {
@@ -57,6 +60,10 @@ public abstract class MergedAssessment {
         return assessments[0].getEnd();
     }
 
+    public Duration getDistance(MergedAssessment b) {
+        return calculateDistance(this.getBegin(), this.getEnd(), b.getBegin(), b.getEnd());
+    }
+
     public LocalDateTime getOptimizedBegin() {
         return optimizedBegin;
     }
@@ -65,11 +72,25 @@ public abstract class MergedAssessment {
         return optimizedEnd;
     }
 
+    public Duration getOptimizedDistance(MergedAssessment b) {
+        return calculateDistance(this.optimizedBegin, this.optimizedEnd, b.optimizedBegin, b.optimizedEnd);
+    }
+
+    @Override
+    public LocalDateTime getPrevailingBegin() {
+        return optimizedBegin;
+    }
+
+    @Override
+    public LocalDateTime getPrevailingEnd() {
+        return optimizedEnd;
+    }
+
     private <T> T quarry(Function<Assessment, T> function) {
         if (assessments == null || assessments.length == 0)
             return null;
         T base = function.apply(assessments[0]);
-        for (int i = 1; i<assessments.length; i++) {
+        for (int i = 1; i < assessments.length; i++) {
             T compare = function.apply(assessments[i]);
             if (!Objects.equals(base, compare))
                 return null;
@@ -77,18 +98,35 @@ public abstract class MergedAssessment {
         return base;
     }
 
+    @Override
     public Long getNumber() {
         return quarry(Assessment::getNumber);
     }
 
+    @Override
     public String getCourseOfStudy() {
         return quarry(Assessment::getCourseOfStudy);
     }
 
+    @Override
     public String getAssessmentVersion() {
         return quarry(Assessment::getAssessmentVersion);
     }
 
+    @Override
+    public Set<AssessmentBase.AssessmentEntry> getAssessmentEntries() {
+        if (assessments == null)
+            return null;
+        Set<AssessmentBase.AssessmentEntry> result = new HashSet<>();
+        for (Assessment a : assessments) {
+            if (a.getRegisteredStudents() == null)
+                continue;
+            result.addAll(a.getAssessmentEntries());
+        }
+        return result;
+    }
+
+    @Override
     public Set<String> getRegisteredStudents() {
         if (assessments == null)
             return null;
@@ -101,6 +139,7 @@ public abstract class MergedAssessment {
         return result;
     }
 
+    @Override
     public Integer getCollisionSum() {
         if (assessments == null)
             return null;
@@ -114,6 +153,7 @@ public abstract class MergedAssessment {
         return result;
     }
 
+    @Override
     public Map<MergedAssessment, Integer> getCollisionCountByAssessment() {
         if (assessments == null)
             return null;
@@ -178,7 +218,7 @@ public abstract class MergedAssessment {
                 ", assessmentVersion='" + getAssessmentVersion() + '\'' +
                 ", registeredStudents='" + getRegisteredStudents() + '\'' +
                 ", collisionSum='" + getCollisionSum() + '\'' +
-                ", collisionCountByAssessment='" + collisions+ '\'' +
+                ", collisionCountByAssessment='" + collisions + '\'' +
                 '}';
     }
 }
