@@ -3,6 +3,8 @@ package gui;
 import data.AssessmentBase;
 import data.Assessment;
 
+import data.MergedAssessment;
+import data.MergedAssessmentEditable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -17,15 +19,34 @@ import javafx.scene.text.FontWeight;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This class provides a pie chart visualization for assessment collisions,
  * showing the distribution of collisions based on the time distance between exams.
  */
 public class CollisionPieChartView {
+
+    /**
+     * Creates a pie chart for collisions within a specific course of study.
+     *
+     * @param courseOfStudy     Course of study to analyze
+     * @param mergedAssessments Array of optimized assessments to analyze
+     * @return The generated PieChart
+     */
+    public static Node createOptimizedCollisionPieChartByCourseOfStudy(String courseOfStudy, MergedAssessment[] mergedAssessments) {
+        List<MergedAssessment> assessmentList = new ArrayList<>();
+
+        for (MergedAssessment ma : mergedAssessments) {
+            if (ma != null && ma.getCourseOfStudy() != null && ma.getCourseOfStudy().equals(courseOfStudy)) {
+                assessmentList.add(ma);
+            }
+        }
+        MergedAssessment[] optimizedAssessments = assessmentList.toArray(new MergedAssessment[0]);
+        return visualizePieChart(optimizedAssessments, "Optimierte Studiengänge");
+    }
 
     /**
      * Creates a pie chart for collisions within a specific course of study.
@@ -45,34 +66,74 @@ public class CollisionPieChartView {
         return visualizePieChart(assessmentsByCourseOfStudy, "Studiengänge");
     }
 
+    public static Node createOptimizedCollisionPieChartByTime(MergedAssessment[] mergedAssessments) {
+        return visualizePieChart(mergedAssessments, "alle optimierte Prüfungen");
+    }
+
     public static Node createCollisionPieChartByTime(Assessment[] assessments) {
         return visualizePieChart(assessments, "alle Prüfungen");
     }
-    public static Node createCollisionPieChartByFaculty(Assessment[] assessments){
+
+    public static Node createOptimizedCollisionPieChartByFaculty(MergedAssessment[] mergedAssessments) {
         VBox facultyStatistics = new VBox(20);
         facultyStatistics.setPadding(new Insets(20));
         facultyStatistics.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
-        facultyStatistics.setAlignment(Pos.CENTER);
+        facultyStatistics.setAlignment(Pos.CENTER_RIGHT);
         facultyStatistics.setMinHeight(1500);
-        facultyStatistics.setMinWidth(1000);
+        facultyStatistics.setMinWidth(600);
+
+        List<MergedAssessment> facultyAAssessments = new ArrayList<>();
+        List<MergedAssessment> facultyBAssessments = new ArrayList<>();
+        List<MergedAssessment> facultyCAssessments = new ArrayList<>();
+
+        for (MergedAssessment ma : mergedAssessments) {
+            if (!(ma.getAssessmentEntries() == null)) {
+                for (AssessmentBase.AssessmentEntry assessmentEntry : ma.getAssessmentEntries()) {
+                    if (assessmentEntry.faculty().equals("A")) {
+                        facultyAAssessments.add(ma);
+                    } else if (assessmentEntry.faculty().equals("B")) {
+                        facultyBAssessments.add(ma);
+                    } else {
+                        facultyCAssessments.add(ma);
+                    }
+
+                }
+            }
+        }
+        MergedAssessment[] facultyAArray = facultyAAssessments.toArray(new MergedAssessment[0]);
+        MergedAssessment[] facultyBArray = facultyBAssessments.toArray(new MergedAssessment[0]);
+        MergedAssessment[] facultyCArray = facultyCAssessments.toArray(new MergedAssessment[0]);
+
+        Node facultyAPieChart = visualizePieChart(facultyAArray, "Fakultät A optimiert:");
+        Node facultyBPieChart = visualizePieChart(facultyBArray, "Fakultät B optimiert:");
+        Node facultyCPieChart = visualizePieChart(facultyCArray, "Fakultät C optimiert:");
+
+        facultyStatistics.getChildren().addAll(facultyAPieChart, facultyBPieChart, facultyCPieChart);
+
+        return facultyStatistics;
+    }
+
+    public static Node createCollisionPieChartByFaculty(Assessment[] assessments) {
+        VBox facultyStatistics = new VBox(20);
+        facultyStatistics.setPadding(new Insets(20));
+        facultyStatistics.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
+        facultyStatistics.setAlignment(Pos.CENTER_LEFT);
+        facultyStatistics.setMinHeight(1500);
+        facultyStatistics.setMinWidth(600);
 
         List<Assessment> facultyAAssessments = new ArrayList<>();
         List<Assessment> facultyBAssessments = new ArrayList<>();
         List<Assessment> facultyCAssessments = new ArrayList<>();
 
-        for(Assessment a : assessments){
+        for (Assessment a : assessments) {
             if (!(a.getAssessmentEntries() == null)) {
                 for (AssessmentBase.AssessmentEntry assessmentEntry : a.getAssessmentEntries()) {
-                    Map<Assessment, Integer> collisions = a.getCollisionCountByAssessment();
-                    for (Map.Entry<Assessment, Integer> entry : collisions.entrySet()) {
-                        if (assessmentEntry.faculty().equals("A")) {
-                            facultyAAssessments.add(a);
-                        } else if (assessmentEntry.faculty().equals("B")) {
-                            facultyBAssessments.add(a);
-                        } else {
-                            facultyCAssessments.add(a);
-                        }
-
+                    if (assessmentEntry.faculty().equals("A")) {
+                        facultyAAssessments.add(a);
+                    } else if (assessmentEntry.faculty().equals("B")) {
+                        facultyBAssessments.add(a);
+                    } else {
+                        facultyCAssessments.add(a);
                     }
                 }
             }
@@ -90,7 +151,7 @@ public class CollisionPieChartView {
         return facultyStatistics;
     }
 
-    public static Node visualizePieChart(Assessment[] assessments, String info) {
+    public static Node visualizePieChart(AssessmentBase[] assessments, String info) {
         // Categories for time distances
         int greenCollisions = 0; // > 36 hours
         int yellowCollisions = 0; // > 12 hours but <= 36 hours
@@ -101,32 +162,32 @@ public class CollisionPieChartView {
         long minDistance = 100;
 
 
-        for (Assessment assessment : assessments) {
+        for (AssessmentBase assessment : assessments) {
 
             if (assessment != null) {
-                Map<Assessment, Integer> collisions = assessment.getCollisionCountByAssessment();
-                for (Map.Entry<Assessment, Integer> entry : collisions.entrySet()) {
-                    Assessment collidingAssessment = entry.getKey();
+                Map<? extends AssessmentBase, Integer> collisions = assessment.getCollisionCountByAssessment();
+                for (Map.Entry<? extends AssessmentBase, Integer> entry : collisions.entrySet()) {
+                    AssessmentBase collidingAssessment = entry.getKey();
                     int count = entry.getValue();
 
                     // Calculate distance between assessments
-                    if (assessment.getBegin() != null && assessment.getEnd() != null &&
-                            collidingAssessment.getBegin() != null && collidingAssessment.getEnd() != null) {
+                    if (assessment.getPrevailingBegin() != null && assessment.getPrevailingEnd() != null &&
+                            collidingAssessment.getPrevailingBegin() != null && collidingAssessment.getPrevailingEnd() != null) {
 
                         Duration distance;
-                        if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
-                            distance = Duration.between(assessment.getEnd(), collidingAssessment.getBegin());
+                        if (assessment.getPrevailingBegin().isBefore(collidingAssessment.getPrevailingBegin())) {
+                            distance = Duration.between(assessment.getPrevailingEnd(), collidingAssessment.getPrevailingBegin());
                         } else {
-                            distance = Duration.between(collidingAssessment.getEnd(), assessment.getBegin());
+                            distance = Duration.between(collidingAssessment.getPrevailingEnd(), assessment.getPrevailingBegin());
                         }
 
                         // Only count if the distance is valid (not negative)
                         if (!distance.isNegative()) {
                             long hours = distance.toHours();
-                            totalHours+=hours;
+                            totalHours += hours;
 
                             // Get the minimum distance between 2 Assessments
-                            if(hours<minDistance){
+                            if (hours < minDistance) {
                                 minDistance = hours;
                             }
 
@@ -166,13 +227,13 @@ public class CollisionPieChartView {
 
         //Calculate the average time between assessments
         DecimalFormat formatter = new DecimalFormat("#0.00");
-        double avgHoursBetweenAssessments = totalHours/(greenCollisions+yellowCollisions+orangeCollisions+redCollisions+blackCollisions);
+        double avgHoursBetweenAssessments = totalHours / (greenCollisions + yellowCollisions + orangeCollisions + redCollisions + blackCollisions);
 
         //Create Labels for additional Info
-        Label avgHoursLabel = new Label("Durchschnittlicher Abstand zwischen Prüfungen: "+formatter.format(avgHoursBetweenAssessments)+" Stunden.");
+        Label avgHoursLabel = new Label("Durchschnittlicher Abstand zwischen Prüfungen: " + formatter.format(avgHoursBetweenAssessments) + " Stunden.");
         avgHoursLabel.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
-        Label minDistanceLabel = new Label("Kleinster Abstand zwischen zwei Prüfungen: " +minDistance+" Stunden.");
+        Label minDistanceLabel = new Label("Kleinster Abstand zwischen zwei Prüfungen: " + minDistance + " Stunden.");
         minDistanceLabel.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
 
@@ -182,6 +243,7 @@ public class CollisionPieChartView {
         chart.setLabelsVisible(true);
         chart.setLabelLineLength(20);
         chart.setPrefHeight(400);
+        chart.setMinWidth(800);
         chart.setLegendVisible(true);
 
         try {
@@ -195,9 +257,6 @@ public class CollisionPieChartView {
         VBox contentBox = new VBox(20);
         contentBox.setMinHeight(400);
         contentBox.getChildren().addAll(chart, avgHoursLabel, minDistanceLabel);
-        minDistanceLabel.setAlignment(Pos.CENTER);
-        avgHoursLabel.setAlignment(Pos.CENTER);
-
 
         return contentBox;
     }

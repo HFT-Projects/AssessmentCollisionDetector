@@ -14,7 +14,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -72,7 +71,7 @@ public class ExamGUI extends Application {
     private CheckBox showOnlyAssessmentsCheckbox; // Add this field
     private CheckBox showOnlyWithCollisionsCheckbox; // Add checkbox to show only assessments with collisions
     private Assessment[] assessments;
-    private MergedAssessment[] mergedAssessments;
+    private MergedAssessment[] optimizedStatAssessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
 
 
@@ -2078,7 +2077,7 @@ public class ExamGUI extends Application {
 
         // Create the statistics selector
         ComboBox<String> selectStatistic = new ComboBox<>();
-        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Zeitverteilung");
+        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Kollisionsschwere");
         selectStatistic.setPromptText("Wählen Sie eine Statistik.");
 
         selectorContainer.getChildren().add(selectStatistic);
@@ -2101,9 +2100,8 @@ public class ExamGUI extends Application {
         ComboBox<String> courseComboBox = new ComboBox<>();
         courseComboBox.setPromptText("Wählen Sie einen Studiengang.");
         courseComboBox.setMaxWidth(300);
-
         // Container for the pie chart
-        VBox chartBox = new VBox();
+        HBox chartBox = new HBox();
         chartBox.setAlignment(Pos.CENTER);
         chartBox.setMinHeight(400);
 
@@ -2115,8 +2113,22 @@ public class ExamGUI extends Application {
                 chartBox.getChildren().clear();
 
                 // Create new chart with the selected course
-                Node pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
-                chartBox.getChildren().add(pieChart);
+                VBox pieChart = new VBox();
+                pieChart.setAlignment(Pos.CENTER_LEFT);
+                pieChart.setMinHeight(300);
+                pieChart.getChildren().add(CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments));
+
+                VBox pieChartOptimized = new VBox();
+                pieChartOptimized.setAlignment(Pos.CENTER_RIGHT);
+                pieChartOptimized.setMinHeight(300);
+
+                if(optimizedStatAssessments!=null){
+                    pieChartOptimized.getChildren().add(CollisionPieChartView.createOptimizedCollisionPieChartByCourseOfStudy(selectedCourse, optimizedStatAssessments));
+                }else{
+                    showAlert("Bitte lassen Sie die Optimierung zuerst laufen!", Alert.AlertType.WARNING);
+                }
+                chartBox.getChildren().addAll(pieChart, pieChartOptimized);
+
             }
         });
         // Add components to the course chart container
@@ -2131,12 +2143,15 @@ public class ExamGUI extends Application {
         separator.setPadding(new Insets(5, 0, 10, 0));
 
         courseChartContainer.getChildren().addAll(
-            courseHeading,
-            courseDescription,
-            separator,
-            courseComboBox,
-            chartBox
+                courseHeading,
+                courseDescription,
+                separator,
+                courseComboBox,
+                chartBox
         );
+
+
+
 
         // Action handler for the statistics selector
         selectStatistic.setOnAction(event -> {
@@ -2149,9 +2164,16 @@ public class ExamGUI extends Application {
             switch(selectedStatistic) {
                 case "Fakultäten" -> {
                     if(assessments != null){
+                        HBox facultyContent = new HBox();
+                        facultyContent.setAlignment(Pos.CENTER);
+                        facultyContent.setMinHeight(800);
+                        Node facultyChart = CollisionPieChartView.createCollisionPieChartByFaculty(assessments);
+                        Node optimizedFacultyChart = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByFaculty(optimizedStatAssessments);
+                        facultyContent.getChildren().addAll(facultyChart, optimizedFacultyChart);
+
                         ScrollPane sp = new ScrollPane();
                         sp.setMinWidth(500);
-                        sp.setContent(CollisionPieChartView.createCollisionPieChartByFaculty(assessments));
+                        sp.setContent(facultyContent);
                         courseChartContainer.setVisible(false);
                         contentArea.getChildren().add(sp);
                     }else{
@@ -2178,10 +2200,10 @@ public class ExamGUI extends Application {
                     courseChartContainer.setVisible(true);
                     contentArea.getChildren().add(courseChartContainer);
                 }
-                case "Zeitverteilung" -> {
+                case "Kollisionsschwere" -> {
                     if(assessments != null){
                         courseChartContainer.setVisible(false);
-                        contentArea.getChildren().add(createTimeContent());
+                        contentArea.getChildren().add(createColSchwereContent());
                     }else{
                         showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
                     }
@@ -2194,8 +2216,14 @@ public class ExamGUI extends Application {
         return statisticsTab;
     }
 
-    private Node createTimeContent() {
-        return CollisionPieChartView.createCollisionPieChartByTime(assessments);
+    private Node createColSchwereContent() {
+        HBox collisionBox = new HBox();
+        collisionBox.setAlignment(Pos.CENTER);
+        collisionBox.setMinHeight(400);
+        Node collisionChart = CollisionPieChartView.createCollisionPieChartByTime(assessments);
+        Node collisionChartOptimized = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByTime(optimizedStatAssessments);
+        collisionBox.getChildren().addAll(collisionChart, collisionChartOptimized);
+        return collisionBox;
     }
 
 
@@ -2381,12 +2409,11 @@ public class ExamGUI extends Application {
 
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
-
         // TODO: tmp
         MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
 
-        this.mergedAssessments = optimizedAssessments;
+        this.optimizedStatAssessments = optimizedAssessments;
 
         return optimizedAssessments;
 
