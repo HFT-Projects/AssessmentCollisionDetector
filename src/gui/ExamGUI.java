@@ -22,6 +22,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.scene.effect.DropShadow;
 
@@ -207,7 +208,7 @@ public class ExamGUI extends Application {
         // Create left section for title
         HBox titleSection = new HBox();
         titleSection.setAlignment(Pos.CENTER_LEFT);
-        titleSection.setHgrow(titleSection, Priority.ALWAYS);
+        HBox.setHgrow(titleSection, Priority.ALWAYS);
 
         Label title = new Label(APP_NAME);
         title.setFont(Font.font("System", FontWeight.BOLD, 24));
@@ -1444,6 +1445,10 @@ public class ExamGUI extends Application {
         );
         fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
 
+        // Create directory chooser for output
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
+
         // Get the file section from the input tab
         ScrollPane inputScrollPane = (ScrollPane) inputTab.getContent();
         VBox inputContent = (VBox) inputScrollPane.getContent();
@@ -1471,7 +1476,13 @@ public class ExamGUI extends Application {
         // Set button actions
         examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, primaryStage, false));
         registrationBrowse.setOnAction(e -> selectFile(fileChooser, registrationPathField, primaryStage, false));
-        collisionBrowse.setOnAction(e -> selectFile(fileChooser, collisionPathField, primaryStage, true));
+        collisionBrowse.setOnAction(e -> {
+            File dir = directoryChooser.showDialog(primaryStage);
+            if (dir != null) {
+                collisionPathField.setText(dir.getAbsolutePath() + File.separator + "collisions.csv");
+                directoryChooser.setInitialDirectory(dir);
+            }
+        });
 
         // Get the action buttons from the file section (fourth child)
         HBox actionBox = (HBox) fileSection.getChildren().get(4);
@@ -2021,57 +2032,8 @@ public class ExamGUI extends Application {
             default -> 0;
         };
     }
-    private int parseDurationToMinutes(String durationStr) {
-        if (durationStr == null || durationStr.trim().isEmpty()) {
-            return 0;
-        }
-
-        String duration = durationStr.trim();
-        int totalMinutes = 0;
-
-        // Split by spaces to handle formats like "123h 30m"
-        String[] parts = duration.split("\\s+");
-
-        for (String part : parts) {
-            if (part.endsWith("h")) {
-                // Extract hours
-                try {
-                    String hoursStr = part.substring(0, part.length() - 1).trim();
-                    int hours = Integer.parseInt(hoursStr);
-                    totalMinutes += hours * 60;
-                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    // Skip if unparseable
-                }
-            } else if (part.endsWith("m")) {
-                // Extract minutes
-                try {
-                    String minutesStr = part.substring(0, part.length() - 1).trim();
-                    int minutes = Integer.parseInt(minutesStr);
-                    totalMinutes += minutes;
-                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    // Skip if unparseable
-                }
-            }
-        }
-
-        return totalMinutes;
-    }
 
 
-    private static Duration calculateOptimizedTimeDifference(Assessment exam1, Assessment exam2) {
-        // Return null if any required time is missing
-        if (exam1 == null || exam2 == null ||
-                exam1.getBegin() == null || exam1.getEnd() == null ||
-                exam2.getBegin() == null || exam2.getEnd() == null) {
-            return null;
-        }
-
-        if (exam1.getBegin().isBefore(exam2.getBegin())) {
-            return Duration.between(exam1.getEnd(), exam2.getBegin());
-        } else {
-            return Duration.between(exam2.getEnd(), exam1.getBegin());
-        }
-    }
 
     private void updateSort() {
         // If already updating, prevent infinite loop
@@ -2551,7 +2513,7 @@ public class ExamGUI extends Application {
         }
     }
 
-    public MergedAssessment [] optimizeStart() {
+    public MergedAssessment [] optimizeStart(Boolean supervisor, boolean room) {
         if (assessments == null || assessments.length == 0) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Assessments");
@@ -2565,7 +2527,7 @@ public class ExamGUI extends Application {
 
         // TODO: tmp
         /*MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
+        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
 
         this.optimizedStatAssessments = optimizedAssessments;
 

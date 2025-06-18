@@ -12,14 +12,12 @@ import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
 
 import java.text.Collator;
 import java.util.*;
@@ -31,8 +29,6 @@ public class OptimizeTab {
 
     private static final String PRIMARY_COLOR = "#3498db";
     private static final String SECONDARY_COLOR = "#2c3e50";
-    private static final String SUCCESS_COLOR = "#2ecc71";
-    private static final String DARK_COLOR = "#34495e";
 
 
     private final Tab tab;
@@ -67,12 +63,11 @@ public class OptimizeTab {
     private final Map<String, CheckMenuItem> columnMenuItems = new HashMap<>();
     private final Map<String, Boolean> columnVisibilityStates = new HashMap<>();
 
-
-
-
     // Constants for column groups
-    private static final List<String> LOCKED_COLUMNS = Arrays.asList("Exam 1", "Exam 2");
 
+    // Map to associate dropdown options with column names for sorting
+    private final Map<String, String> sortExam1ColumnMap = new HashMap<>();
+    private final Map<String, String> sortExam2ColumnMap = new HashMap<>();
 
     // Sort direction constants
     private static final String ASCENDING = "Ascending";
@@ -86,6 +81,9 @@ public class OptimizeTab {
         tab = new Tab("Optimize");
         tab.setClosable(false);
 
+        // Initialize the column mapping for sort dropdowns
+        initializeSortColumnMappings();
+
         // Create basic layout
         VBox content = new VBox(10);
         content.setPadding(new Insets(20));
@@ -96,60 +94,98 @@ public class OptimizeTab {
         scrollPane.setPannable(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
 
-        // Create optimize button section
-        HBox buttonSection = new HBox();
-        buttonSection.setAlignment(Pos.BASELINE_LEFT);
-        buttonSection.setPadding(new Insets(0, 0, 10, 0));
+        // Create control section with left and right sides in an HBox
+        HBox controlSection = new HBox(20);
+        controlSection.setPadding(new Insets(0, 0, 20, 0));
+        controlSection.setAlignment(Pos.CENTER_LEFT);
+
+
+        VBox leftSide = new VBox(10);
+        leftSide.setAlignment(Pos.TOP_LEFT);
 
         Button optimizeButton = new Button("Run Optimization");
         optimizeButton.setStyle(
-                "-fx-background-color:  #2ecc71 ;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 8px 15px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-radius: 4px;"
-
+                "-fx-background-color: #2ecc71;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 8px 15px;" +
+                "-fx-cursor: hand;" +
+                "-fx-border-radius: 4px;"
         );
 
-        optimizeButton.setOnAction(e -> onOptimizeButtonClicked());
 
-        CheckBox considerRoom = new CheckBox("Consider Rooms in Optimization");
-        considerRoom.setStyle("-fx-text-fill: #2c3e50;");
+        // CheckBoxes for optimization options
+        CheckBox considerRoomCheckbox = new CheckBox("Consider Rooms in Optimization");
+        considerRoomCheckbox.setStyle("-fx-text-fill: #2c3e50;");
 
-        CheckBox considerSupervisor = new CheckBox("Consider Supervisor in Optimization");
-        considerSupervisor.setStyle("-fx-text-fill: #2c3e50;");
+        CheckBox considerSupervisorCheckbox = new CheckBox("Consider Supervisors in Optimization");
+        considerSupervisorCheckbox.setStyle("-fx-text-fill: #2c3e50;");
 
-        Label optiLabelSave = new Label();
-        optiLabelSave.setText("Save the Optimized File");
+        leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox);
+        optimizeButton.setOnAction(e -> onOptimizeButtonClicked(considerSupervisorCheckbox.isSelected(),considerRoomCheckbox.isSelected()));
 
-        TextField optimizedSavePath = new TextField();
-        optimizedSavePath.setPrefWidth(300);
-        optimizedSavePath.setPrefHeight(28);
+        // === Right side ===
+        VBox rightSide = new VBox(10);
+        rightSide.setAlignment(Pos.TOP_LEFT);
 
-        Button optSave = new Button("Save Optimized");
-        optSave.setStyle(
-                        "-fx-background-color:  #3498db ;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 8px 15px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-radius: 4px;"
+        HBox saveSection = new HBox(15);  // Increased spacing between elements
+        saveSection.setAlignment(Pos.CENTER_LEFT);
 
+        Label saveFileLabel = new Label("Save Optimized File:");
+        saveFileLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        TextField folderPathField = new TextField();
+        folderPathField.setEditable(false);
+        folderPathField.setPromptText("No folder selected");
+        
+        folderPathField.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-border-color: #e0e0e0;" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 4px;" +
+                "-fx-padding: 8px;" +
+                "-fx-font-size: 12px;"
         );
-        optSave.setOnAction(e -> {
 
+        Button browseButton = new Button("Browse...");
+        browseButton.setStyle(
+                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 8px 15px;" +
+                "-fx-cursor: hand;" +
+                "-fx-border-radius: 4px;"
+        );
+
+        browseButton.setOnAction(e -> {
+            javafx.stage.DirectoryChooser directoryChooser = new javafx.stage.DirectoryChooser();
+            directoryChooser.setTitle("Select Output Directory");
+            java.io.File directory = directoryChooser.showDialog(tab.getTabPane().getScene().getWindow());
+            if (directory != null) {
+                folderPathField.setText(directory.getAbsolutePath());
+            }
         });
 
+        Button saveOptimizedButton = new Button("Save Optimized");
+        saveOptimizedButton.setStyle(
+                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-padding: 8px 15px;" +
+                "-fx-cursor: hand;" +
+                "-fx-border-radius: 4px;"
+        );
 
-        //Distance between button and checkboxes
-        buttonSection.getChildren().addAll(optimizeButton, considerRoom, considerSupervisor, optiLabelSave, optimizedSavePath, optSave);
-        HBox.setMargin(considerRoom, new Insets(0, 0, 0, 20));
-        HBox.setMargin(considerSupervisor, new Insets(0, 0, 0, 10));
-        HBox.setMargin(optiLabelSave, new Insets(0, 0, 0, 30));
-        HBox.setMargin(optimizedSavePath, new Insets(0, 0, 0, 10));
-        HBox.setMargin(optSave, new Insets(0, 0, 0, 10));
+        saveOptimizedButton.setOnAction(e -> {
+            // Placeholder for save action
+            // Implementation will be added later
+        });
 
+        saveSection.getChildren().addAll(saveFileLabel, folderPathField, browseButton, saveOptimizedButton);
+        rightSide.getChildren().add(saveSection);
+
+        // Add left and right sides to the control section
+        controlSection.getChildren().addAll(leftSide, rightSide);
 
         // Create filter section
         VBox filterSection = createFilterSection();
@@ -159,7 +195,7 @@ public class OptimizeTab {
         VBox tableSection = createTableSection();
 
         // Add all sections to the content
-        content.getChildren().addAll(buttonSection, filterSection, tableSection);
+        content.getChildren().addAll(controlSection, filterSection, tableSection);
 
         // Set the ScrollPane as the tab content
         tab.setContent(scrollPane);
@@ -169,6 +205,31 @@ public class OptimizeTab {
 
         // Initialize event handlers (this will setup our sorting listeners)
         setupEventHandlers();
+
+        // Set default sort direction
+        sortDirectionExam1Box.setValue(ASCENDING);
+        sortDirectionExam2Box.setValue(ASCENDING);
+
+        // Set initial default sort columns
+        sortExam1Box.setValue("Exam1 Name");
+        sortExam2Box.setValue("Exam2 Name");
+
+        // Apply initial sorting to the TreeTableView
+        if (optimizedTreeTable != null) {
+            // Sort Exam 1 table
+            applySortToTreeTable(optimizedTreeTable, "Exam1 Name", TreeTableColumn.SortType.ASCENDING);
+
+            // Sort each parent's children by Exam 2 name
+            TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
+            if (root != null) {
+                for (TreeItem<CollisionEntry> parent : root.getChildren()) {
+                    List<TreeItem<CollisionEntry>> children = new ArrayList<>(parent.getChildren());
+                    sortItems(children, "Exam2 Name", ASCENDING);
+                    parent.getChildren().clear();
+                    parent.getChildren().addAll(children);
+                }
+            }
+        }
     }
 
     private VBox createFilterSection() {
@@ -502,15 +563,36 @@ public class OptimizeTab {
 
     //
     private void bindColumnToCheckItem(String columnName, CheckMenuItem item, boolean defaultVisible) {
-        item.setSelected(defaultVisible);
-        TreeTableColumn<CollisionEntry, ?> col = findColumnByName(columnName);
-        if (col != null) col.setVisible(defaultVisible);
+        // Store the check menu item in the map for later reference
+        columnMenuItems.put(columnName, item);
+        columnVisibilityStates.put(columnName, defaultVisible);
 
-        item.selectedProperty().addListener((obs, old, newVal) -> {
-            TreeTableColumn<CollisionEntry, ?> c = findColumnByName(columnName);
-            if (c != null) c.setVisible(newVal);
-            adjustColumnWidths();
-        });
+        // Set initial selected state
+        item.setSelected(defaultVisible);
+
+        // Find and set initial visibility of the column
+        TreeTableColumn<CollisionEntry, ?> col = findColumnByName(columnName);
+        if (col != null) {
+            col.setVisible(defaultVisible);
+
+            // Two-way binding between column visibility and menu item
+            item.selectedProperty().addListener((obs, old, newVal) -> {
+                columnVisibilityStates.put(columnName, newVal);
+                TreeTableColumn<CollisionEntry, ?> c = findColumnByName(columnName);
+                if (c != null) {
+                    c.setVisible(newVal);
+                    adjustColumnWidths();
+                }
+            });
+
+            // Update menu item if column visibility changes externally
+            col.visibleProperty().addListener((obs, old, newVal) -> {
+                if (item.isSelected() != newVal) {
+                    item.setSelected(newVal);
+                    columnVisibilityStates.put(columnName, newVal);
+                }
+            });
+        }
     }
 
 
@@ -533,17 +615,17 @@ public class OptimizeTab {
         CheckMenuItem oldEndItem = new CheckMenuItem("Old End");
         bindColumnToCheckItem("Old End", oldEndItem, false);
 
-        CheckMenuItem optBeginItem = new CheckMenuItem("Optimize Begin");
-        bindColumnToCheckItem("Optimize Begin", optBeginItem, true);
+        CheckMenuItem optBeginItem = new CheckMenuItem("Opt Begin");
+        bindColumnToCheckItem("Opt Begin", optBeginItem, true);
 
-        CheckMenuItem optEndItem = new CheckMenuItem("Optimize End");
-        bindColumnToCheckItem("Optimize End", optEndItem, true);
+        CheckMenuItem optEndItem = new CheckMenuItem("Opt End");
+        bindColumnToCheckItem("Opt End", optEndItem, true);
 
         CheckMenuItem oldDistanceItem = new CheckMenuItem("Old Distance");
         bindColumnToCheckItem("Old Distance", oldDistanceItem, false);
 
-        CheckMenuItem optDistanceItem = new CheckMenuItem("Optimize Distance");
-        bindColumnToCheckItem("Optimize Distance", optDistanceItem, true);
+        CheckMenuItem optDistanceItem = new CheckMenuItem("Opt Distance");
+        bindColumnToCheckItem("Opt Distance", optDistanceItem, true);
 
         CheckMenuItem oldAvgDistanceItem = new CheckMenuItem("Old Avg. Distance");
         bindColumnToCheckItem("Old Avg. Distance", oldAvgDistanceItem, false);
@@ -551,11 +633,11 @@ public class OptimizeTab {
         CheckMenuItem oldMinDistanceItem = new CheckMenuItem("Old Min. Distance");
         bindColumnToCheckItem("Old Min. Distance", oldMinDistanceItem, false);
 
-        CheckMenuItem optAvgDistanceItem = new CheckMenuItem("Optimize Avg. Distance");
-        bindColumnToCheckItem("Optimize Avg. Distance", optAvgDistanceItem, true);
+        CheckMenuItem optAvgDistanceItem = new CheckMenuItem("Opt Avg. Distance");
+        bindColumnToCheckItem("Opt Avg. Distance", optAvgDistanceItem, true);
 
-        CheckMenuItem optMinDistanceItem = new CheckMenuItem("Optimize Min. Distance");
-        bindColumnToCheckItem("Optimize Min. Distance", optMinDistanceItem, true);
+        CheckMenuItem optMinDistanceItem = new CheckMenuItem("Opt Min. Distance");
+        bindColumnToCheckItem("Opt Min. Distance", optMinDistanceItem, true);
 
         // Add menu items to the columns menu
         columnsMenuButton.getItems().addAll(
@@ -671,7 +753,6 @@ public class OptimizeTab {
             }
         });
     }
-
 
     private void updateTable() {
 
@@ -877,13 +958,6 @@ public class OptimizeTab {
     }
 
 
-    /*private void restoreExpansionStates(Map<String, Boolean> states) {
-        TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
-        if (root != null) {
-            restoreExpansionStatesFromMap(root, states);
-        }
-    }*/
-
     //REFACTOR
     private void restoreExpansionStates(TreeItem<CollisionEntry> item) {
         if (item == null) return;
@@ -1039,13 +1113,7 @@ public class OptimizeTab {
             default -> null;
         };
     }
-
-    private int compareTimes(String time1, String time2) {
-        if (time1.isEmpty() && time2.isEmpty()) return 0;
-        if (time1.isEmpty()) return 1;
-        if (time2.isEmpty()) return -1;
-        return time1.compareTo(time2);
-    }
+    //For synchro
     private String mapDropdownValueToColumnName(String dropdownValue) {
         return switch (dropdownValue) {
             case "Exam 1 Name" -> "Exam 1";
@@ -1148,23 +1216,6 @@ public class OptimizeTab {
         });
     }
 
-    private void navigateToAssessment(MergedAssessment targetAssessment) {
-        if (targetAssessment == null || optimizedTreeTable.getRoot() == null) return;
-
-        // Search through the tree items to find the matching assessment
-        String targetQualifiedName = targetAssessment.getQualifiedName();
-
-        for (TreeItem<CollisionEntry> titleItem : optimizedTreeTable.getRoot().getChildren()) {
-            if (titleItem.getValue().isTitle() &&
-                    titleItem.getValue().getParentAssessment().getQualifiedName().equals(targetQualifiedName)) {
-                // Found the matching assessment, expand and select it
-                titleItem.setExpanded(true);
-                optimizedTreeTable.getSelectionModel().select(titleItem);
-                optimizedTreeTable.scrollTo(optimizedTreeTable.getRow(titleItem));
-                break;
-            }
-        }
-    }
 
     private TreeTableView<CollisionEntry> setupTreeTableView() {
         TreeTableView<CollisionEntry> optimizedTreeTable = new TreeTableView<>();
@@ -1197,8 +1248,6 @@ public class OptimizeTab {
                 }
             }
         });
-
-
 
         // Create all columns
         TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
@@ -1412,6 +1461,28 @@ public class OptimizeTab {
                 }
             });
         }
+
+        // Add listener to update dropdowns when column sorting changes
+        optimizedTreeTable.getSortOrder().addListener((javafx.collections.ListChangeListener<TreeTableColumn<CollisionEntry, ?>>) change -> {
+            if (isUpdating) return;
+
+            while (change.next()) {
+                if (change.wasAdded() && !change.getAddedSubList().isEmpty()) {
+                    TreeTableColumn<CollisionEntry, ?> column = change.getAddedSubList().get(0);
+                    updateSortDropdownsFromColumnHeader(column);
+                }
+            }
+        });
+
+        // Add listeners to each column's sortType property
+        for (TreeTableColumn<CollisionEntry, ?> column : optimizedTreeTable.getColumns()) {
+            column.sortTypeProperty().addListener((obs, oldValue, newValue) -> {
+                if (!isUpdating && newValue != null) {
+                    updateSortDropdownsFromColumnHeader(column);
+                }
+            });
+        }
+
         return optimizedTreeTable;
 
     }
@@ -1523,20 +1594,6 @@ public class OptimizeTab {
         });
     }
 
-    private void setupTableSizeListener() {
-        optimizedTreeTable.widthProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.doubleValue() > 0) {
-                adjustColumnWidths();
-            }
-        });
-    }
-
-    private void updateColumnVisibility() {
-        for (TreeTableColumn<CollisionEntry, ?> column : optimizedTreeTable.getColumns()) {
-            String columnName = column.getText();
-            column.setVisible(columnVisibilityStates.getOrDefault(columnName, true));
-        }
-    }
 
     /**
      * Returns the optimize tab instance.
@@ -1902,40 +1959,7 @@ public class OptimizeTab {
         return null;
     }
 
-    /**
-     * Compares two strings with proper handling of German umlauts
-     * Replaces "Ä" → "AE", "Ö" → "OE", "Ü" → "UE", and "ß" → "SS" before comparing
-     */
-    private int compareGermanStrings(String s1, String s2) {
-        if (s1 == null && s2 == null) return 0;
-        if (s1 == null) return -1;
-        if (s2 == null) return 1;
 
-        // Normalize German umlauts for comparison
-        String normalized1 = normalizeGermanString(s1);
-        String normalized2 = normalizeGermanString(s2);
-
-        return normalized1.compareTo(normalized2);
-    }
-
-    /**
-     * Normalizes German umlauts in a string for proper sorting
-     */
-    private String normalizeGermanString(String input) {
-        if (input == null) return "";
-
-        return input.replace("Ä", "AE")
-                .replace("ä", "ae")
-                .replace("Ö", "OE")
-                .replace("ö", "oe")
-                .replace("Ü", "UE")
-                .replace("ü", "ue")
-                .replace("ß", "SS");
-    }
-
-    /**
-     * Updates the TreeTableView after optimization
-     */
     public void updateOptimizedTreeTable(MergedAssessment[] assessments) {
         if (assessments == null || assessments.length == 0) {
             return;
@@ -1980,7 +2004,36 @@ public class OptimizeTab {
     /**
      * Updates the sort dropdowns based on the current column sort state
      */
+    private void updateSortDropdownsFromColumnHeader(TreeTableColumn<CollisionEntry, ?> column) {
+        if (column == null) return;
 
+        String columnName = column.getText();
+        TreeTableColumn.SortType sortType = column.getSortType();
+
+        // Convert sort type to direction string
+        String direction = (sortType == TreeTableColumn.SortType.ASCENDING) ? ASCENDING : DESCENDING;
+
+        // Determine which dropdown to update based on column type
+        if (isExam1Column(columnName)) {
+            // Update Exam 1 dropdowns
+            isUpdating = true;
+            try {
+                sortExam1Box.setValue(mapColumnNameToDropdownValue(columnName));
+                sortDirectionExam1Box.setValue(direction);
+            } finally {
+                isUpdating = false;
+            }
+        } else if (isExam2Column(columnName)) {
+            // Update Exam 2 dropdowns
+            isUpdating = true;
+            try {
+                sortExam2Box.setValue(mapColumnNameToDropdownValue(columnName));
+                sortDirectionExam2Box.setValue(direction);
+            } finally {
+                isUpdating = false;
+            }
+        }
+    }
 
     /**
      * Finds a column by its name
@@ -1994,13 +2047,97 @@ public class OptimizeTab {
         return null;
     }
 
-    private void onOptimizeButtonClicked() {
-        optimizedAssessments = examGUI.optimizeStart();
+    private void onOptimizeButtonClicked(Boolean supervisor, boolean room) {
+        optimizedAssessments = examGUI.optimizeStart(supervisor, room);
         if (optimizedAssessments != null) {
             updateOptimizedTreeTable(optimizedAssessments);
         } else {
             System.out.println("Da stimmt doch irgendwas nicht");
         }
     }
-}
 
+    /**
+     * Applies sorting to the tree table based on column name and sort type.
+     *
+     * @param treeTable The tree table to sort
+     * @param columnName The name of the column to sort by
+     * @param sortType The sort direction (ascending or descending)
+     */
+    private void applySortToTreeTable(TreeTableView<CollisionEntry> treeTable, String columnName, TreeTableColumn.SortType sortType) {
+        TreeTableColumn<CollisionEntry, ?> column = findColumnByName(columnName);
+        if (column != null) {
+            column.setSortType(sortType);
+            treeTable.getSortOrder().setAll(column);
+            treeTable.sort();
+        }
+    }
+
+    /**
+     * Checks if the given column name is an Exam 1 column.
+     *
+     * @param columnName The column name to check
+     * @return true if the column is an Exam 1 column, false otherwise
+     */
+    private boolean isExam1Column(String columnName) {
+        return columnName.startsWith("Exam1") ||
+               columnName.equals("Collision Count") ||
+               columnName.equals("Old Begin") ||
+               columnName.equals("Old End") ||
+               columnName.equals("Old Average Distance") ||
+               columnName.equals("Old Min. Distance") ||
+               columnName.equals("Optimize Begin") ||
+               columnName.equals("Optimize End") ||
+               columnName.equals("Optimize Average Distance") ||
+               columnName.equals("Optimize Min. Distance");
+    }
+
+    /**
+     * Checks if the given column name is an Exam 2 column.
+     *
+     * @param columnName The column name to check
+     * @return true if the column is an Exam 2 column, false otherwise
+     */
+    private boolean isExam2Column(String columnName) {
+        return columnName.startsWith("Exam2") ||
+               columnName.equals("Collision Count") ||
+               columnName.equals("Old Begin") ||
+               columnName.equals("Old End") ||
+               columnName.equals("Old Distance") ||
+               columnName.equals("Optimize Begin") ||
+               columnName.equals("Optimize End") ||
+               columnName.equals("Optimize Distance");
+    }
+
+    /**
+     * Maps a column name to the corresponding dropdown value.
+     *
+     * @param columnName The column name to map
+     * @return The dropdown value corresponding to the column name
+     */
+    private String mapColumnNameToDropdownValue(String columnName) {
+        // Direct mapping for most column names
+        if (columnName.equals("Exam 1")) return "Exam1 Name";
+        if (columnName.equals("Exam 2")) return "Exam2 Name";
+
+        // For other columns, use the same name as in the dropdown
+        return columnName;
+    }
+
+    /**
+     * Initialize the mapping between dropdown options and their corresponding column names.
+     * This is used to associate dropdown selections with the actual table columns for sorting.
+     */
+    private void initializeSortColumnMappings() {
+        // Map SortExam1 dropdown options to column names
+        sortExam1ColumnMap.put("Exam1 Name", "Exam 1");
+        sortExam1ColumnMap.put("Old Average Distance", "Old Avg. Distance");
+        sortExam1ColumnMap.put("Old Min. Distance", "Old Min. Distance");
+        sortExam1ColumnMap.put("Optimize Average Distance", "Opt Avg. Distance");
+        sortExam1ColumnMap.put("Optimize Min. Distance", "Opt Min. Distance");
+
+        // Map SortExam2 dropdown options to column names
+        sortExam2ColumnMap.put("Exam2 Name", "Exam 2");
+        sortExam2ColumnMap.put("Old Distance", "Old Distance");
+        sortExam2ColumnMap.put("Optimize Distance", "Opt Distance");
+    }
+}

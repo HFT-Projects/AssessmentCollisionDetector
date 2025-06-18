@@ -1,0 +1,49 @@
+Claude Sonnet 3.7:
+
+1.Prompt: // In the Optimize tab of the JavaFX application, arrange the following UI elements side by side:
+
+          // === Left side ===
+          // VBox with:
+          // - A Button: "Run Optimization"
+          // - Two CheckBoxes:
+          //     - "Consider Rooms in Optimization"
+          //     - "Consider Supervisors in Optimization"
+
+          // === Right side ===
+          // HBox with:
+          // - Label: "Save Optimized File:"
+          // - TextField: non-editable, shows selected folder path
+          // - Button: "Browse..." → opens a directory chooser (not a file chooser)
+          // - Button: "Save Optimized"
+
+          // === Functionality ===
+          // - When the user clicks the "Browse..." button, open a DirectoryChooser dialog
+          // - Once a folder is selected, update the TextField with the selected path
+          // - The "Save Optimized" button should have a placeholder event handler
+
+          // === Layout ===
+          // - Place the left VBox and the right HBox next to each other using an HBox as the root layout
+          // - Ensure clean spacing and alignment
+          // - All UI elements should be clearly aligned and not stacked on top of each other
+2.Prompt: // In the "Optimize" tab of the JavaFX application, create the following UI elements:
+
+          // 1. Two CheckBoxes:
+          //    - "Consider Rooms in Optimization"
+          //    - "Consider Supervisors in Optimization"
+
+          // 2. A section to select and display a file path for saving the optimized file:
+          //    - Label: "Save Optimized File:"
+          //    - TextField: non-editable, displays selected file path
+          //    - Button: "Browse...", opens a FileChooser to select the file path
+          //      The selected file path should automatically appear in the TextField.
+
+          // 3. A Button: "Save Optimized" (with an action listener placeholder)
+
+          // Layout requirements:
+          // - Use a VBox or GridPane for vertical structure with proper spacing
+          // - Align the "Browse" button next to the TextField
+          // - Ensure proper padding and spacing between elements
+          // - The UI should look clean and structured
+
+          // Note: Add a placeholder ActionListener for the "Save Optimized" button,
+          // the implementation will be added later.
