@@ -2,6 +2,8 @@ package gui;
 
 import data.Assessment;
 import data.MergedAssessment;
+import data.MergedAssessmentEditable;
+import javafx.application.Platform;
 import manager.optimizer.AssessmentOptimizer;
 import manager.AssessmentsManager;
 import manager.SaveManager;
@@ -394,8 +396,8 @@ public class ExamGUI extends Application {
 
         // Create distance filter field
         filterDistanceField = createStyledTextField("");
-        filterDistanceField.setPromptText("Enter hours");
-        filterDistanceField.setPrefWidth(150);
+        filterDistanceField.setPromptText("Enter max hours");
+        filterDistanceField.setPrefWidth(50);
 
         // Add numeric validation and filtering
         filterDistanceField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -429,33 +431,28 @@ public class ExamGUI extends Application {
         });
 
         // Add components to grid
-        controlGrid.add(filterExam1Label, 0, 0);
-        controlGrid.add(filterExam1Field, 1, 0);
-        controlGrid.add(filterExam2Label, 2, 0);
-        controlGrid.add(filterExam2Field, 3, 0);
+        int row = 0;
+        controlGrid.add(filterExam1Label, 0, row);
+        controlGrid.add(filterExam1Field, 1, row);
+        controlGrid.add(filterExam2Label, 2, row);
+        controlGrid.add(filterExam2Field, 3, row);
 
-        controlGrid.add(sortExam1Label, 0, 1);
-        controlGrid.add(sortExam1Box, 1, 1);
-        controlGrid.add(sortDirectionExam1Label, 2, 1);
-        controlGrid.add(sortDirectionExam1Box, 3, 1);
+        row++;
+        controlGrid.add(sortExam1Label, 0, row);
+        controlGrid.add(sortExam1Box, 1, row);
+        controlGrid.add(sortDirectionExam1Label, 2, row);
+        controlGrid.add(sortDirectionExam1Box, 3, row);
 
-        controlGrid.add(sortExam2Label, 0, 2);
-        controlGrid.add(sortExam2Box, 1, 2);
-        controlGrid.add(sortDirectionExam2Label, 2, 2);
-        controlGrid.add(sortDirectionExam2Box, 3, 2);
+        row++;
+        controlGrid.add(sortExam2Label, 0, row);
+        controlGrid.add(sortExam2Box, 1, row);
+        controlGrid.add(sortDirectionExam2Label, 2, row);
+        controlGrid.add(sortDirectionExam2Box, 3, row);
 
-        // Place Max Distance filter side by side on the left
-        HBox distanceBox = new HBox(10); // 10px spacing between label and field
-        distanceBox.setAlignment(Pos.CENTER_LEFT);
-        distanceBox.setPadding(new Insets(0, 0, 0, 0)); // Reset padding to align with other rows
-        filterDistanceLabel.setPadding(new Insets(0, 10, 0, 0)); // Add some right padding to the label
-        distanceBox.getChildren().addAll(filterDistanceLabel, filterDistanceField);
+        row++;
+        controlGrid.add(filterDistanceLabel, 0, row);
+        controlGrid.add(filterDistanceField, 1, row);
 
-        // Add the HBox to the grid in the fourth row, spanning all columns
-        controlGrid.add(distanceBox, 0, 3, 4, 1);
-
-        // Configure the TextField width to be reasonable
-        filterDistanceField.setPrefWidth(150); // Set a reasonable width for the field
 
         // Column constraints for even distribution
         ColumnConstraints labelCol = new ColumnConstraints();
@@ -537,37 +534,6 @@ public class ExamGUI extends Application {
         // Add checkboxes for filtering
         hideNullTimesCheckbox = new CheckBox("Hide entries with no times");
         hideNullTimesCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        showOnlyAssessmentsCheckbox = new CheckBox("Show only assessments");
-        showOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        showOnlyWithCollisionsCheckbox = new CheckBox("Show only with collisions");
-        showOnlyWithCollisionsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        // Create columns menu button
-        MenuButton columnsMenuButton = new MenuButton("Columns");
-        columnsMenuButton.setStyle(
-                "-fx-background-color: " + PRIMARY_COLOR + ";" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 5px 10px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-radius: 4px;"
-        );
-
-        controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, showOnlyWithCollisionsCheckbox, columnsMenuButton);
-
-        // Separator
-        Separator separator = new Separator();
-        separator.setPadding(new Insets(5, 0, 10, 0));
-
-        // Create tree table view instead of regular table
-        TreeTableView<CollisionEntry> collisionTreeTable = new TreeTableView<>();
-        collisionTreeTable.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
-        collisionTreeTable.setShowRoot(false);
-        VBox.setVgrow(collisionTreeTable, Priority.ALWAYS);
-
-        // Set up the filtering
         hideNullTimesCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
             // Vor dem Filtern oder Neuaufbauen immer die Expansion-States speichern
             if (collisionTreeTable.getRoot() != null) {
@@ -589,13 +555,19 @@ public class ExamGUI extends Application {
                     }
                 }
             } else {
+                updateCollisionTreeTable();
                 TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
                 if (root != null) {
                     filterTreeItems(root, newValue);
+                    // Ensure sorting is reapplied after filtering
+                    sortTreeItems(root);
                 }
             }
         });
 
+        //filterung included (setup)
+        showOnlyAssessmentsCheckbox = new CheckBox("Show only assessments");
+        showOnlyAssessmentsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
         // Set up assessment-only view toggle
         showOnlyAssessmentsCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
             TreeItem<CollisionEntry> root = collisionTreeTable.getRoot();
@@ -633,6 +605,8 @@ public class ExamGUI extends Application {
             }
         });
 
+        showOnlyWithCollisionsCheckbox = new CheckBox("Show only with collisions");
+        showOnlyWithCollisionsCheckbox.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
         // Set up with-collisions-only view toggle
         showOnlyWithCollisionsCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
             // Save expansion states before updating
@@ -656,6 +630,35 @@ public class ExamGUI extends Application {
             }
         });
 
+
+        // Create columns menu button
+        MenuButton columnsMenuButton = new MenuButton("Columns");
+        columnsMenuButton.setStyle(
+                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 5px 10px;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-border-radius: 4px;"
+        );
+
+        controlsContainer.getChildren().addAll(hideNullTimesCheckbox, showOnlyAssessmentsCheckbox, showOnlyWithCollisionsCheckbox, columnsMenuButton);
+
+        // Separator
+        Separator separator = new Separator();
+        separator.setPadding(new Insets(5, 0, 10, 0));
+
+        // Create tree table view instead of regular table
+        TreeTableView<CollisionEntry> collisionTreeTable = new TreeTableView<>();
+        collisionTreeTable.setColumnResizePolicy(TreeTableView.CONSTRAINED_RESIZE_POLICY);
+        collisionTreeTable.setShowRoot(false);
+
+        // Set preferred height to match CollisionResults tab
+        collisionTreeTable.setPrefHeight(600);
+        collisionTreeTable.setMinHeight(400);
+        VBox.setVgrow(collisionTreeTable, Priority.ALWAYS);
+
+
         // Table columns
         TreeTableColumn<CollisionEntry, String> exam1Col = new TreeTableColumn<>("Exam 1");
         exam1Col.setCellValueFactory(
@@ -674,13 +677,7 @@ public class ExamGUI extends Application {
                 param -> new SimpleStringProperty(param.getValue().getValue().collisionCount)
         );
         collisionCountCol.setSortable(false);  // Disable sorting
-        collisionCountCol.setComparator((s1, s2) -> {
-            try {
-                return Integer.compare(Integer.parseInt(s1), Integer.parseInt(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+
 
         TreeTableColumn<CollisionEntry, String> beginCol = new TreeTableColumn<>("Begin");
         beginCol.setCellValueFactory(
@@ -700,9 +697,30 @@ public class ExamGUI extends Application {
         );
         distanceCol.setSortable(true);
         distanceCol.setComparator((s1, s2) -> {
+            // Empty strings
+            if (s1.isEmpty() && s2.isEmpty()) return 0;
+            if (s1.isEmpty()) return -1;
+            if (s2.isEmpty()) return 1;
+
             try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
+                // Parse the strings into Duration objects
+                Duration d1 = parseDurationString(s1);
+                Duration d2 = parseDurationString(s2);
+
+                // Handle null cases (though this shouldn't happen with the parsing)
+                if (d1 == null && d2 == null) return 0;
+                if (d1 == null) return -1;
+                if (d2 == null) return 1;
+
+                // Handle zero cases
+                if (d1.equals(Duration.ZERO) && d2.equals(Duration.ZERO)) return 0;
+                if (d1.equals(Duration.ZERO)) return -1;
+                if (d2.equals(Duration.ZERO)) return 1;
+
+                // Use Duration's built-in comparison
+                return d1.compareTo(d2);
+            } catch (Exception e) {
+                // Fall back to string comparison if parsing fails
                 return s1.compareTo(s2);
             }
         });
@@ -717,9 +735,25 @@ public class ExamGUI extends Application {
         });
         avgDistanceCol.setSortable(true);
         avgDistanceCol.setComparator((s1, s2) -> {
+            // Empty strings
+            if (s1.isEmpty() && s2.isEmpty()) return 0;
+            if (s1.isEmpty()) return -1;
+            if (s2.isEmpty()) return 1;
+
             try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
+                // Parse the strings into Duration objects
+                Duration d1 = parseDurationString(s1);
+                Duration d2 = parseDurationString(s2);
+
+                // Handle zero cases
+                if (d1.equals(Duration.ZERO) && d2.equals(Duration.ZERO)) return 0;
+                if (d1.equals(Duration.ZERO)) return -1;
+                if (d2.equals(Duration.ZERO)) return 1;
+
+                // Use Duration's built-in comparison
+                return d1.compareTo(d2);
+            } catch (Exception e) {
+                // Fall back to string comparison if parsing fails
                 return s1.compareTo(s2);
             }
         });
@@ -734,12 +768,39 @@ public class ExamGUI extends Application {
         });
         maxDistanceCol.setSortable(true);
         maxDistanceCol.setComparator((s1, s2) -> {
+            // Empty strings
+            if (s1.isEmpty() && s2.isEmpty()) return 0;
+            if (s1.isEmpty()) return -1;
+            if (s2.isEmpty()) return 1;
+
             try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
+                // Parse the strings into Duration objects
+                Duration d1 = parseDurationString(s1);
+                Duration d2 = parseDurationString(s2);
+
+                // Handle null cases (though this shouldn't happen with the parsing)
+                if (d1 == null && d2 == null) return 0;
+                if (d1 == null) return -1;
+                if (d2 == null) return 1;
+
+                // Handle zero cases
+                if (d1.equals(Duration.ZERO) && d2.equals(Duration.ZERO)) return 0;
+                if (d1.equals(Duration.ZERO)) return -1;
+                if (d2.equals(Duration.ZERO)) return 1;
+
+                // Use Duration's built-in comparison
+                return d1.compareTo(d2);
+            } catch (Exception e) {
+                // Fall back to string comparison if parsing fails
                 return s1.compareTo(s2);
             }
         });
+
+        // Add all columns to the TreeTableView
+        //noinspection unchecked
+        collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
+                beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
+
 
         // Create column visibility menu items
         CheckMenuItem exam1Item = new CheckMenuItem("Exam 1");
@@ -825,8 +886,7 @@ public class ExamGUI extends Application {
         // Make sort arrows always visible for all columns
 
 
-        collisionTreeTable.getColumns().addAll(exam1Col, exam2Col, collisionCountCol,
-                beginCol, endCol, distanceCol, avgDistanceCol, maxDistanceCol);
+
 
         // Set default sort on Exam 1 column (ascending)
         exam1Col.setSortType(TreeTableColumn.SortType.ASCENDING);
@@ -853,11 +913,45 @@ public class ExamGUI extends Application {
         );
         return section;
     }
+    private Duration parseDurationString(String durationStr) {
+        if (durationStr == null || durationStr.trim().isEmpty()) {
+            return Duration.ZERO;
+        }
+
+        String duration = durationStr.trim();
+        long hours = 0;
+        long minutes = 0;
+
+        // Split by spaces to handle formats like "123h 30m"
+        String[] parts = duration.split("\\s+");
+
+        for (String part : parts) {
+            if (part.endsWith("h")) {
+                // Extract hours
+                try {
+                    String hoursStr = part.substring(0, part.length() - 1).trim();
+                    hours = Long.parseLong(hoursStr);
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Skip if unparseable
+                }
+            } else if (part.endsWith("m")) {
+                // Extract minutes
+                try {
+                    String minutesStr = part.substring(0, part.length() - 1).trim();
+                    minutes = Long.parseLong(minutesStr);
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Skip if unparseable
+                }
+            }
+        }
+
+        return Duration.ofHours(hours).plusMinutes(minutes);
+    }
 
     private void adjustColumnWidths() {
         // Ensure we're on the JavaFX Application Thread
-        if (!javafx.application.Platform.isFxApplicationThread()) {
-            javafx.application.Platform.runLater(this::adjustColumnWidths);
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(this::adjustColumnWidths);
             return;
         }
 
@@ -882,16 +976,16 @@ public class ExamGUI extends Application {
 
         // Count visible columns for proper width distribution
         long visibleColumns = collisionTreeTable.getColumns().stream()
-                .filter(javafx.scene.control.TreeTableColumn::isVisible)
+                .filter(TreeTableColumn::isVisible)
                 .count();
 
         if (visibleColumns == 0) return;
 
         // Second pass: Apply proportional widths with proper bindings
-        javafx.application.Platform.runLater(() -> {
+        Platform.runLater(() -> {
             // Calculate total proportion to ensure we use 100% of width
             double totalProportion = 0;
-            for (javafx.scene.control.TreeTableColumn<?, ?> column : collisionTreeTable.getColumns()) {
+            for (TreeTableColumn<?, ?> column : collisionTreeTable.getColumns()) {
                 if (column.isVisible()) {
                     if (column.getText().equals("Exam 1") || column.getText().equals("Exam 2")) {
                         totalProportion += 0.18;
@@ -910,10 +1004,10 @@ public class ExamGUI extends Application {
                 // Add visibility change listener to each column
                 column.visibleProperty().addListener((obs, oldVal, newVal) -> {
                     // Use runLater to ensure layout is updated after visibility change
-                    javafx.application.Platform.runLater(() -> {
+                    Platform.runLater(() -> {
                         adjustColumnWidths();
                         // Additional refresh after a short delay to ensure proper layout
-                        javafx.application.Platform.runLater(() -> {
+                        Platform.runLater(() -> {
                             collisionTreeTable.refresh();
                             collisionTreeTable.layout();
                         });
@@ -949,7 +1043,7 @@ public class ExamGUI extends Application {
         });
 
         // Final layout pass after a short delay to ensure all changes are applied
-        javafx.application.Platform.runLater(() -> {
+        Platform.runLater(() -> {
             // Add a small delay to ensure all bindings are properly applied
             try {
                 Thread.sleep(50);
@@ -1058,6 +1152,7 @@ public class ExamGUI extends Application {
         private final Assessment assessment;
         private final Assessment collidingAssessment;
         private final int collisionCountValue;
+        private Duration distanceDuration = null;
 
         private Duration maxDuration;
         private Duration minDuration;
@@ -1156,6 +1251,7 @@ public class ExamGUI extends Application {
                 }
 
                 Duration distance = Duration.between(first.getEnd(), last.getBegin());
+                this.distanceDuration=distance;
                 long hours = distance.toHours();
                 long minutes = distance.toMinutesPart();
                 this.distance = String.format("%dh %dm", hours, minutes);
@@ -1202,6 +1298,31 @@ public class ExamGUI extends Application {
                 this.validDurationsCount = 0;
                 this.totalDuration = Duration.ZERO;
             }
+        }
+        public Duration getAvgDistanceDuration(){
+            if (validDurationsCount == 0) return Duration.ZERO;
+            return totalDuration.dividedBy(validDurationsCount);}
+
+        public Duration getMinDistanceDuration(){return minDuration;}
+        // Add this method to your CollisionEntry class
+        public Duration getDistanceDuration() {
+            if (assessment == null || collidingAssessment == null ||
+                    assessment.getBegin() == null || assessment.getEnd() == null ||
+                    collidingAssessment.getBegin() == null || collidingAssessment.getEnd() == null) {
+                return null;
+            }
+
+            Assessment first, last;
+            if (assessment.getBegin().isBefore(collidingAssessment.getBegin())) {
+                first = assessment;
+                last = collidingAssessment;
+            } else {
+                first = collidingAssessment;
+                last = assessment;
+            }
+
+            Duration distance = Duration.between(first.getEnd(), last.getBegin());
+            return distance.isNegative() ? null : distance;
         }
 
         public boolean isTitle() {
@@ -1659,17 +1780,22 @@ public class ExamGUI extends Application {
             }
         }
 
+
         // Apply sorting
         sortTreeItems(root);
 
         // Update the tree table
         collisionTreeTable.setRoot(root);
 
+
+
         // Restore column-based sorting if it was active before
         if (!sortOrder.isEmpty()) {
             collisionTreeTable.getSortOrder().clear();
             collisionTreeTable.getSortOrder().addAll(sortOrder);
         }
+        //Hier lag der Fehler-Nerviger Bug
+
 
         // Set expansion states based on saved states and checkbox settings
         for (TreeItem<CollisionEntry> titleItem : root.getChildren()) {
@@ -1796,13 +1922,13 @@ public class ExamGUI extends Application {
             case "Exam 1 Name", "Exam Name" -> {
                 if (entry1.isTitle()) {
                     // For title rows (Exam 1), sort by primary exam
-                    yield compareGermanStrings(a1.getQualifiedName(), a2.getQualifiedName());
+                    yield compareGermanStrings(a1.getQualifiedName().toLowerCase(), a2.getQualifiedName().toLowerCase());
                 } else {
                     // For child rows (Exam 2), sort by the colliding assessment
                     Assessment c1 = entry1.getCollidingAssessment();
                     Assessment c2 = entry2.getCollidingAssessment();
                     if (c1 != null && c2 != null) {
-                        yield compareGermanStrings(c1.getQualifiedName(), c2.getQualifiedName());
+                        yield compareGermanStrings(c1.getQualifiedName().toLowerCase(), c2.getQualifiedName().toLowerCase());
                     }
                     yield 0;
                 }
@@ -1843,88 +1969,108 @@ public class ExamGUI extends Application {
                 yield compareA1.getEnd().compareTo(compareA2.getEnd());
             }
             case "Distance" -> {
-                if (!entry1.isTitle() && !entry2.isTitle()) {
-                    // Extract numeric values from distance strings (format: "Xh Ym")
-                    String dist1 = entry1.distance;
-                    String dist2 = entry2.distance;
+                // Compare Duration objects directly
+                Duration dist1 = entry1.getDistanceDuration();
+                Duration dist2 = entry2.getDistanceDuration();
 
-                    if (dist1.isEmpty() && dist2.isEmpty()) yield 0;
-                    if (dist1.isEmpty()) yield -1;
-                    if (dist2.isEmpty()) yield 1;
+                //NULL
+                if (dist1 == null && dist2 == null) yield 0;
+                if (dist1 == null) yield -1;
+                if (dist2 == null) yield 1;
 
-                    // Parse hours and minutes to comparable value
-                    try {
-                        // Extract hours
-                        int h1 = Integer.parseInt(dist1.substring(0, dist1.indexOf('h')).trim());
-                        int h2 = Integer.parseInt(dist2.substring(0, dist2.indexOf('h')).trim());
+                // Then handle zero values
+                if (dist1.equals(Duration.ZERO) && dist2.equals(Duration.ZERO)) yield 0;
+                if (dist1.equals(Duration.ZERO)) yield -1;
+                if (dist2.equals(Duration.ZERO)) yield 1;
 
-                        if (h1 != h2) yield Integer.compare(h1, h2);
+                // Duration has built-in compareTo that does proper numeric comparison
+                yield dist1.compareTo(dist2);
 
-                        // Extract minutes
-                        int m1 = Integer.parseInt(dist1.substring(dist1.indexOf('h') + 1, dist1.indexOf('m')).trim());
-                        int m2 = Integer.parseInt(dist2.substring(dist2.indexOf('h') + 1, dist2.indexOf('m')).trim());
-
-                        yield Integer.compare(m1, m2);
-                    } catch (Exception e) {
-                        yield dist1.compareTo(dist2);
-                    }
-                }
-                yield 0;
             }
             case "Avg. Distance" -> {
                 if (entry1.isTitle() && entry2.isTitle()) {
-                    String avg1 = entry1.getAverageDistance();
-                    String avg2 = entry2.getAverageDistance();
+                    // Compare Duration objects directly
+                    Duration avg1 = entry1.getAvgDistanceDuration();
+                    Duration avg2 = entry2.getAvgDistanceDuration();
 
-                    if (avg1.isEmpty() && avg2.isEmpty()) yield 0;
-                    if (avg1.isEmpty()) yield -1;
-                    if (avg2.isEmpty()) yield 1;
+                    if (avg1.equals(Duration.ZERO) && avg2.equals(Duration.ZERO)) yield 0;
+                    if (avg1.equals(Duration.ZERO)) yield -1;
+                    if (avg2.equals(Duration.ZERO)) yield 1;
 
-                    try {
-                        // Convert to minutes for comparison
-                        int h1 = Integer.parseInt(avg1.substring(0, avg1.indexOf('h')).trim());
-                        int m1 = Integer.parseInt(avg1.substring(avg1.indexOf('h') + 1, avg1.indexOf('m')).trim());
-                        int totalMinutes1 = h1 * 60 + m1;
-
-                        int h2 = Integer.parseInt(avg2.substring(0, avg2.indexOf('h')).trim());
-                        int m2 = Integer.parseInt(avg2.substring(avg2.indexOf('h') + 1, avg2.indexOf('m')).trim());
-                        int totalMinutes2 = h2 * 60 + m2;
-
-                        yield Integer.compare(totalMinutes1, totalMinutes2);
-                    } catch (Exception e) {
-                        yield avg1.compareTo(avg2);
-                    }
+                    // Duration has built-in compareTo that does proper numeric comparison
+                    yield avg1.compareTo(avg2);
                 }
                 yield 0;
             }
+
             case "Min. Distance" -> {
                 if (entry1.isTitle() && entry2.isTitle()) {
-                    String min1 = entry1.getMinDistance();
-                    String min2 = entry2.getMinDistance();
+                    // Compare Duration objects directly
+                    Duration min1 = entry1.getMinDistanceDuration();
+                    Duration min2 = entry2.getMinDistanceDuration();
 
-                    if (min1.isEmpty() && min2.isEmpty()) yield 0;
-                    if (min1.isEmpty()) yield -1;
-                    if (min2.isEmpty()) yield 1;
+                    if (min1 == null && min2 == null) yield 0;
+                    if (min1 == null) yield -1;
+                    if (min2 == null) yield 1;
 
-                    try {
-                        // Convert to minutes for comparison
-                        int h1 = Integer.parseInt(min1.substring(0, min1.indexOf('h')).trim());
-                        int m1 = Integer.parseInt(min1.substring(min1.indexOf('h') + 1, min1.indexOf('m')).trim());
-                        int totalMinutes1 = h1 * 60 + m1;
-
-                        int h2 = Integer.parseInt(min2.substring(0, min2.indexOf('h')).trim());
-                        int m2 = Integer.parseInt(min2.substring(min2.indexOf('h') + 1, min2.indexOf('m')).trim());
-                        int totalMinutes2 = h2 * 60 + m2;
-
-                        yield Integer.compare(totalMinutes1, totalMinutes2);
-                    } catch (Exception e) {
-                        yield min1.compareTo(min2);
-                    }
+                    // Duration has built-in compareTo that does proper numeric comparison
+                    yield min1.compareTo(min2);
                 }
                 yield 0;
             }
             default -> 0;
         };
+    }
+    private int parseDurationToMinutes(String durationStr) {
+        if (durationStr == null || durationStr.trim().isEmpty()) {
+            return 0;
+        }
+
+        String duration = durationStr.trim();
+        int totalMinutes = 0;
+
+        // Split by spaces to handle formats like "123h 30m"
+        String[] parts = duration.split("\\s+");
+
+        for (String part : parts) {
+            if (part.endsWith("h")) {
+                // Extract hours
+                try {
+                    String hoursStr = part.substring(0, part.length() - 1).trim();
+                    int hours = Integer.parseInt(hoursStr);
+                    totalMinutes += hours * 60;
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Skip if unparseable
+                }
+            } else if (part.endsWith("m")) {
+                // Extract minutes
+                try {
+                    String minutesStr = part.substring(0, part.length() - 1).trim();
+                    int minutes = Integer.parseInt(minutesStr);
+                    totalMinutes += minutes;
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    // Skip if unparseable
+                }
+            }
+        }
+
+        return totalMinutes;
+    }
+
+
+    private static Duration calculateOptimizedTimeDifference(Assessment exam1, Assessment exam2) {
+        // Return null if any required time is missing
+        if (exam1 == null || exam2 == null ||
+                exam1.getBegin() == null || exam1.getEnd() == null ||
+                exam2.getBegin() == null || exam2.getEnd() == null) {
+            return null;
+        }
+
+        if (exam1.getBegin().isBefore(exam2.getBegin())) {
+            return Duration.between(exam1.getEnd(), exam2.getBegin());
+        } else {
+            return Duration.between(exam2.getEnd(), exam1.getBegin());
+        }
     }
 
     private void updateSort() {
@@ -1938,6 +2084,11 @@ public class ExamGUI extends Application {
             String exam1SortDirection = sortDirectionExam1Box.getValue();
             String exam2SortColumn = sortExam2Box.getValue();
             String exam2SortDirection = sortDirectionExam2Box.getValue();
+
+            // Store current expansion states before updating sort
+            if (collisionTreeTable.getRoot() != null) {
+                saveExpansionStates(collisionTreeTable.getRoot());
+            }
 
             // Clear previous sorting
             collisionTreeTable.getSortOrder().clear();
@@ -1974,8 +2125,17 @@ public class ExamGUI extends Application {
                 }
             }
 
-            // Update the tree table with the current sort and filtering
-            updateCollisionTreeTable();
+            // Manually sort the tree items to ensure correct sorting
+            sortTreeItems(collisionTreeTable.getRoot());
+
+            // Force a refresh of the TreeTableView to update visual indicators
+            collisionTreeTable.refresh();
+
+            // Restore expansion states
+            if (collisionTreeTable.getRoot() != null) {
+                restoreExpansionStates(collisionTreeTable.getRoot());
+            }
+
             savePreferences();
         } finally {
             isUpdating = false;
@@ -2404,18 +2564,18 @@ public class ExamGUI extends Application {
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
         // TODO: tmp
-        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+        /*MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, false, false);
 
         this.optimizedStatAssessments = optimizedAssessments;
 
-        return optimizedAssessments;
+        return optimizedAssessments;*/
 
-        /*for (MergedAssessment ma : mergedAssessments) {
+        for (MergedAssessment ma : mergedAssessments) {
             ((MergedAssessmentEditable)ma).setOptimizedBegin(ma.getBegin());
             ((MergedAssessmentEditable)ma).setOptimizedEnd(ma.getEnd());
         }
-        return mergedAssessments;*/
+        return mergedAssessments;
     }
 
 
@@ -2424,6 +2584,4 @@ public class ExamGUI extends Application {
         launch();
     }
 }
-
-
 
