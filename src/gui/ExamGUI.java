@@ -2525,19 +2525,12 @@ public class ExamGUI extends Application {
 
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
-        // TODO: tmp
-        /*MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
 
         this.optimizedStatAssessments = optimizedAssessments;
 
-        return optimizedAssessments;*/
-
-        for (MergedAssessment ma : mergedAssessments) {
-            ((MergedAssessmentEditable)ma).setOptimizedBegin(ma.getBegin());
-            ((MergedAssessmentEditable)ma).setOptimizedEnd(ma.getEnd());
-        }
-        return mergedAssessments;
+        return optimizedAssessments;
     }
 
 
