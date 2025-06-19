@@ -200,13 +200,13 @@ public class CollisionPieChartView {
                             }
 
                             // Add the count of colliding students to the appropriate category
-                            if (hours > 36) {
+                            if (hours >= 36) {
                                 greenCollisions += count;
-                            } else if (hours > 12) {
+                            } else if (hours >= 12) {
                                 yellowCollisions += count;
-                            } else if (hours > 3) {
+                            } else if (hours >= 3) {
                                 orangeCollisions += count;
-                            } else if (hours > 1) {
+                            } else if (hours >= 1) {
                                 redCollisions += count;
                             } else {
                                 blackCollisions += count;
@@ -227,11 +227,11 @@ public class CollisionPieChartView {
         ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
 
         // Add slices for all categories
-        pieChartData.add(new PieChart.Data("(>36h): " + greenCollisions, greenCollisions));
-        pieChartData.add(new PieChart.Data("(>12h, ≤36h): " + yellowCollisions, yellowCollisions));
-        pieChartData.add(new PieChart.Data("(>3h, ≤12h): " + orangeCollisions, orangeCollisions));
-        pieChartData.add(new PieChart.Data("(>1h, ≤3h): " + redCollisions, redCollisions));
-        pieChartData.add(new PieChart.Data("(≤1h): " + blackCollisions, blackCollisions));
+        pieChartData.add(new PieChart.Data("(≥36h): " + greenCollisions, greenCollisions));
+        pieChartData.add(new PieChart.Data("(≥12h, <36h): " + yellowCollisions, yellowCollisions));
+        pieChartData.add(new PieChart.Data("(≥3h, <12h): " + orangeCollisions, orangeCollisions));
+        pieChartData.add(new PieChart.Data("(≥1h, <3h): " + redCollisions, redCollisions));
+        pieChartData.add(new PieChart.Data("(<1h): " + blackCollisions, blackCollisions));
 
         //Calculate the average time between assessments
         DecimalFormat formatter = new DecimalFormat("#0.00");
