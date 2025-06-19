@@ -119,7 +119,7 @@ public abstract class MergedAssessment extends AssessmentBase {
             return null;
         Set<AssessmentBase.AssessmentEntry> result = new HashSet<>();
         for (Assessment a : assessments) {
-            if (a.getRegisteredStudents() == null || a.getAssessmentEntries() == null)
+            if (a.getAssessmentEntries() == null)
                 continue;
             result.addAll(a.getAssessmentEntries());
         }
