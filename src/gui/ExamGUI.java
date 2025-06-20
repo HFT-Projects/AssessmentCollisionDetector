@@ -380,13 +380,7 @@ public class ExamGUI extends Application {
         // Set button actions
         examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, primaryStage, false));
         registrationBrowse.setOnAction(e -> selectFile(fileChooser, registrationPathField, primaryStage, false));
-        collisionBrowse.setOnAction(e -> {
-            File dir = directoryChooser.showDialog(primaryStage);
-            if (dir != null) {
-                collisionPathField.setText(dir.getAbsolutePath() + File.separator + "collisions.csv");
-                directoryChooser.setInitialDirectory(dir);
-            }
-        });
+        collisionBrowse.setOnAction(e -> selectFile(fileChooser, collisionPathField, primaryStage, true));
 
         // Get the action buttons from the file section (fourth child)
         HBox actionBox = (HBox) fileSection.getChildren().get(4);
