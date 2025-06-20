@@ -56,6 +56,7 @@ public class ExamGUI extends Application {
     private MergedAssessment[] optimizedStatAssessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
     private final Preferences preferencesCollisionsTab = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
+    private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
 
     // Page management
     private TabPane tabPane;
@@ -101,7 +102,7 @@ public class ExamGUI extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // Initialize OptimizeTab
-        OptimizeTab optimizeTab = new OptimizeTab(this);
+        OptimizeTab optimizeTab = new OptimizeTab(this::optimizeStart, preferencesOptimizerTab);
 
         // Create input page
         inputTab = new Tab("Data Input");
@@ -739,7 +740,8 @@ public class ExamGUI extends Application {
         dialog.showAndWait();
     }
 
-    public MergedAssessment [] optimizeStart(Boolean supervisor, boolean room) {
+    // TODO
+    public MergedAssessment [] optimizeStart(boolean room, Boolean supervisor) {
         if (assessments == null || assessments.length == 0) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Assessments");
