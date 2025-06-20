@@ -48,6 +48,7 @@ public class ExamGUI extends Application {
     private static final int RESULTS_PAGE = 1;
 
     private CollisionsTab collisionsTab;
+    private OptimizeTab optimizeTab;
     private TextField examPathField;
     private TextField registrationPathField;
     private TextField collisionPathField;
@@ -102,7 +103,8 @@ public class ExamGUI extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // Initialize OptimizeTab
-        OptimizeTab optimizeTab = new OptimizeTab(this::optimizeStart, preferencesOptimizerTab);
+        optimizeTab = new OptimizeTab(this::optimizeStart, preferencesOptimizerTab);
+        optimizeTab.getTab().setDisable(true);
 
         // Create input page
         inputTab = new Tab("Data Input");
@@ -444,6 +446,7 @@ public class ExamGUI extends Application {
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
 
         collisionsTab.enable_tab(assessments, preferencesCollisionsTab);
+        optimizeTab.getTab().setDisable(false);
 
         showAlert("Collisions detected successfully!", Alert.AlertType.INFORMATION);
 
