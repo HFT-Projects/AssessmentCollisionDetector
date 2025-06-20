@@ -76,7 +76,7 @@ public class CollisionsTab {
     }
 
     public void enable_tab(Assessment[] assessments, Preferences prefs) {
-        AssessmentTable assessmentTable = new AssessmentTable(assessments, prefs);
+        AssessmentTable assessmentTable = new AssessmentTable(assessments, prefs, false);
         VBox.setVgrow(assessmentTable, Priority.ALWAYS);
         section.getChildren().add(assessmentTable);
         tab.setDisable(false);
