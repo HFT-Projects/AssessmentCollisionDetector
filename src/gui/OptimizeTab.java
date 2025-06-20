@@ -44,6 +44,7 @@ public class OptimizeTab {
         HBox controlSection = new HBox(20);
         controlSection.setPadding(new Insets(0, 0, 20, 0));
         controlSection.setAlignment(Pos.CENTER_LEFT);
+        controlSection.setPrefWidth(Double.MAX_VALUE);
 
 
         VBox leftSide = new VBox(10);
@@ -75,7 +76,7 @@ public class OptimizeTab {
 
         // === Right side ===
         VBox rightSide = new VBox(10);
-        rightSide.setAlignment(Pos.TOP_LEFT);
+        rightSide.setAlignment(Pos.TOP_RIGHT);
 
         HBox saveSection = new HBox(15);  // Increased spacing between elements
         saveSection.setAlignment(Pos.CENTER_LEFT);
@@ -93,7 +94,8 @@ public class OptimizeTab {
                         "-fx-border-width: 1px;" +
                         "-fx-border-radius: 4px;" +
                         "-fx-padding: 8px;" +
-                        "-fx-font-size: 12px;"
+                        "-fx-font-size: 12px;" +
+                        "-fx-pref-width: 600px;"
         );
 
         Button browseButton = new Button("Browse...");
@@ -106,14 +108,7 @@ public class OptimizeTab {
                         "-fx-border-radius: 4px;"
         );
 
-        browseButton.setOnAction(e -> {
-            javafx.stage.DirectoryChooser directoryChooser = new javafx.stage.DirectoryChooser();
-            directoryChooser.setTitle("Select Output Directory");
-            java.io.File directory = directoryChooser.showDialog(tab.getTabPane().getScene().getWindow());
-            if (directory != null) {
-                folderPathField.setText(directory.getAbsolutePath());
-            }
-        });
+        browseButton.setOnAction(e -> ExamGUI.selectFile(folderPathField,true));
 
         Button saveOptimizedButton = new Button("Save Optimized");
         saveOptimizedButton.setStyle(
@@ -128,13 +123,17 @@ public class OptimizeTab {
         saveOptimizedButton.setOnAction(e -> {
             // Placeholder for save action
             // Implementation will be added later
+            // TODO
         });
 
         saveSection.getChildren().addAll(saveFileLabel, folderPathField, browseButton, saveOptimizedButton);
         rightSide.getChildren().add(saveSection);
 
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
         // Add left and right sides to the control section
-        controlSection.getChildren().addAll(leftSide, rightSide);
+        controlSection.getChildren().addAll(leftSide, spacer, rightSide);
 
         section = new VBox(15);
         section.setPadding(new Insets(20));

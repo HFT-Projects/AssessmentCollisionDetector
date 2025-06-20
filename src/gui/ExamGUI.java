@@ -32,6 +32,16 @@ public class ExamGUI extends Application {
     private static final String SUCCESS_COLOR = "#2ecc71";
     private static final String DARK_COLOR = "#34495e";
 
+    private static final FileChooser fileChooser;
+
+    static {
+        fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
+    }
+
     // Application constants
     private static final String APP_NAME = "Exam Collision Detector";
     private static final String APP_VERSION = "1.5.0";
@@ -63,8 +73,12 @@ public class ExamGUI extends Application {
     private TabPane tabPane;
     private Tab inputTab;
 
+    // TODO
+    private static Stage primaryStage;
+
     @Override
     public void start(Stage primaryStage) {
+        ExamGUI.primaryStage = primaryStage;
         primaryStage.setTitle("Exam Collision Detector");
         primaryStage.setMaximized(true);
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -346,11 +360,6 @@ public class ExamGUI extends Application {
     }
 
     private void setupEventHandlers(Stage primaryStage) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
-        );
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
 
         // Create directory chooser for output
         DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -381,9 +390,9 @@ public class ExamGUI extends Application {
                 .orElseThrow();
 
         // Set button actions
-        examBrowse.setOnAction(e -> selectFile(fileChooser, examPathField, primaryStage, false));
-        registrationBrowse.setOnAction(e -> selectFile(fileChooser, registrationPathField, primaryStage, false));
-        collisionBrowse.setOnAction(e -> selectFile(fileChooser, collisionPathField, primaryStage, true));
+        examBrowse.setOnAction(e -> selectFile(examPathField, false));
+        registrationBrowse.setOnAction(e -> selectFile(registrationPathField, false));
+        collisionBrowse.setOnAction(e -> selectFile(collisionPathField, true));
 
         // Get the action buttons from the file section (fourth child)
         HBox actionBox = (HBox) fileSection.getChildren().get(4);
@@ -395,12 +404,12 @@ public class ExamGUI extends Application {
         saveButton.setOnAction(e -> saveCollisions());
     }
 
-    private void selectFile(FileChooser fileChooser, TextField field, Stage stage, boolean save) {
+    static void selectFile(TextField field, boolean save) {
         File file;
         if (!save)
-            file = fileChooser.showOpenDialog(stage);
+            file = fileChooser.showOpenDialog(primaryStage);
         else
-            file = fileChooser.showSaveDialog(stage);
+            file = fileChooser.showSaveDialog(primaryStage);
 
         if (file != null) {
             field.setText(file.getAbsolutePath());
