@@ -68,6 +68,8 @@ public class CollisionsTab {
 
         // Add all sections to the content
         content.getChildren().addAll(section);
+        VBox.setVgrow(section, Priority.ALWAYS);
+        scrollPane.setFitToHeight(true);
 
         // Set the ScrollPane as the tab content
         tab.setContent(scrollPane);
@@ -75,6 +77,7 @@ public class CollisionsTab {
 
     public void enable_tab(Assessment[] assessments, Preferences prefs) {
         AssessmentTable assessmentTable = new AssessmentTable(assessments, prefs);
+        VBox.setVgrow(assessmentTable, Priority.ALWAYS);
         section.getChildren().add(assessmentTable);
         tab.setDisable(false);
     }
