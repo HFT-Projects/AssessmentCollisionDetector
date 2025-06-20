@@ -20,7 +20,7 @@ public class CollisionsTab {
     private static final String PRIMARY_COLOR = "#3498db";
     private static final String SECONDARY_COLOR = "#2c3e50";
 
-    private final VBox content;
+    private final VBox section;
     private final Tab tab;
 
     public CollisionsTab() {
@@ -29,7 +29,7 @@ public class CollisionsTab {
         tab.setDisable(true);
 
         // Create basic layout
-        content = new VBox(10);
+        VBox content = new VBox(10);
         content.setPadding(new Insets(20));
 
         // Create a ScrollPane to wrap the content
@@ -38,7 +38,7 @@ public class CollisionsTab {
         scrollPane.setPannable(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
 
-        VBox section = new VBox(15);
+        section = new VBox(15);
         section.setPadding(new Insets(20));
         section.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
         VBox.setVgrow(section, Priority.ALWAYS);
@@ -75,7 +75,7 @@ public class CollisionsTab {
 
     public void enable_tab(Assessment[] assessments, Preferences prefs) {
         AssessmentTable assessmentTable = new AssessmentTable(assessments, prefs);
-        content.getChildren().add(assessmentTable);
+        section.getChildren().add(assessmentTable);
         tab.setDisable(false);
     }
 
