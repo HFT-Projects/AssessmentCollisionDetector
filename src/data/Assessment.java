@@ -109,7 +109,8 @@ public abstract class Assessment extends AssessmentBase {
 
     @Override
     public int hashCode() {
-        return Objects.hash(number, name, courseOfStudy, assessmentVersion, begin, end, assessmentEntries, registeredStudents, collisionSum);
+        // ATTENTION: only consider final/immutable attributes
+        return Objects.hash(number, name, courseOfStudy, assessmentVersion, begin, end);
     }
 
     @Override

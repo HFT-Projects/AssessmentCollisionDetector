@@ -1,6 +1,8 @@
 package manager.optimizer;
 
-import data.*;
+import data.Assessment;
+import data.MergedAssessment;
+import data.MergedAssessmentEditable;
 import org.optaplanner.core.api.solver.Solver;
 import org.optaplanner.core.api.solver.SolverFactory;
 import org.optaplanner.core.config.solver.SolverConfig;
@@ -13,9 +15,9 @@ import java.util.*;
 
 public class AssessmentOptimizer {
     // Optimization timeouts
-    private static final Duration SMALL_GROUP_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration SMALL_GROUP_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration LARGE_GROUP_TIMEOUT = Duration.ofMinutes(1);
-    private static final int LARGE_GROUP_THRESHOLD = 50;
+    private static final int LARGE_GROUP_THRESHOLD = 36;
     private static final String MOVE_THREAD_COUNT = "1";
     private static final int DEFAULT_START_HOUR = 8;
     private static final int DEFAULT_END_HOUR = 18;
@@ -34,7 +36,7 @@ public class AssessmentOptimizer {
             if (mergedAssessments.containsKey(ai)) {
                 List<Assessment> currentAssessments = new LinkedList<>(Arrays.asList(mergedAssessments.get(ai).getAssessments()));
                 currentAssessments.add(a);
-                ((MergedAssessmentEditable)mergedAssessments.get(ai)).setAssessments(currentAssessments.toArray(new Assessment[0]));
+                ((MergedAssessmentEditable) mergedAssessments.get(ai)).setAssessments(currentAssessments.toArray(new Assessment[0]));
             } else {
                 MergedAssessmentEditable ma = new MergedAssessmentEditable();
                 ma.setAssessments(new Assessment[]{a});
@@ -72,18 +74,13 @@ public class AssessmentOptimizer {
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
 
-    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups, boolean respect_rooms, boolean respect_supervisors) {
-        AssessmentSchedulingConstraintProvider.respect_rooms = respect_rooms;
-        AssessmentSchedulingConstraintProvider.respect_supervisors = respect_supervisors;
+    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups) {
+        AssessmentSchedulingConstraintProvider.respectRooms = false;
+        AssessmentSchedulingConstraintProvider.respectSupervisors = false;
 
-        List<MergedAssessment[]> largeGroups = new ArrayList<>();
-        List<MergedAssessment[]> smallGroups = new ArrayList<>();
+        List<MergedAssessment[]> groups = new ArrayList<>();
 
         for (MergedAssessment[] group : assessmentGroups) {
-            if (group.length < 2) {
-                continue;
-            }
-
             MergedAssessment[] validAssessments = Arrays.stream(group)
                     .filter(a -> a.getBegin() != null && a.getEnd() != null)
                     .toArray(MergedAssessment[]::new);
@@ -92,25 +89,35 @@ public class AssessmentOptimizer {
                 continue;
             }
 
-            if (validAssessments.length >= LARGE_GROUP_THRESHOLD) {
-                largeGroups.add(validAssessments);
-            } else {
-                smallGroups.add(validAssessments);
-            }
+            groups.add(validAssessments);
         }
 
-        for (MergedAssessment[] largeGroup : largeGroups) {
-            optimizeAssessments(largeGroup, true);
-        }
-
-        if (!smallGroups.isEmpty()) {
-            optimizeSmallGroupsParallel(smallGroups);
-        }
+        groups.stream().filter(a -> a.length > LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).forEach(a -> optimizeAssessments(a, true));
+        groups.stream().filter(a -> a.length <= LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).parallel().forEach(a -> optimizeAssessments(a, false));
 
         MergedAssessment[] allAssessments = Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
         fillMissingOptimizedTimes(allAssessments);
 
         return allAssessments;
+    }
+
+    public static MergedAssessment[] optimizeAssessments(MergedAssessment[] assessments, boolean respectRooms, boolean respectSupervisors) {
+        AssessmentSchedulingConstraintProvider.respectRooms = respectRooms;
+        AssessmentSchedulingConstraintProvider.respectSupervisors = respectSupervisors;
+
+        MergedAssessment[] validAssessments = Arrays.stream(assessments)
+                .filter(a -> a.getBegin() != null && a.getEnd() != null)
+                .toArray(MergedAssessment[]::new);
+
+        if (validAssessments.length < 2) {
+            return assessments;
+        }
+
+        optimizeAssessments(validAssessments, true);
+
+        fillMissingOptimizedTimes(assessments);
+
+        return assessments;
     }
 
     private static void optimizeAssessments(MergedAssessment[] assessments, boolean isLargeGroup) {
@@ -140,10 +147,8 @@ public class AssessmentOptimizer {
         for (AssessmentScheduleItem item : solution.getAssessmentList()) {
             optimizedAssessments.add(item.getAssessment());
         }
-    }
 
-    private static void optimizeSmallGroupsParallel(List<MergedAssessment[]> smallGroups) {
-        smallGroups.parallelStream().forEach(group -> optimizeAssessments(group, false));
+        // System.out.println(assessments.length + "; " + solution.getScore().toString());
     }
 
     private static List<LocalDateTime> generateTimeSlots(MergedAssessment[] assessments) {
@@ -226,6 +231,9 @@ public class AssessmentOptimizer {
     }
 
     // Helper Records
-    private record TimeRange(LocalDateTime earliest, LocalDateTime latest) {}
-    private record AssessmentIdentifier(String name, LocalDateTime begin, LocalDateTime end) {}
+    private record TimeRange(LocalDateTime earliest, LocalDateTime latest) {
+    }
+
+    private record AssessmentIdentifier(String name, LocalDateTime begin, LocalDateTime end) {
+    }
 }

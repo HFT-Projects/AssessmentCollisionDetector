@@ -246,8 +246,12 @@ public class MainGUI extends Application {
 
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
-        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
+        if (!supervisor && !room) {
+            MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+            optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+        } else {
+            optimizedAssessments = AssessmentOptimizer.optimizeAssessments(mergedAssessments, room, supervisor);
+        }
 
         statisticsTab.setOptimizedAssessments(optimizedAssessments);
 

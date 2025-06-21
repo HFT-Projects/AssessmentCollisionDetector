@@ -186,7 +186,8 @@ public abstract class MergedAssessment extends AssessmentBase {
 
     @Override
     public int hashCode() {
-        return Objects.hash(Arrays.hashCode(assessments), optimizedBegin, optimizedEnd);
+        // ATTENTION: only consider final/immutable attributes
+        return Objects.hash(getName(), getBegin(), getEnd());
     }
 
     @Override

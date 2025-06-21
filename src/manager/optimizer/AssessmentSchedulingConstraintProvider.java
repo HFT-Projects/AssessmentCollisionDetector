@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class AssessmentSchedulingConstraintProvider implements ConstraintProvider {
-    public static boolean respect_rooms;
-    public static boolean respect_supervisors;
+    public static boolean respectRooms;
+    public static boolean respectSupervisors;
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
@@ -39,7 +39,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     }
 
     Constraint roomConflict(ConstraintFactory factory) {
-        if (!respect_rooms)
+        if (!respectRooms)
             return factory
                     .forEach(AssessmentScheduleItem.class)
                     .filter(a -> false)
@@ -78,7 +78,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
     }
 
     Constraint supervisorConflict(ConstraintFactory factory) {
-        if (!respect_rooms)
+        if (!respectRooms)
             return factory
                     .forEach(AssessmentScheduleItem.class)
                     .filter(a -> false)
