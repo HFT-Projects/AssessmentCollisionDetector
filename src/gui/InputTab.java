@@ -120,6 +120,7 @@ public class InputTab {
 
         Button detectButton = createStyledButton("Detect Collisions", MainGUI.SUCCESS_COLOR);
         Button saveButton = createStyledButton("Save Collisions", MainGUI.PRIMARY_COLOR);
+        saveButton.setDisable(true);
 
         detectButton.setOnAction(e -> {
             String examsPath = examsPathField.getText();
@@ -153,6 +154,9 @@ public class InputTab {
             prefs.put("yearInput", year == null ? "" : String.valueOf(year));
 
             mainGUI.detectCollisions(examsPath, registrationsPath, year);
+
+            detectButton.setDisable(true);
+            saveButton.setDisable(false);
         });
 
         saveButton.setOnAction(e -> {

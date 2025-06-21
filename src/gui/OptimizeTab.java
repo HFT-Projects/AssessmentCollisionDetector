@@ -40,6 +40,8 @@ public class OptimizeTab {
         controlSection.setPrefWidth(Double.MAX_VALUE);
 
 
+        Button saveOptimizedButton = new Button("Save Optimized");
+
         VBox leftSide = new VBox(10);
         leftSide.setAlignment(Pos.TOP_LEFT);
 
@@ -53,7 +55,6 @@ public class OptimizeTab {
                         "-fx-border-radius: 4px;"
         );
 
-
         // CheckBoxes for optimization options
         CheckBox considerRoomCheckbox = new CheckBox("Consider Rooms in Optimization");
         considerRoomCheckbox.setStyle("-fx-text-fill: #2c3e50;");
@@ -64,7 +65,11 @@ public class OptimizeTab {
         leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox);
         optimizeButton.setOnAction(e -> {
             MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
+            if (optimizedAssessments == null)
+                return;
             setAssessments(optimizedAssessments, prefs);
+            saveOptimizedButton.setDisable(false);
+            optimizeButton.setDisable(true);
         });
 
         // === Right side ===
@@ -104,7 +109,7 @@ public class OptimizeTab {
 
         browseButton.setOnAction(e -> mainGUI.selectFile(folderPathField, true));
 
-        Button saveOptimizedButton = new Button("Save Optimized");
+        saveOptimizedButton.setDisable(true);
         saveOptimizedButton.setStyle(
                 "-fx-background-color: " + MainGUI.PRIMARY_COLOR + ";" +
                         "-fx-text-fill: white;" +
