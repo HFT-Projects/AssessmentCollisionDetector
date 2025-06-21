@@ -60,6 +60,7 @@ public class MainGUI extends Application {
     private StatisticsTab statisticsTab;
 
     private Assessment[] assessments;
+    MergedAssessment[] optimizedAssessments;
 
     @Override
     public void start(Stage primaryStage) {
@@ -243,11 +244,27 @@ public class MainGUI extends Application {
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
         MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
+        optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
 
         statisticsTab.setOptimizedAssessments(optimizedAssessments);
 
         return optimizedAssessments;
+    }
+
+    void saveOptimizedAssessments(String path) {
+        // Check if we have collision data to save
+        if (optimizedAssessments == null || optimizedAssessments.length == 0) {
+            MainGUI.showAlert("No optimized collisions to save! Please optimize collisions first.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Proceed with saving
+        try {
+            SaveManager.saveAssessments(path, optimizedAssessments);
+            showAlert("Optimized assessments saved successfully to " + path, Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            showAlert("Error saving optimized assessments: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
 
     public static void showAlert(String message, Alert.AlertType type) {

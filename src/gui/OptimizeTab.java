@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.io.File;
 import java.util.prefs.Preferences;
 
 public class OptimizeTab {
@@ -77,6 +78,7 @@ public class OptimizeTab {
         saveFileLabel.setStyle("-fx-text-fill: #2c3e50;");
 
         TextField folderPathField = new TextField();
+        folderPathField.setText(prefs.get("optimizedAssessmentsPath", ""));
         folderPathField.setEditable(false);
         folderPathField.setPromptText("No folder selected");
 
@@ -113,9 +115,43 @@ public class OptimizeTab {
         );
 
         saveOptimizedButton.setOnAction(e -> {
-            // Placeholder for save action
-            // Implementation will be added later
-            // TODO
+            String path  = folderPathField.getText();
+
+            // Check if path is null or empty
+            if (path == null || path.trim().isEmpty()) {
+                MainGUI.showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            File collisionFile = new File(path);
+
+            // Check if parent directory exists and is accessible
+            File parentDir = collisionFile.getParentFile();
+            if (parentDir == null) {
+                MainGUI.showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            if (!parentDir.exists()) {
+                MainGUI.showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
+                return;
+            }
+
+            if (!parentDir.canWrite()) {
+                MainGUI.showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            // Check if file exists and is writable
+            if (collisionFile.exists() && !collisionFile.canWrite()) {
+                MainGUI.showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            // Save paths to preferences
+            prefs.put("optimizedAssessmentsPath", path);
+
+            mainGUI.saveOptimizedAssessments(path);
         });
 
         saveSection.getChildren().addAll(saveFileLabel, folderPathField, browseButton, saveOptimizedButton);
