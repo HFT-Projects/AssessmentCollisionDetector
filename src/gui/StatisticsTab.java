@@ -78,7 +78,7 @@ public class StatisticsTab {
         // Add components to the course chart container
         Label courseHeading = new Label("collisions by course of study");
         courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
-        courseHeading.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        courseHeading.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));

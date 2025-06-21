@@ -42,11 +42,11 @@ public class CollisionsTab {
         // Section title
         Label sectionTitle = new Label("Collision Results");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         // Section description
         Label sectionDescription = new Label("Detected exam collisions based on student registrations.");
-        sectionDescription.setStyle("-fx-text-fill: " + ExamGUI.SECONDARY_COLOR + ";");
+        sectionDescription.setStyle("-fx-text-fill: " + MainGUI.SECONDARY_COLOR + ";");
 
         // Separator
         Separator separator = new Separator();

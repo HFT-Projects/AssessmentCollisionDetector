@@ -28,7 +28,7 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.prefs.Preferences;
 
-public class ExamGUI extends Application {
+public class MainGUI extends Application {
     static final String PRIMARY_COLOR = "#3498db";
     static final String SECONDARY_COLOR = "#2c3e50";
     static final String SUCCESS_COLOR = "#2ecc71";
@@ -231,7 +231,7 @@ public class ExamGUI extends Application {
     void saveCollisions(String collisionsPath) {
         // Check if we have collision data to save
         if (assessments == null || assessments.length == 0) {
-            ExamGUI.showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
+            MainGUI.showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
             return;
         }
 

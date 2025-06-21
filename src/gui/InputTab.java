@@ -21,7 +21,7 @@ public class InputTab {
     private final TextField collisionsPathField;
     private final TextField optionalYearField;
 
-    public InputTab(ExamGUI mainGUI, Preferences prefs) {
+    public InputTab(MainGUI mainGUI, Preferences prefs) {
         tab = new Tab("Data Input");
         VBox inputContent = new VBox(20);
         inputContent.setPadding(new Insets(20));
@@ -35,7 +35,7 @@ public class InputTab {
         // Section header
         Label sectionTitle = new Label("Import Files");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
@@ -51,9 +51,9 @@ public class InputTab {
         collisionsPathField = createStyledTextField(prefs.get("collisionsPath", ""));
 
         // Create browse buttons
-        Button examBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
-        Button registrationBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
-        Button collisionBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
+        Button examBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
+        Button registrationBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
+        Button collisionBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
 
         examBrowseButton.setOnAction(e -> mainGUI.selectFile(examsPathField, false));
         registrationBrowseButton.setOnAction(e -> mainGUI.selectFile(registrationsPathField, false));
@@ -62,15 +62,15 @@ public class InputTab {
         // Create and style field labels with dark text color for visibility
         Label examLabel = new Label("Exam File");
         examLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        examLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        examLabel.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         Label registrationLabel = new Label("Registration File");
         registrationLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        registrationLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        registrationLabel.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         Label collisionLabel = new Label("Output File");
         collisionLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        collisionLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        collisionLabel.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         // Add components to grid with proper layout
         fileGrid.add(examLabel, 0, 0);
@@ -104,7 +104,7 @@ public class InputTab {
 
         Label optionalYearLabel = new Label("Year (Optional):");
         optionalYearLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        optionalYearLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        optionalYearLabel.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         optionalYearField = createStyledTextField(prefs.get("yearInput", ""));
         optionalYearField.setPromptText("YYYY");
@@ -118,8 +118,8 @@ public class InputTab {
         actionBox.setAlignment(Pos.CENTER);
         actionBox.setPadding(new Insets(20, 0, 0, 0));
 
-        Button detectButton = createStyledButton("Detect Collisions", ExamGUI.SUCCESS_COLOR);
-        Button saveButton = createStyledButton("Save Collisions", ExamGUI.PRIMARY_COLOR);
+        Button detectButton = createStyledButton("Detect Collisions", MainGUI.SUCCESS_COLOR);
+        Button saveButton = createStyledButton("Save Collisions", MainGUI.PRIMARY_COLOR);
 
         detectButton.setOnAction(e -> {
             String examsPath = examsPathField.getText();
@@ -127,12 +127,12 @@ public class InputTab {
             String yearInput = optionalYearField.getText();
 
             if (!new File(examsPath).exists()) {
-                ExamGUI.showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
                 return;
             }
 
             if (!new File(registrationsPath).exists()) {
-                ExamGUI.showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
                 return;
             }
 
@@ -140,7 +140,7 @@ public class InputTab {
             if (yearInput == null || yearInput.isEmpty()) {
                 year = null;
             } else if (!(yearInput.matches("\\d{4}"))) {
-                ExamGUI.showAlert("Invalid year!", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Invalid year!", Alert.AlertType.ERROR);
                 return;
             } else {
                 // Parse year, store it and update table
@@ -160,7 +160,7 @@ public class InputTab {
 
             // Check if path is null or empty
             if (collisionsPath == null || collisionsPath.trim().isEmpty()) {
-                ExamGUI.showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
                 return;
             }
 
@@ -169,23 +169,23 @@ public class InputTab {
             // Check if parent directory exists and is accessible
             File parentDir = collisionFile.getParentFile();
             if (parentDir == null) {
-                ExamGUI.showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
                 return;
             }
 
             if (!parentDir.exists()) {
-                ExamGUI.showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
+                MainGUI.showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
                 return;
             }
 
             if (!parentDir.canWrite()) {
-                ExamGUI.showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
                 return;
             }
 
             // Check if file exists and is writable
             if (collisionFile.exists() && !collisionFile.canWrite()) {
-                ExamGUI.showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
+                MainGUI.showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
                 return;
             }
 

@@ -18,7 +18,7 @@ public class OptimizeTab {
     private final VBox section;
     private final Tab tab;
 
-    public OptimizeTab(ExamGUI mainGUI, Preferences prefs) {
+    public OptimizeTab(MainGUI mainGUI, Preferences prefs) {
         tab = new Tab("Optimization");
         tab.setClosable(false);
 
@@ -92,7 +92,7 @@ public class OptimizeTab {
 
         Button browseButton = new Button("Browse...");
         browseButton.setStyle(
-                "-fx-background-color: " + ExamGUI.PRIMARY_COLOR + ";" +
+                "-fx-background-color: " + MainGUI.PRIMARY_COLOR + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-padding: 8px 15px;" +
@@ -104,7 +104,7 @@ public class OptimizeTab {
 
         Button saveOptimizedButton = new Button("Save Optimized");
         saveOptimizedButton.setStyle(
-                "-fx-background-color: " + ExamGUI.PRIMARY_COLOR + ";" +
+                "-fx-background-color: " + MainGUI.PRIMARY_COLOR + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-padding: 8px 15px;" +
@@ -136,11 +136,11 @@ public class OptimizeTab {
         // Section title
         Label sectionTitle = new Label("Optimization Results");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
         // Section description
         Label sectionDescription = new Label("Results of exam schedule optimization.");
-        sectionDescription.setStyle("-fx-text-fill: " + ExamGUI.SECONDARY_COLOR + ";");
+        sectionDescription.setStyle("-fx-text-fill: " + MainGUI.SECONDARY_COLOR + ";");
 
         // Separator
         Separator separator = new Separator();
