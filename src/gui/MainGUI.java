@@ -33,6 +33,7 @@ public class MainGUI extends Application {
     static final String PRIMARY_COLOR = "#3498db";
     static final String SECONDARY_COLOR = "#2c3e50";
     static final String SUCCESS_COLOR = "#2ecc71";
+    static final String LIGHT_COLOR = "#ecf0f1";
     static final String DARK_COLOR = "#34495e";
 
     private static final String APP_NAME = "Exam Collision Detector";
