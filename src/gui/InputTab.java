@@ -150,7 +150,7 @@ public class InputTab {
             // save paths to preferences
             prefs.put("examsPath", examsPath);
             prefs.put("registrationsPath", registrationsPath);
-            prefs.put("yearInput", registrationsPath);
+            prefs.put("yearInput", year == null ? "" : String.valueOf(year));
 
             mainGUI.detectCollisions(examsPath, registrationsPath, year);
         });

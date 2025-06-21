@@ -6,16 +6,16 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import manager.AssessmentsManager;
@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.prefs.Preferences;
 
 public class MainGUI extends Application {
@@ -35,12 +36,12 @@ public class MainGUI extends Application {
     static final String DARK_COLOR = "#34495e";
 
     private static final String APP_NAME = "Exam Collision Detector";
-    private static final String APP_VERSION = "1.5.0";
+    private static final String APP_VERSION = "1.0";
     private static final String[] APP_AUTHORS = {
             "Johannes Wilhelm Hermann Kerger",
+            "Azat Özden",
             "Joshua Bedford",
             "Razvan Grumaz",
-            "Azat Özden"
     };
     private static final String COPYRIGHT_YEAR = "2025";
 
@@ -65,6 +66,8 @@ public class MainGUI extends Application {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Exam Collision Detector");
         primaryStage.setMaximized(true);
+
+        // add handler to create an alert box if an unexpected exception is thrown.
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             final StringWriter sw = new StringWriter();
             final PrintWriter pw = new PrintWriter(sw, true);
@@ -82,13 +85,6 @@ public class MainGUI extends Application {
             showAlert(err, Alert.AlertType.ERROR);
         });
 
-        // Create a drop shadow effect for cards
-        DropShadow dropShadow = new DropShadow();
-        dropShadow.setRadius(5.0);
-        dropShadow.setOffsetX(3.0);
-        dropShadow.setOffsetY(3.0);
-        dropShadow.setColor(Color.color(0.4, 0.4, 0.4, 0.3));
-
         // Main container
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #f5f7fa;");
@@ -101,13 +97,13 @@ public class MainGUI extends Application {
         tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        // Initialize OptimizeTab
-        optimizeTab = new OptimizeTab(this, preferencesOptimizerTab);
-        optimizeTab.getTab().setDisable(true);
-
         inputTab = new InputTab(this, preferencesInputTab);
 
         collisionsTab = new CollisionsTab();
+        // collisionsTab is disabled by default because it needs Assessment[] to be enabled.
+
+        optimizeTab = new OptimizeTab(this, preferencesOptimizerTab);
+        optimizeTab.getTab().setDisable(true);
 
         statisticsTab = new StatisticsTab();
         statisticsTab.getTab().setDisable(true);
@@ -128,9 +124,6 @@ public class MainGUI extends Application {
         Scene scene = new Scene(root, 1000, 700);
         primaryStage.setScene(scene);
 
-        // Setup file choosers and event handlers
-        setupEventHandlers();
-
         primaryStage.show();
 
         fileChooser = new FileChooser();
@@ -146,7 +139,6 @@ public class MainGUI extends Application {
         header.setPadding(new Insets(20, 15, 20, 15));
         header.setStyle("-fx-background-color: " + PRIMARY_COLOR + ";");
 
-        // Create left section for title
         HBox titleSection = new HBox();
         titleSection.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(titleSection, Priority.ALWAYS);
@@ -156,23 +148,8 @@ public class MainGUI extends Application {
         title.setTextFill(Color.WHITE);
         titleSection.getChildren().add(title);
 
-        // Create right section for About button
-        HBox buttonSection = new HBox();
-        buttonSection.setAlignment(Pos.CENTER_RIGHT);
-
-        Button aboutButton = new Button("About");
-        aboutButton.setStyle(
-                "-fx-background-color: transparent;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-border-color: white;" +
-                        "-fx-border-radius: 3px;"
-        );
-        aboutButton.setOnAction(e -> showAboutDialog());
-        buttonSection.getChildren().add(aboutButton);
-
         // Add both sections to header
-        header.getChildren().addAll(titleSection, buttonSection);
+        header.getChildren().addAll(titleSection);
         HBox.setHgrow(titleSection, Priority.ALWAYS);
 
         return header;
@@ -184,18 +161,27 @@ public class MainGUI extends Application {
         footer.setPadding(new Insets(15));
         footer.setStyle("-fx-background-color: " + DARK_COLOR + ";");
 
-        Label copyright = new Label("Exam Collision Detector © 2025");
+        List<String> authors = Arrays.asList(APP_AUTHORS);
+        String authorString = "";
+
+
+        //noinspection ConstantValue
+        if (!authors.isEmpty()) {
+            authorString = authors.get(authors.size() - 1);
+            //noinspection ConstantValue
+            if (authors.size() >= 2) {
+                authorString = authors.get(authors.size() - 2) + " & " + authorString;
+                //noinspection ConstantValue
+                if (authors.size() >= 3)
+                    authorString = String.join(", ", authors.subList(0, authors.size() - 2)) + ", " + authorString;
+            }
+        }
+
+        Label copyright = new Label("Exam Collision Detector V" + APP_VERSION + " © " + COPYRIGHT_YEAR + " by " + authorString);
         copyright.setTextFill(Color.WHITE);
 
         footer.getChildren().add(copyright);
         return footer;
-    }
-
-    // TODO
-    private void setupEventHandlers() {
-        // Create directory chooser for output
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
     }
 
     void selectFile(TextField field, boolean save) {
@@ -244,7 +230,6 @@ public class MainGUI extends Application {
         }
     }
 
-    // TODO
     MergedAssessment[] optimizeStart(boolean room, Boolean supervisor) {
         if (assessments == null || assessments.length == 0) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -263,61 +248,6 @@ public class MainGUI extends Application {
         statisticsTab.setOptimizedAssessments(optimizedAssessments);
 
         return optimizedAssessments;
-    }
-
-    private void showAboutDialog() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("About " + APP_NAME);
-        dialog.setHeaderText(null);
-
-        VBox content = new VBox(15);
-        content.setPadding(new Insets(20));
-        content.setStyle("-fx-background-color: white;");
-
-        // App name and version
-        Label nameLabel = new Label(APP_NAME);
-        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
-        nameLabel.setTextFill(Color.web(PRIMARY_COLOR));
-
-        Label versionLabel = new Label("Version " + APP_VERSION);
-        versionLabel.setFont(Font.font("System", FontWeight.MEDIUM, 14));
-        versionLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        // Authors section
-        Label authorsTitle = new Label("Authors:");
-        authorsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
-        authorsTitle.setTextFill(Color.web(SECONDARY_COLOR));
-
-        VBox authorsBox = new VBox(5);
-        for (String author : APP_AUTHORS) {
-            Label authorLabel = new Label("• " + author);
-            authorLabel.setTextFill(Color.web(SECONDARY_COLOR));
-            authorsBox.getChildren().add(authorLabel);
-        }
-
-        // Copyright
-        Label copyrightLabel = new Label("© " + COPYRIGHT_YEAR + " All rights reserved.");
-        copyrightLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Separator separator = new Separator();
-        separator.setPadding(new Insets(10, 0, 10, 0));
-
-        content.getChildren().addAll(
-                nameLabel,
-                versionLabel,
-                separator,
-                authorsTitle,
-                authorsBox,
-                new Separator(),
-                copyrightLabel
-        );
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.getDialogPane().setPrefWidth(400);
-        dialog.getDialogPane().setStyle("-fx-background-color: white;");
-
-        dialog.showAndWait();
     }
 
     public static void showAlert(String message, Alert.AlertType type) {

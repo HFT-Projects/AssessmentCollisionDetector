@@ -1,10 +1,8 @@
 package gui;
 
-import data.AssessmentBase;
 import data.Assessment;
-
+import data.AssessmentBase;
 import data.MergedAssessment;
-import data.MergedAssessmentEditable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -19,7 +17,6 @@ import javafx.scene.text.FontWeight;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +42,7 @@ public class CollisionPieChartView {
             }
         }
         MergedAssessment[] optimizedAssessments = assessmentList.toArray(new MergedAssessment[0]);
-        return visualizePieChart(optimizedAssessments, "Optimierte Studiengänge");
+        return visualizePieChart(optimizedAssessments, "course of study (optimized)");
     }
 
     /**
@@ -63,15 +60,15 @@ public class CollisionPieChartView {
             }
         }
         Assessment[] assessmentsByCourseOfStudy = assesmentList.toArray(new Assessment[0]);
-        return visualizePieChart(assessmentsByCourseOfStudy, "Studiengänge");
+        return visualizePieChart(assessmentsByCourseOfStudy, "course of study");
     }
 
     public static Node createOptimizedCollisionPieChartByTime(MergedAssessment[] mergedAssessments) {
-        return visualizePieChart(mergedAssessments, "alle optimierten Prüfungen");
+        return visualizePieChart(mergedAssessments, "all assessments (optimized)");
     }
 
     public static Node createCollisionPieChartByTime(Assessment[] assessments) {
-        return visualizePieChart(assessments, "alle Prüfungen");
+        return visualizePieChart(assessments, "all assessments");
     }
 
     public static Node createOptimizedCollisionPieChartByFaculty(MergedAssessment[] mergedAssessments) {
@@ -112,9 +109,9 @@ public class CollisionPieChartView {
         MergedAssessment[] facultyBArray = facultyBAssessments.toArray(new MergedAssessment[0]);
         MergedAssessment[] facultyCArray = facultyCAssessments.toArray(new MergedAssessment[0]);
 
-        Node facultyAPieChart = visualizePieChart(facultyAArray, "Fakultät A optimiert:");
-        Node facultyBPieChart = visualizePieChart(facultyBArray, "Fakultät B optimiert:");
-        Node facultyCPieChart = visualizePieChart(facultyCArray, "Fakultät C optimiert:");
+        Node facultyAPieChart = visualizePieChart(facultyAArray, "faculty A (optimized)");
+        Node facultyBPieChart = visualizePieChart(facultyBArray, "faculty B (optimized)");
+        Node facultyCPieChart = visualizePieChart(facultyCArray, "faculty C (optimized)");
 
         facultyStatistics.getChildren().addAll(facultyAPieChart, facultyBPieChart, facultyCPieChart);
 
@@ -150,9 +147,9 @@ public class CollisionPieChartView {
         Assessment[] facultyBArray = facultyBAssessments.toArray(new Assessment[0]);
         Assessment[] facultyCArray = facultyCAssessments.toArray(new Assessment[0]);
 
-        Node facultyAPieChart = visualizePieChart(facultyAArray, "Fakultät A:");
-        Node facultyBPieChart = visualizePieChart(facultyBArray, "Fakultät B:");
-        Node facultyCPieChart = visualizePieChart(facultyCArray, "Fakultät C:");
+        Node facultyAPieChart = visualizePieChart(facultyAArray, "faculty A:");
+        Node facultyBPieChart = visualizePieChart(facultyBArray, "faculty B:");
+        Node facultyCPieChart = visualizePieChart(facultyCArray, "faculty C:");
 
         facultyStatistics.getChildren().addAll(facultyAPieChart, facultyBPieChart, facultyCPieChart);
 
@@ -238,16 +235,16 @@ public class CollisionPieChartView {
         double avgHoursBetweenAssessments = totalHours / (greenCollisions + yellowCollisions + orangeCollisions + redCollisions + blackCollisions);
 
         //Create Labels for additional Info
-        Label avgHoursLabel = new Label("Durchschnittlicher Abstand zwischen Prüfungen: " + formatter.format(avgHoursBetweenAssessments) + " Stunden.");
+        Label avgHoursLabel = new Label("Average Distance between Assessments: " + formatter.format(avgHoursBetweenAssessments) + " hours.");
         avgHoursLabel.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
-        Label minDistanceLabel = new Label("Kleinster Abstand zwischen zwei Prüfungen: " + minDistance + " Stunden.");
+        Label minDistanceLabel = new Label("Minimum Distance between Assessments: " + minDistance + " hours.");
         minDistanceLabel.setFont(Font.font("System", FontWeight.NORMAL, 16));
 
 
         // Create and configure the chart
         final PieChart chart = new PieChart(pieChartData);
-        chart.setTitle("Kollisionsverteilung für " + info);
+        chart.setTitle("Collisions by " + info);
         chart.setLabelsVisible(true);
         chart.setLabelLineLength(20);
         chart.setPrefHeight(400);
@@ -255,6 +252,7 @@ public class CollisionPieChartView {
         chart.setLegendVisible(true);
 
         try {
+            @SuppressWarnings({"SpellCheckingInspection", "DataFlowIssue"})
             String cssResource = CollisionPieChartView.class.getResource("/chartcolors.css").toExternalForm();
             chart.getStylesheets().add(cssResource);
         } catch (Exception e) {

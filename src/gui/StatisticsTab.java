@@ -76,7 +76,7 @@ public class StatisticsTab {
         courseComboBox.valueProperty().addListener((o, oldVal, newVal) -> loadCollisionByAssessmentContent());
 
         // Add components to the course chart container
-        Label courseHeading = new Label("collisions by course of study");
+        Label courseHeading = new Label("Collisions by course of study");
         courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
         courseHeading.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
@@ -156,7 +156,7 @@ public class StatisticsTab {
     }
 
     private void loadCollisionByAssessmentContent() {
-        if (courseComboBox.getValue() == null) //TODO
+        if (courseComboBox.getValue() == null)
             return;
 
         String selectedCourse = courseComboBox.getValue();
