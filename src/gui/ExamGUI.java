@@ -2,78 +2,67 @@ package gui;
 
 import data.Assessment;
 import data.MergedAssessment;
-import manager.optimizer.AssessmentOptimizer;
-import manager.AssessmentsManager;
-import manager.SaveManager;
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.FileChooser;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.scene.effect.DropShadow;
+import manager.AssessmentsManager;
+import manager.SaveManager;
+import manager.optimizer.AssessmentOptimizer;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.prefs.Preferences;
 
 public class ExamGUI extends Application {
-    // Style constants
-    private static final String PRIMARY_COLOR = "#3498db";
-    private static final String SECONDARY_COLOR = "#2c3e50";
-    private static final String DARK_COLOR = "#34495e";
+    static final String PRIMARY_COLOR = "#3498db";
+    static final String SECONDARY_COLOR = "#2c3e50";
+    static final String SUCCESS_COLOR = "#2ecc71";
+    static final String DARK_COLOR = "#34495e";
 
-    private static final FileChooser fileChooser;
-
-    static {
-        fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
-        );
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
-    }
-
-    // Application constants
     private static final String APP_NAME = "Exam Collision Detector";
     private static final String APP_VERSION = "1.5.0";
     private static final String[] APP_AUTHORS = {
-            "Johannes Kerger",
+            "Johannes Wilhelm Hermann Kerger",
             "Joshua Bedford",
             "Razvan Grumaz",
             "Azat Özden"
     };
     private static final String COPYRIGHT_YEAR = "2025";
 
-    // Page constants
-    private static final int INPUT_PAGE = 0;
-    private static final int RESULTS_PAGE = 1;
-
-    private CollisionsTab collisionsTab;
-    private OptimizeTab optimizeTab;
-    private StatisticsTab statisticsTab;
-    private Assessment[] assessments;
-    private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
     private final Preferences preferencesCollisionsTab = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
     private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
     private final Preferences preferencesInputTab = Preferences.userRoot().node("/assessment_collision_detector/input_tab");
 
-    // Page management
+    private FileChooser fileChooser;
+    private Stage primaryStage;
     private TabPane tabPane;
-    private InputTab inputTab;
 
-    // TODO
-    private static Stage primaryStage;
+    @SuppressWarnings("FieldCanBeLocal")
+    private InputTab inputTab;
+    private CollisionsTab collisionsTab;
+    private OptimizeTab optimizeTab;
+    private StatisticsTab statisticsTab;
+
+    private Assessment[] assessments;
 
     @Override
     public void start(Stage primaryStage) {
-        ExamGUI.primaryStage = primaryStage;
+        this.primaryStage = primaryStage;
         primaryStage.setTitle("Exam Collision Detector");
         primaryStage.setMaximized(true);
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -88,6 +77,7 @@ public class ExamGUI extends Application {
                 err = Arrays.stream(stackTrace).limit(19).reduce("", (s1, s2) -> s1 + "\n" + s2);
                 err += "\n... and " + (stackTrace.length - 19) + " more lines.";
             }
+            //noinspection CallToPrintStackTrace
             throwable.printStackTrace();
             showAlert(err, Alert.AlertType.ERROR);
         });
@@ -112,10 +102,10 @@ public class ExamGUI extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // Initialize OptimizeTab
-        optimizeTab = new OptimizeTab(this::optimizeStart, preferencesOptimizerTab);
+        optimizeTab = new OptimizeTab(this, preferencesOptimizerTab);
         optimizeTab.getTab().setDisable(true);
 
-       inputTab = new InputTab(this, preferencesInputTab);
+        inputTab = new InputTab(this, preferencesInputTab);
 
         collisionsTab = new CollisionsTab();
 
@@ -126,7 +116,7 @@ public class ExamGUI extends Application {
         tabPane.getTabs().addAll(inputTab.getTab(), collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab());
 
         // Set initial tab to input
-        tabPane.getSelectionModel().select(INPUT_PAGE);
+        tabPane.getSelectionModel().select(inputTab.getTab());
 
         root.setCenter(tabPane);
 
@@ -142,6 +132,13 @@ public class ExamGUI extends Application {
         setupEventHandlers();
 
         primaryStage.show();
+
+        fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
+
     }
 
     private HBox createHeader() {
@@ -201,7 +198,7 @@ public class ExamGUI extends Application {
         directoryChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
     }
 
-    static void selectFile(TextField field, boolean save) {
+    void selectFile(TextField field, boolean save) {
         File file;
         if (!save)
             file = fileChooser.showOpenDialog(primaryStage);
@@ -215,33 +212,7 @@ public class ExamGUI extends Application {
         }
     }
 
-    void detectCollisions(String examsPath, String registrationsPath, String yearInput) {
-        if (!new File(examsPath).exists()) {
-            showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
-            return;
-        }
-
-        if (!new File(registrationsPath).exists()) {
-            showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
-            return;
-        }
-
-        Integer year;
-        if (yearInput == null || yearInput.isEmpty()) {
-            year = null;
-        }
-        else if (!(yearInput.matches("\\d{4}"))) {
-            showAlert("Invalid year!", Alert.AlertType.ERROR);
-            return;
-        } else {
-            // Parse year, store it and update table
-            year = Integer.parseInt(yearInput.trim());
-        }
-
-        // save paths to preferences
-        prefs.put("examsPath", examsPath);
-        prefs.put("registrationsPath", registrationsPath);
-
+    void detectCollisions(String examsPath, String registrationsPath, Integer year) {
         assessments = AssessmentsManager.loadAllAssessments(examsPath, registrationsPath, year);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, registrationsPath);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
@@ -254,50 +225,15 @@ public class ExamGUI extends Application {
         showAlert("Collisions detected successfully!", Alert.AlertType.INFORMATION);
 
         // Switch to results tab
-        tabPane.getSelectionModel().select(RESULTS_PAGE);
+        tabPane.getSelectionModel().select(collisionsTab.getTab());
     }
 
-    //Wenn man einen Speicherpfad angibt und auf dem Button Save klickt
     void saveCollisions(String collisionsPath) {
-        // Check if path is null or empty
-        if (collisionsPath == null || collisionsPath.trim().isEmpty()) {
-            showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
-            return;
-        }
-
-        File collisionFile = new File(collisionsPath);
-
-        // Check if parent directory exists and is accessible
-        File parentDir = collisionFile.getParentFile();
-        if (parentDir == null) {
-            showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
-            return;
-        }
-
-        if (!parentDir.exists()) {
-            showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
-            return;
-        }
-
-        if (!parentDir.canWrite()) {
-            showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
-            return;
-        }
-
-        // Check if file exists and is writable
-        if (collisionFile.exists() && !collisionFile.canWrite()) {
-            showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
-            return;
-        }
-
         // Check if we have collision data to save
         if (assessments == null || assessments.length == 0) {
-            showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
+            ExamGUI.showAlert("No collisions to save! Please detect collisions first.", Alert.AlertType.ERROR);
             return;
         }
-
-        // Save paths to preferences
-        prefs.put("collisionsPath", collisionsPath);
 
         // Proceed with saving
         try {
@@ -308,15 +244,25 @@ public class ExamGUI extends Application {
         }
     }
 
-    public static void showAlert(String message, Alert.AlertType type) {
-        Alert alert = new Alert(type);
-        alert.setTitle(type == Alert.AlertType.ERROR ? "Error" : "Information");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.setResizable(true);
-        alert.getDialogPane().setMinWidth(1000);
+    // TODO
+    MergedAssessment[] optimizeStart(boolean room, Boolean supervisor) {
+        if (assessments == null || assessments.length == 0) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Assessments");
+            alert.setHeaderText(null);
+            alert.setContentText("No assessments found. Please run Detect Collisions first.");
+            alert.showAndWait();
+            return null;
+        }
 
-        alert.showAndWait();
+        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
+
+        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
+        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
+
+        statisticsTab.setOptimizedAssessments(optimizedAssessments);
+
+        return optimizedAssessments;
     }
 
     private void showAboutDialog() {
@@ -374,30 +320,18 @@ public class ExamGUI extends Application {
         dialog.showAndWait();
     }
 
-    // TODO
-    public MergedAssessment [] optimizeStart(boolean room, Boolean supervisor) {
-        if (assessments == null || assessments.length == 0) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Assessments");
-            alert.setHeaderText(null);
-            alert.setContentText("No assessments found. Please run Detect Collisions first.");
-            alert.showAndWait();
-            return null;
-        }
+    public static void showAlert(String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(type == Alert.AlertType.ERROR ? "Error" : "Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.setResizable(true);
+        alert.getDialogPane().setMinWidth(1000);
 
-        MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
-
-        MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-        MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
-
-        statisticsTab.setOptimizedAssessments(optimizedAssessments);
-
-        return optimizedAssessments;
+        alert.showAndWait();
     }
 
-
-
-    public static void run(){
+    public static void run() {
         launch();
     }
 }

@@ -15,11 +15,6 @@ import java.util.prefs.Preferences;
  * Tab for optimization functionalities in the exam scheduling application.
  */
 public class CollisionsTab {
-
-    @SuppressWarnings("unused")
-    private static final String PRIMARY_COLOR = "#3498db";
-    private static final String SECONDARY_COLOR = "#2c3e50";
-
     private final VBox section;
     private final Tab tab;
 
@@ -47,11 +42,11 @@ public class CollisionsTab {
         // Section title
         Label sectionTitle = new Label("Collision Results");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         // Section description
         Label sectionDescription = new Label("Detected exam collisions based on student registrations.");
-        sectionDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+        sectionDescription.setStyle("-fx-text-fill: " + ExamGUI.SECONDARY_COLOR + ";");
 
         // Separator
         Separator separator = new Separator();

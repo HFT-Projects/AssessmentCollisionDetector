@@ -1,32 +1,24 @@
 package gui;
 
-import data.Assessment;
-
 import data.MergedAssessment;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-import java.util.function.BiFunction;
 import java.util.prefs.Preferences;
 
-/**
- * Tab for optimization functionalities in the exam scheduling application.
- */
 public class OptimizeTab {
-
-    @SuppressWarnings("unused")
-    private static final String PRIMARY_COLOR = "#3498db";
-    private static final String SECONDARY_COLOR = "#2c3e50";
-
     private final VBox section;
     private final Tab tab;
 
-    public OptimizeTab(BiFunction<Boolean, Boolean, MergedAssessment[]> optimizerFunction, Preferences prefs) {
+    public OptimizeTab(ExamGUI mainGUI, Preferences prefs) {
         tab = new Tab("Optimization");
         tab.setClosable(false);
 
@@ -70,7 +62,7 @@ public class OptimizeTab {
 
         leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox);
         optimizeButton.setOnAction(e -> {
-            MergedAssessment[] optimizedAssessments = optimizerFunction.apply(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
+            MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
             setAssessments(optimizedAssessments, prefs);
         });
 
@@ -100,7 +92,7 @@ public class OptimizeTab {
 
         Button browseButton = new Button("Browse...");
         browseButton.setStyle(
-                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                "-fx-background-color: " + ExamGUI.PRIMARY_COLOR + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-padding: 8px 15px;" +
@@ -108,11 +100,11 @@ public class OptimizeTab {
                         "-fx-border-radius: 4px;"
         );
 
-        browseButton.setOnAction(e -> ExamGUI.selectFile(folderPathField,true));
+        browseButton.setOnAction(e -> mainGUI.selectFile(folderPathField, true));
 
         Button saveOptimizedButton = new Button("Save Optimized");
         saveOptimizedButton.setStyle(
-                "-fx-background-color: " + PRIMARY_COLOR + ";" +
+                "-fx-background-color: " + ExamGUI.PRIMARY_COLOR + ";" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-padding: 8px 15px;" +
@@ -144,16 +136,15 @@ public class OptimizeTab {
         // Section title
         Label sectionTitle = new Label("Optimization Results");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         // Section description
         Label sectionDescription = new Label("Results of exam schedule optimization.");
-        sectionDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
+        sectionDescription.setStyle("-fx-text-fill: " + ExamGUI.SECONDARY_COLOR + ";");
 
         // Separator
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
-
 
 
         // Add components to section

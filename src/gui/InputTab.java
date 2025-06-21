@@ -3,20 +3,18 @@ package gui;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.io.File;
 import java.util.prefs.Preferences;
 
 public class InputTab {
-
-    @SuppressWarnings("unused")
-    private static final String PRIMARY_COLOR = "#3498db";
-    private static final String SECONDARY_COLOR = "#2c3e50";
-    private static final String SUCCESS_COLOR = "#2ecc71";
-
     private final Tab tab;
     private final TextField examsPathField;
     private final TextField registrationsPathField;
@@ -37,7 +35,7 @@ public class InputTab {
         // Section header
         Label sectionTitle = new Label("Import Files");
         sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(SECONDARY_COLOR));
+        sectionTitle.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
@@ -53,26 +51,26 @@ public class InputTab {
         collisionsPathField = createStyledTextField(prefs.get("collisionsPath", ""));
 
         // Create browse buttons
-        Button examBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
-        Button registrationBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
-        Button collisionBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
+        Button examBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
+        Button registrationBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
+        Button collisionBrowseButton = createStyledButton("Browse", ExamGUI.PRIMARY_COLOR);
 
-        examBrowseButton.setOnAction(e -> ExamGUI.selectFile(examsPathField, false));
-        registrationBrowseButton.setOnAction(e -> ExamGUI.selectFile(registrationsPathField, false));
-        collisionBrowseButton.setOnAction(e -> ExamGUI.selectFile(collisionsPathField, true));
+        examBrowseButton.setOnAction(e -> mainGUI.selectFile(examsPathField, false));
+        registrationBrowseButton.setOnAction(e -> mainGUI.selectFile(registrationsPathField, false));
+        collisionBrowseButton.setOnAction(e -> mainGUI.selectFile(collisionsPathField, true));
 
         // Create and style field labels with dark text color for visibility
         Label examLabel = new Label("Exam File");
         examLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        examLabel.setTextFill(Color.web(SECONDARY_COLOR));
+        examLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         Label registrationLabel = new Label("Registration File");
         registrationLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        registrationLabel.setTextFill(Color.web(SECONDARY_COLOR));
+        registrationLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         Label collisionLabel = new Label("Output File");
         collisionLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        collisionLabel.setTextFill(Color.web(SECONDARY_COLOR));
+        collisionLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         // Add components to grid with proper layout
         fileGrid.add(examLabel, 0, 0);
@@ -106,9 +104,9 @@ public class InputTab {
 
         Label optionalYearLabel = new Label("Year (Optional):");
         optionalYearLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        optionalYearLabel.setTextFill(Color.web(SECONDARY_COLOR));
+        optionalYearLabel.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
-        optionalYearField = createStyledTextField("");
+        optionalYearField = createStyledTextField(prefs.get("yearInput", ""));
         optionalYearField.setPromptText("YYYY");
         //optionalYearField.setPadding(new Insets(0,1,0,0));
         optionalYearField.setPrefWidth(100);
@@ -120,11 +118,82 @@ public class InputTab {
         actionBox.setAlignment(Pos.CENTER);
         actionBox.setPadding(new Insets(20, 0, 0, 0));
 
-        Button detectButton = createStyledButton("Detect Collisions", SUCCESS_COLOR);
-        Button saveButton = createStyledButton("Save Collisions", PRIMARY_COLOR);
+        Button detectButton = createStyledButton("Detect Collisions", ExamGUI.SUCCESS_COLOR);
+        Button saveButton = createStyledButton("Save Collisions", ExamGUI.PRIMARY_COLOR);
 
-        detectButton.setOnAction(e -> mainGUI.detectCollisions(examsPathField.getText(), registrationsPathField.getText(), optionalYearField.getText()));
-        saveButton.setOnAction(e -> mainGUI.saveCollisions(collisionsPathField.getText()));
+        detectButton.setOnAction(e -> {
+            String examsPath = examsPathField.getText();
+            String registrationsPath = registrationsPathField.getText();
+            String yearInput = optionalYearField.getText();
+
+            if (!new File(examsPath).exists()) {
+                ExamGUI.showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
+                return;
+            }
+
+            if (!new File(registrationsPath).exists()) {
+                ExamGUI.showAlert("Invalid registrations file path!", Alert.AlertType.ERROR);
+                return;
+            }
+
+            Integer year;
+            if (yearInput == null || yearInput.isEmpty()) {
+                year = null;
+            } else if (!(yearInput.matches("\\d{4}"))) {
+                ExamGUI.showAlert("Invalid year!", Alert.AlertType.ERROR);
+                return;
+            } else {
+                // Parse year, store it and update table
+                year = Integer.parseInt(yearInput.trim());
+            }
+
+            // save paths to preferences
+            prefs.put("examsPath", examsPath);
+            prefs.put("registrationsPath", registrationsPath);
+            prefs.put("yearInput", registrationsPath);
+
+            mainGUI.detectCollisions(examsPath, registrationsPath, year);
+        });
+
+        saveButton.setOnAction(e -> {
+            String collisionsPath = collisionsPathField.getText();
+
+            // Check if path is null or empty
+            if (collisionsPath == null || collisionsPath.trim().isEmpty()) {
+                ExamGUI.showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            File collisionFile = new File(collisionsPath);
+
+            // Check if parent directory exists and is accessible
+            File parentDir = collisionFile.getParentFile();
+            if (parentDir == null) {
+                ExamGUI.showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            if (!parentDir.exists()) {
+                ExamGUI.showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
+                return;
+            }
+
+            if (!parentDir.canWrite()) {
+                ExamGUI.showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            // Check if file exists and is writable
+            if (collisionFile.exists() && !collisionFile.canWrite()) {
+                ExamGUI.showAlert("Cannot write to file: " + collisionFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
+                return;
+            }
+
+            // Save paths to preferences
+            prefs.put("collisionsPath", collisionsPath);
+
+            mainGUI.saveCollisions(collisionsPath);
+        });
 
         actionBox.getChildren().addAll(detectButton, saveButton);
 

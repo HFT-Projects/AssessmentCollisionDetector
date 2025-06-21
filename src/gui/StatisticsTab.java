@@ -17,11 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class StatisticsTab {
-
-    @SuppressWarnings("unused")
-    private static final String PRIMARY_COLOR = "#3498db";
-    private static final String SECONDARY_COLOR = "#2c3e50";
-
     private final Tab tab;
     private final VBox contentArea;
     private final ComboBox<String> selectStatistic;
@@ -83,7 +78,7 @@ public class StatisticsTab {
         // Add components to the course chart container
         Label courseHeading = new Label("collisions by course of study");
         courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
-        courseHeading.setTextFill(Color.web(SECONDARY_COLOR));
+        courseHeading.setTextFill(Color.web(ExamGUI.SECONDARY_COLOR));
 
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
