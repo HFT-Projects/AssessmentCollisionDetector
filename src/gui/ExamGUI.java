@@ -28,7 +28,6 @@ public class ExamGUI extends Application {
     // Style constants
     private static final String PRIMARY_COLOR = "#3498db";
     private static final String SECONDARY_COLOR = "#2c3e50";
-    private static final String SUCCESS_COLOR = "#2ecc71";
     private static final String DARK_COLOR = "#34495e";
 
     private static final FileChooser fileChooser;
@@ -59,18 +58,15 @@ public class ExamGUI extends Application {
     private CollisionsTab collisionsTab;
     private OptimizeTab optimizeTab;
     private StatisticsTab statisticsTab;
-    private TextField examPathField;
-    private TextField registrationPathField;
-    private TextField collisionPathField;
-    private TextField optionalYearField;
     private Assessment[] assessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
     private final Preferences preferencesCollisionsTab = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
     private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
+    private final Preferences preferencesInputTab = Preferences.userRoot().node("/assessment_collision_detector/input_tab");
 
     // Page management
     private TabPane tabPane;
-    private Tab inputTab;
+    private InputTab inputTab;
 
     // TODO
     private static Stage primaryStage;
@@ -119,22 +115,7 @@ public class ExamGUI extends Application {
         optimizeTab = new OptimizeTab(this::optimizeStart, preferencesOptimizerTab);
         optimizeTab.getTab().setDisable(true);
 
-        // Create input page
-        inputTab = new Tab("Data Input");
-        VBox inputContent = new VBox(20);
-        inputContent.setPadding(new Insets(20));
-
-        // Files section
-        VBox fileSection = createFileSection();
-        fileSection.setEffect(dropShadow);
-
-        inputContent.getChildren().add(fileSection);
-
-        ScrollPane inputScrollPane = new ScrollPane(inputContent);
-        inputScrollPane.setFitToWidth(true);
-        inputScrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-
-        inputTab.setContent(inputScrollPane);
+       inputTab = new InputTab(this, preferencesInputTab);
 
         collisionsTab = new CollisionsTab();
 
@@ -142,7 +123,7 @@ public class ExamGUI extends Application {
         statisticsTab.getTab().setDisable(true);
 
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab, collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab(), createRoomPlansTab());
+        tabPane.getTabs().addAll(inputTab.getTab(), collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab(), createRoomPlansTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -200,103 +181,6 @@ public class ExamGUI extends Application {
         return header;
     }
 
-    private VBox createFileSection() {
-        // Create container for file input section
-        VBox section = new VBox(15);
-        section.setPadding(new Insets(20));
-        section.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
-
-        // Section header
-        Label sectionTitle = new Label("Import Files");
-        sectionTitle.setFont(Font.font("System", FontWeight.BOLD, 16));
-        sectionTitle.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Separator separator = new Separator();
-        separator.setPadding(new Insets(5, 0, 10, 0));
-
-        // File input grid layout
-        GridPane fileGrid = new GridPane();
-        fileGrid.setHgap(10);
-        fileGrid.setVgap(15);
-
-        // Initialize text fields with saved preferences
-        examPathField = createStyledTextField(prefs.get("examsPath", ""));
-        registrationPathField = createStyledTextField(prefs.get("registrationsPath", ""));
-        collisionPathField = createStyledTextField(prefs.get("collisionsPath", ""));
-
-        // Create browse buttons
-        Button examBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
-        Button registrationBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
-        Button collisionBrowseButton = createStyledButton("Browse", PRIMARY_COLOR);
-
-        // Create and style field labels with dark text color for visibility
-        Label examLabel = new Label("Exam File");
-        examLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        examLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Label registrationLabel = new Label("Registration File");
-        registrationLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        registrationLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Label collisionLabel = new Label("Output File");
-        collisionLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        collisionLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        // Add components to grid with proper layout
-        fileGrid.add(examLabel, 0, 0);
-        fileGrid.add(examPathField, 1, 0);
-        fileGrid.add(examBrowseButton, 2, 0);
-
-        fileGrid.add(registrationLabel, 0, 1);
-        fileGrid.add(registrationPathField, 1, 1);
-        fileGrid.add(registrationBrowseButton, 2, 1);
-
-        fileGrid.add(collisionLabel, 0, 2);
-        fileGrid.add(collisionPathField, 1, 2);
-        fileGrid.add(collisionBrowseButton, 2, 2);
-
-        // Column constraints
-        ColumnConstraints labelColumn = new ColumnConstraints();
-        labelColumn.setPercentWidth(20);
-
-        ColumnConstraints fieldColumn = new ColumnConstraints();
-        fieldColumn.setPercentWidth(65);
-
-        ColumnConstraints buttonColumn = new ColumnConstraints();
-        buttonColumn.setPercentWidth(15);
-
-        fileGrid.getColumnConstraints().addAll(labelColumn, fieldColumn, buttonColumn);
-
-        // Optional Year section
-        HBox optionalYearBox = new HBox(10);
-        optionalYearBox.setAlignment(Pos.CENTER_LEFT);
-        optionalYearBox.setPadding(new Insets(15, 0, 0, 0));
-
-        Label optionalYearLabel = new Label("Year (Optional):");
-        optionalYearLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
-        optionalYearLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        optionalYearField = createStyledTextField("");
-        optionalYearField.setPromptText("YYYY");
-        //optionalYearField.setPadding(new Insets(0,1,0,0));
-        optionalYearField.setPrefWidth(100);
-
-        optionalYearBox.getChildren().addAll(optionalYearLabel, optionalYearField);
-
-        // Action buttons
-        HBox actionBox = new HBox(15);
-        actionBox.setAlignment(Pos.CENTER);
-        actionBox.setPadding(new Insets(20, 0, 0, 0));
-
-        Button detectButton = createStyledButton("Detect Collisions", SUCCESS_COLOR);
-        Button saveButton = createStyledButton("Save Collisions", PRIMARY_COLOR);
-
-        actionBox.getChildren().addAll(detectButton, saveButton);
-
-        section.getChildren().addAll(sectionTitle, separator, fileGrid, optionalYearBox, actionBox);
-        return section;
-    }
-
     private HBox createFooter() {
         HBox footer = new HBox();
         footer.setAlignment(Pos.CENTER);
@@ -310,100 +194,11 @@ public class ExamGUI extends Application {
         return footer;
     }
 
-    private static TextField createStyledTextField(String initialText) {
-        TextField textField = new TextField(initialText);
-        textField.setStyle(
-                "-fx-background-color: white;" +
-                        "-fx-border-color: #e0e0e0;" +
-                        "-fx-border-width: 1px;" +
-                        "-fx-border-radius: 4px;" +
-                        "-fx-padding: 8px;" +
-                        "-fx-font-size: 12px;"
-        );
-        textField.setPromptText("Enter path..."); // Add placeholder text
-        return textField;
-    }
-
-    private static Button createStyledButton(String text, String bgColor) {
-        Button button = new Button(text);
-        button.setStyle(
-                "-fx-background-color: " + bgColor + ";" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 8px 15px;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-border-radius: 4px;"
-        );
-
-        // Hover effect
-        button.setOnMouseEntered(e ->
-                button.setStyle(
-                        "-fx-background-color: derive(" + bgColor + ", -20%);" +
-                                "-fx-text-fill: white;" +
-                                "-fx-font-weight: bold;" +
-                                "-fx-padding: 8px 15px;" +
-                                "-fx-cursor: hand;" +
-                                "-fx-border-radius: 4px;"
-                )
-        );
-
-        button.setOnMouseExited(e ->
-                button.setStyle(
-                        "-fx-background-color: " + bgColor + ";" +
-                                "-fx-text-fill: white;" +
-                                "-fx-font-weight: bold;" +
-                                "-fx-padding: 8px 15px;" +
-                                "-fx-cursor: hand;" +
-                                "-fx-border-radius: 4px;"
-                )
-        );
-
-        return button;
-    }
-
+    // TODO
     private void setupEventHandlers() {
-
         // Create directory chooser for output
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
-
-        // Get the file section from the input tab
-        ScrollPane inputScrollPane = (ScrollPane) inputTab.getContent();
-        VBox inputContent = (VBox) inputScrollPane.getContent();
-        VBox fileSection = (VBox) inputContent.getChildren().get(0);
-
-        // Get the GridPane from the file section (third child after title and separator)
-        GridPane fileGrid = (GridPane) fileSection.getChildren().get(2);
-
-        // Get the browse buttons from the grid
-        Button examBrowse = (Button) fileGrid.getChildren().stream()
-                .filter(node -> node instanceof Button)
-                .findFirst()
-                .orElseThrow();
-        Button registrationBrowse = (Button) fileGrid.getChildren().stream()
-                .filter(node -> node instanceof Button)
-                .skip(1)
-                .findFirst()
-                .orElseThrow();
-        Button collisionBrowse = (Button) fileGrid.getChildren().stream()
-                .filter(node -> node instanceof Button)
-                .skip(2)
-                .findFirst()
-                .orElseThrow();
-
-        // Set button actions
-        examBrowse.setOnAction(e -> selectFile(examPathField, false));
-        registrationBrowse.setOnAction(e -> selectFile(registrationPathField, false));
-        collisionBrowse.setOnAction(e -> selectFile(collisionPathField, true));
-
-        // Get the action buttons from the file section (fourth child)
-        HBox actionBox = (HBox) fileSection.getChildren().get(4);
-        Button detectButton = (Button) actionBox.getChildren().get(0);
-        Button saveButton = (Button) actionBox.getChildren().get(1);
-
-        // Set action button handlers
-        detectButton.setOnAction(e -> detectCollisions());
-        saveButton.setOnAction(e -> saveCollisions());
     }
 
     static void selectFile(TextField field, boolean save) {
@@ -420,10 +215,7 @@ public class ExamGUI extends Application {
         }
     }
 
-    private void detectCollisions() {
-        String examsPath = examPathField.getText();
-        String registrationsPath = registrationPathField.getText();
-
+    void detectCollisions(String examsPath, String registrationsPath, String yearInput) {
         if (!new File(examsPath).exists()) {
             showAlert("Invalid exams file path!", Alert.AlertType.ERROR);
             return;
@@ -434,8 +226,6 @@ public class ExamGUI extends Application {
             return;
         }
 
-
-        String yearInput = optionalYearField.getText();
         Integer year;
         if (yearInput == null || yearInput.isEmpty()) {
             year = null;
@@ -468,9 +258,7 @@ public class ExamGUI extends Application {
     }
 
     //Wenn man einen Speicherpfad angibt und auf dem Button Save klickt
-    private void saveCollisions() {
-        String collisionsPath = collisionPathField.getText();
-
+    void saveCollisions(String collisionsPath) {
         // Check if path is null or empty
         if (collisionsPath == null || collisionsPath.trim().isEmpty()) {
             showAlert("Please specify a file path for saving collisions.", Alert.AlertType.ERROR);
