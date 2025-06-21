@@ -20,11 +20,10 @@ public class AssessmentOptimizer {
     private static final int DEFAULT_START_HOUR = 8;
     private static final int DEFAULT_END_HOUR = 18;
     private static final int MAX_WEEKDAY = 5;
-    private static final boolean VERBOSE_LOGGING = false;
 
     private static final Set<MergedAssessment> optimizedAssessments = new HashSet<>();
 
-    // ATTENTION: calling this method invalidates all previous created MergesAssessments. Using them afterward can result in unexpected behavior.
+    // WARNING: calling this method invalidates all previous created MergesAssessments. Using them afterward can result in unexpected behavior.
     public static MergedAssessment[] mergeAssessments(Assessment[] assessments) {
         MergedAssessmentEditable._resetAssessmentToMergedAssessmentMap();
         Map<AssessmentIdentifier, MergedAssessment> mergedAssessments = new HashMap<>();
@@ -82,9 +81,6 @@ public class AssessmentOptimizer {
 
         for (MergedAssessment[] group : assessmentGroups) {
             if (group.length < 2) {
-                if (VERBOSE_LOGGING) {
-                    OptimizationDebugLogger.logSkippingGroup("single group: " + group[0].getName());
-                }
                 continue;
             }
 
@@ -93,9 +89,6 @@ public class AssessmentOptimizer {
                     .toArray(MergedAssessment[]::new);
 
             if (validAssessments.length < 2) {
-                if (VERBOSE_LOGGING) {
-                    OptimizationDebugLogger.logSkippingGroup("group: not enough valid assessments");
-                }
                 continue;
             }
 
@@ -106,15 +99,11 @@ public class AssessmentOptimizer {
             }
         }
 
-        OptimizationDebugLogger.logOptimizationStart(largeGroups.size(), smallGroups.size());
-
         for (MergedAssessment[] largeGroup : largeGroups) {
-            OptimizationDebugLogger.logLargeGroupOptimization(largeGroup.length);
             optimizeAssessments(largeGroup, true);
         }
 
         if (!smallGroups.isEmpty()) {
-            OptimizationDebugLogger.logSmallGroupsOptimization(smallGroups.size());
             optimizeSmallGroupsParallel(smallGroups);
         }
 
@@ -122,10 +111,6 @@ public class AssessmentOptimizer {
         fillMissingOptimizedTimes(allAssessments);
 
         return allAssessments;
-    }
-
-    public static void optimizeAssessments(MergedAssessment[] assessments) {
-        optimizeAssessments(assessments, false);
     }
 
     private static void optimizeAssessments(MergedAssessment[] assessments, boolean isLargeGroup) {
@@ -153,51 +138,17 @@ public class AssessmentOptimizer {
         AssessmentSchedulingSolution solution = solver.solve(problem);
 
         for (AssessmentScheduleItem item : solution.getAssessmentList()) {
-            item.applyScheduleToAssessment();
             optimizedAssessments.add(item.getAssessment());
         }
-
-        OptimizationDebugLogger.logFinalScore(solution.getScore().toString());
     }
 
     private static void optimizeSmallGroupsParallel(List<MergedAssessment[]> smallGroups) {
         smallGroups.parallelStream().forEach(group -> optimizeAssessments(group, false));
     }
 
-    public static void logGroupStatistics(MergedAssessment[][] assessmentGroups) {
-        int largeGroups = 0;
-        int smallGroups = 0;
-
-        for (MergedAssessment[] group : assessmentGroups) {
-            if (group.length < 2) {
-                continue;
-            }
-
-            MergedAssessment[] validAssessments = Arrays.stream(group)
-                    .filter(a -> a.getBegin() != null && a.getEnd() != null)
-                    .toArray(MergedAssessment[]::new);
-
-            if (validAssessments.length < 2) {
-                continue;
-            }
-
-            if (validAssessments.length >= LARGE_GROUP_THRESHOLD) {
-                largeGroups++;
-            } else {
-                smallGroups++;
-            }
-        }
-
-        long estimatedSeconds = (largeGroups * LARGE_GROUP_TIMEOUT.getSeconds()) +
-                (smallGroups * SMALL_GROUP_TIMEOUT.getSeconds());
-
-        OptimizationDebugLogger.logGroupOverview(largeGroups, smallGroups, estimatedSeconds);
-    }
-
     private static List<LocalDateTime> generateTimeSlots(MergedAssessment[] assessments) {
         TimeRange timeRange = findTimeRange(assessments);
         if (timeRange.earliest == null || timeRange.latest == null) {
-            OptimizationDebugLogger.logProblem("earliest or latest is null!");
             return new ArrayList<>();
         }
 
@@ -272,30 +223,6 @@ public class AssessmentOptimizer {
             }
         }
         optimizedAssessments.clear();
-    }
-
-    // Development/Debug methods - can be removed for production
-    public static void analyzeAssessmentTimes(MergedAssessment[] assessments) {
-        int withTimes = 0;
-        int withoutTimes = 0;
-
-        for (MergedAssessment ma : assessments) {
-            if (ma.getBegin() != null) {
-                withTimes++;
-            } else {
-                withoutTimes++;
-            }
-        }
-
-        OptimizationDebugLogger.logAssessmentTimeAnalysis(withTimes, withoutTimes);
-    }
-
-    public static void printOptimizedTimes(MergedAssessment[] assessments) {
-        OptimizationDebugLogger.logOptimizedTimes(assessments);
-    }
-
-    public static void debugAssessmentFiltering(MergedAssessment[][] assessmentGroups, String searchName) {
-        OptimizationDebugLogger.logDebugAssessmentFiltering(assessmentGroups, searchName);
     }
 
     // Helper Records
