@@ -9,7 +9,6 @@ import manager.SaveManager;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -59,12 +58,12 @@ public class ExamGUI extends Application {
 
     private CollisionsTab collisionsTab;
     private OptimizeTab optimizeTab;
+    private StatisticsTab statisticsTab;
     private TextField examPathField;
     private TextField registrationPathField;
     private TextField collisionPathField;
     private TextField optionalYearField;
     private Assessment[] assessments;
-    private MergedAssessment[] optimizedStatAssessments;
     private final Preferences prefs = Preferences.userRoot().node("/assessment_collision_detector");
     private final Preferences preferencesCollisionsTab = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
     private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
@@ -139,8 +138,11 @@ public class ExamGUI extends Application {
 
         collisionsTab = new CollisionsTab();
 
+        statisticsTab = new StatisticsTab();
+        statisticsTab.getTab().setDisable(true);
+
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab, collisionsTab.getTab(), optimizeTab.getTab(), createStatisticsTab(), createRoomPlansTab());
+        tabPane.getTabs().addAll(inputTab, collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab(), createRoomPlansTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -156,7 +158,7 @@ public class ExamGUI extends Application {
         primaryStage.setScene(scene);
 
         // Setup file choosers and event handlers
-        setupEventHandlers(primaryStage);
+        setupEventHandlers();
 
         primaryStage.show();
     }
@@ -359,7 +361,7 @@ public class ExamGUI extends Application {
         return button;
     }
 
-    private void setupEventHandlers(Stage primaryStage) {
+    private void setupEventHandlers() {
 
         // Create directory chooser for output
         DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -456,6 +458,8 @@ public class ExamGUI extends Application {
 
         collisionsTab.enable_tab(assessments, preferencesCollisionsTab);
         optimizeTab.getTab().setDisable(false);
+        statisticsTab.setAssessments(assessments);
+        statisticsTab.getTab().setDisable(false);
 
         showAlert("Collisions detected successfully!", Alert.AlertType.INFORMATION);
 
@@ -516,7 +520,7 @@ public class ExamGUI extends Application {
         }
     }
 
-    private void showAlert(String message, Alert.AlertType type) {
+    public static void showAlert(String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle(type == Alert.AlertType.ERROR ? "Error" : "Information");
         alert.setHeaderText(null);
@@ -525,157 +529,6 @@ public class ExamGUI extends Application {
         alert.getDialogPane().setMinWidth(1000);
 
         alert.showAndWait();
-    }
-
-    private Tab createStatisticsTab() {
-        Tab statisticsTab = new Tab("Statistics");
-
-        // Create main container with BorderPane to allow positioning
-        BorderPane mainContainer = new BorderPane();
-        mainContainer.setPadding(new Insets(20));
-
-        // Create HBox for the dropdown at top left
-        HBox selectorContainer = new HBox(10);
-        selectorContainer.setAlignment(Pos.TOP_LEFT);
-
-        // Create the statistics selector
-        ComboBox<String> selectStatistic = new ComboBox<>();
-        selectStatistic.getItems().addAll("Fakultäten", "Studiengänge", "Kollisionsschwere");
-        selectStatistic.setPromptText("Wählen Sie eine Statistik.");
-
-        selectorContainer.getChildren().add(selectStatistic);
-        mainContainer.setTop(selectorContainer);
-
-        // Content area where statistics will be displayed
-        VBox contentArea = new VBox(20);
-        contentArea.setAlignment(Pos.TOP_CENTER);
-        contentArea.setPadding(new Insets(20, 0, 0, 0));
-        mainContainer.setCenter(contentArea);
-
-
-        // Create a container for course selection and pie chart
-        VBox courseChartContainer = new VBox(15);
-        courseChartContainer.setPadding(new Insets(20));
-        courseChartContainer.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
-        courseChartContainer.setVisible(false); // Initially hidden
-
-        // Course selection
-        ComboBox<String> courseComboBox = new ComboBox<>();
-        courseComboBox.setPromptText("Wählen Sie einen Studiengang.");
-        courseComboBox.setMaxWidth(300);
-        // Container for the pie chart
-        HBox chartBox = new HBox();
-        chartBox.setAlignment(Pos.CENTER);
-        chartBox.setMinHeight(400);
-
-        // When a course is selected, create and display the pie chart
-        courseComboBox.setOnAction(e -> {
-            String selectedCourse = courseComboBox.getValue();
-            if (selectedCourse != null && assessments != null && assessments.length > 0) {
-                // Clear previous chart
-                chartBox.getChildren().clear();
-
-                // Create new chart with the selected course
-                Node pieChart = CollisionPieChartView.createCollisionPieChartByCourseOfStudy(selectedCourse, assessments);
-                Node pieChartOptimized = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByCourseOfStudy(selectedCourse, optimizedStatAssessments);
-
-                chartBox.getChildren().addAll(pieChart, pieChartOptimized);
-
-            }
-        });
-        // Add components to the course chart container
-        Label courseHeading = new Label("Kollisionen nach Studiengang");
-        courseHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
-        courseHeading.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Label courseDescription = new Label("Zeigt die Verteilung der Kollisionen nach Zeitabständen zwischen Prüfungen.");
-        courseDescription.setStyle("-fx-text-fill: " + SECONDARY_COLOR + ";");
-
-        Separator separator = new Separator();
-        separator.setPadding(new Insets(5, 0, 10, 0));
-
-        courseChartContainer.getChildren().addAll(
-                courseHeading,
-                courseDescription,
-                separator,
-                courseComboBox,
-                chartBox
-        );
-
-
-
-
-        // Action handler for the statistics selector
-        selectStatistic.setOnAction(event -> {
-            String selectedStatistic = selectStatistic.getValue();
-
-            // Clear current content
-            contentArea.getChildren().clear();
-
-            // Handle the selected statistic
-            switch(selectedStatistic) {
-                case "Fakultäten" -> {
-                    if(assessments != null){
-                        HBox facultyContent = new HBox();
-                        facultyContent.setAlignment(Pos.CENTER);
-                        facultyContent.setMinHeight(800);
-                        Node facultyChart = CollisionPieChartView.createCollisionPieChartByFaculty(assessments);
-                        Node optimizedFacultyChart = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByFaculty(optimizedStatAssessments);
-                        facultyContent.getChildren().addAll(facultyChart, optimizedFacultyChart);
-
-                        ScrollPane sp = new ScrollPane();
-                        sp.setMinWidth(500);
-                        sp.setContent(facultyContent);
-                        courseChartContainer.setVisible(false);
-                        contentArea.getChildren().add(sp);
-                    }else{
-                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
-                    }
-                }
-                case "Studiengänge" -> {
-                    // Update course selection box first
-                    if (assessments != null && assessments.length > 0) {
-                        Set<String> courses = new TreeSet<>();
-                        for (Assessment a : assessments) {
-                            if (a.getCourseOfStudy() != null && !a.getCourseOfStudy().isEmpty()) {
-                                courses.add(a.getCourseOfStudy());
-                            }
-                        }
-                        courseComboBox.getItems().clear();
-                        courseComboBox.getItems().addAll(courses);
-                    } else {
-                        courseComboBox.getItems().clear();
-                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
-                    }
-
-                    // Show the course selection and chart container
-                    courseChartContainer.setVisible(true);
-                    contentArea.getChildren().add(courseChartContainer);
-                }
-                case "Kollisionsschwere" -> {
-                    if(assessments != null){
-                        courseChartContainer.setVisible(false);
-                        contentArea.getChildren().add(createColSchwereContent());
-                    }else{
-                        showAlert("Bitte laden Sie zuerst die Daten und erkennen Sie Kollisionen.", Alert.AlertType.WARNING);
-                    }
-                }
-                default -> System.out.println("No statistic selected");
-            }
-        });
-
-        statisticsTab.setContent(mainContainer);
-        return statisticsTab;
-    }
-
-    private Node createColSchwereContent() {
-        HBox collisionBox = new HBox();
-        collisionBox.setAlignment(Pos.CENTER);
-        collisionBox.setMinHeight(400);
-        Node collisionChart = CollisionPieChartView.createCollisionPieChartByTime(assessments);
-        Node collisionChartOptimized = optimizedStatAssessments == null? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByTime(optimizedStatAssessments);
-        collisionBox.getChildren().addAll(collisionChart, collisionChartOptimized);
-        return collisionBox;
     }
 
 
@@ -768,7 +621,7 @@ public class ExamGUI extends Application {
         MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
         MergedAssessment[] optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, supervisor, room);
 
-        this.optimizedStatAssessments = optimizedAssessments;
+        statisticsTab.setOptimizedAssessments(optimizedAssessments);
 
         return optimizedAssessments;
     }
