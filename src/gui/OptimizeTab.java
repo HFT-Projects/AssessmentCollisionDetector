@@ -8,6 +8,7 @@ import data.MergedAssessment;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -18,18 +19,22 @@ import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
+import manager.SaveManager;
 
-import java.text.Collator;
 import java.util.*;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
-/**
- * Tab for optimization functionalities in the exam scheduling application.
- */
 public class OptimizeTab {
 
     private static final String PRIMARY_COLOR = "#3498db";
     private static final String SECONDARY_COLOR = "#2c3e50";
 
+    //to save preferences
+    private final Preferences prefs;
+
+    private final TextField folderPathField;
 
     private final Tab tab;
     private TreeTableView<CollisionEntry> optimizedTreeTable;
@@ -60,29 +65,24 @@ public class OptimizeTab {
 
     // Column visibility controls
     private MenuButton columnsMenuButton;
-    private final Map<String, CheckMenuItem> columnMenuItems = new HashMap<>();
     private final Map<String, Boolean> columnVisibilityStates = new HashMap<>();
 
     // Constants for column groups
 
-    // Map to associate dropdown options with column names for sorting
-    private final Map<String, String> sortExam1ColumnMap = new HashMap<>();
-    private final Map<String, String> sortExam2ColumnMap = new HashMap<>();
 
     // Sort direction constants
     private static final String ASCENDING = "Ascending";
     private static final String DESCENDING = "Descending";
 
-    private final Collator germanCollator = Collator.getInstance(Locale.GERMAN);
+
     private boolean isUpdating;
 
-    public OptimizeTab(ExamGUI examGUI) {
+    public OptimizeTab(ExamGUI examGUI, Preferences prefs) {
+        this.prefs = prefs;
+
         this.examGUI = examGUI;
         tab = new Tab("Optimize");
         tab.setClosable(false);
-
-        // Initialize the column mapping for sort dropdowns
-        initializeSortColumnMappings();
 
         // Create basic layout
         VBox content = new VBox(10);
@@ -134,10 +134,10 @@ public class OptimizeTab {
         Label saveFileLabel = new Label("Save Optimized File:");
         saveFileLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        TextField folderPathField = new TextField();
+        folderPathField = new TextField();
         folderPathField.setEditable(false);
         folderPathField.setPromptText("No folder selected");
-        
+
         folderPathField.setStyle(
                 "-fx-background-color: white;" +
                 "-fx-border-color: #e0e0e0;" +
@@ -157,12 +157,15 @@ public class OptimizeTab {
                 "-fx-border-radius: 4px;"
         );
 
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+        );
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.dir")));
         browseButton.setOnAction(e -> {
-            javafx.stage.DirectoryChooser directoryChooser = new javafx.stage.DirectoryChooser();
-            directoryChooser.setTitle("Select Output Directory");
-            java.io.File directory = directoryChooser.showDialog(tab.getTabPane().getScene().getWindow());
-            if (directory != null) {
-                folderPathField.setText(directory.getAbsolutePath());
+            File file = fileChooser.showSaveDialog(tab.getTabPane().getScene().getWindow());
+            if (file != null) {
+                folderPathField.setText(file.getAbsolutePath());
             }
         });
 
@@ -176,10 +179,7 @@ public class OptimizeTab {
                 "-fx-border-radius: 4px;"
         );
 
-        saveOptimizedButton.setOnAction(e -> {
-            // Placeholder for save action
-            // Implementation will be added later
-        });
+        saveOptimizedButton.setOnAction(e -> saveOptimized());
 
         saveSection.getChildren().addAll(saveFileLabel, folderPathField, browseButton, saveOptimizedButton);
         rightSide.getChildren().add(saveSection);
@@ -214,22 +214,9 @@ public class OptimizeTab {
         sortExam1Box.setValue("Exam1 Name");
         sortExam2Box.setValue("Exam2 Name");
 
-        // Apply initial sorting to the TreeTableView
-        if (optimizedTreeTable != null) {
-            // Sort Exam 1 table
-            applySortToTreeTable(optimizedTreeTable, "Exam1 Name", TreeTableColumn.SortType.ASCENDING);
-
-            // Sort each parent's children by Exam 2 name
-            TreeItem<CollisionEntry> root = optimizedTreeTable.getRoot();
-            if (root != null) {
-                for (TreeItem<CollisionEntry> parent : root.getChildren()) {
-                    List<TreeItem<CollisionEntry>> children = new ArrayList<>(parent.getChildren());
-                    sortItems(children, "Exam2 Name", ASCENDING);
-                    parent.getChildren().clear();
-                    parent.getChildren().addAll(children);
-                }
-            }
-        }
+        // Load preferences
+        loadPreferences();
+        tab.setOnClosed(e -> onClose());
     }
 
     private VBox createFilterSection() {
@@ -264,7 +251,7 @@ public class OptimizeTab {
         sortExam1Box.setPromptText("Select Exam 1 sort...");
         sortExam1Box.setItems(FXCollections.observableArrayList(
                 "Exam1 Name","Collision Count", "Old Begin", "Old End", "Old Average Distance", "Old Min. Distance",
-                "Optimize Begin", "Optimize End", "Optimize Average Distance", "Optimize Min. Distance"
+                "Optimized Begin", "Optimized End", "Optimized Average Distance", "Optimized Min. Distance"
         ));
 
         sortDirectionExam1Box = createStyledComboBox();
@@ -275,7 +262,7 @@ public class OptimizeTab {
         sortExam2Box.setPromptText("Select Exam 2 sort...");
         sortExam2Box.setItems(FXCollections.observableArrayList(
                 "Exam2 Name", "Collision Count", "Old Begin", "Old End", "Old Distance",
-                "Optimize Begin", "Optimize End", "Optimize Distance"
+                "Optimized Begin", "Optimized End", "Optimized Distance"
         ));
 
         sortDirectionExam2Box = createStyledComboBox();
@@ -312,7 +299,7 @@ public class OptimizeTab {
             }
 
             // Don't update on partial decimal (e.g., "." or "5.")
-            if (!newVal.equals(".") && !newVal.endsWith(".")) {
+            if (!newVal.endsWith(".")) {
                 updateTable();
             }
         });
@@ -321,7 +308,7 @@ public class OptimizeTab {
         maxDistanceField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) { // Focus lost
                 String text = maxDistanceField.getText();
-                if (text.equals(".") || text.endsWith(".")) {
+                if (text.endsWith(".")) {
                     maxDistanceField.setText(text.replace(".", ""));
                 }
                 updateTable();
@@ -564,7 +551,6 @@ public class OptimizeTab {
     //
     private void bindColumnToCheckItem(String columnName, CheckMenuItem item, boolean defaultVisible) {
         // Store the check menu item in the map for later reference
-        columnMenuItems.put(columnName, item);
         columnVisibilityStates.put(columnName, defaultVisible);
 
         // Set initial selected state
@@ -912,6 +898,12 @@ public class OptimizeTab {
 
         // Update parent aggregates
         updateAllParentAggregates();
+        savePreferences();
+        try {
+            prefs.flush();
+        } catch (BackingStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sortTreeItems(TreeItem<CollisionEntry> root) {
@@ -1008,8 +1000,8 @@ public class OptimizeTab {
             } else if (value2 == null) {
                 result = 1;
             } else if (value1 instanceof String && value2 instanceof String) {
-                // Use German collator for String comparison (case insensitive)
-                result = germanCollator.compare(value1.toString(), value2.toString());
+
+                result = value1.toString().compareTo(value2.toString());
             } else {
                 // For non-string types, use natural ordering
                 @SuppressWarnings("unchecked")
@@ -1043,16 +1035,16 @@ public class OptimizeTab {
                 case "Collision Count" -> entry.getCollisionCount();
                 case "Old Begin" -> assessment != null ? assessment.getBegin() : null;
                 case "Old End" -> assessment != null ? assessment.getEnd() : null;
-                case "Optimize Begin", "Optimized Begin" -> assessment != null ? assessment.getOptimizedBegin() : null;
-                case "Optimize End", "Optimized End" -> assessment != null ? assessment.getOptimizedEnd() : null;
+                case "Optimized Begin" -> assessment != null ? assessment.getOptimizedBegin() : null;
+                case "Optimized End" -> assessment != null ? assessment.getOptimizedEnd() : null;
                 // Handle all variations of distance column names for consistency
                 case "Old Average Distance", "Old Avg. Distance" ->
                     entry.dynamicStats != null ? entry.dynamicStats.getAverageOldDistance() : null;
-                case "Optimize Average Distance", "Optimized Average Distance", "Opt Avg. Distance" ->
+                case "Optimized Average Distance", "Opt Avg. Distance" ->
                     entry.dynamicStats != null ? entry.dynamicStats.getAverageOptimizedDistance() : null;
                 case "Old Min Distance", "Old Min. Distance" ->
                     entry.dynamicStats != null ? entry.dynamicStats.getMinOldDistance() : null;
-                case "Optimize Min. Distance", "Optimized Min Distance", "Opt Min. Distance" ->
+                case "Optimized Min Distance", "Opt Min. Distance" ->
                     entry.dynamicStats != null ? entry.dynamicStats.getMinOptimizedDistance() : null;
                 default -> entry.getExam1QualifiedName(); //default
             };
@@ -1072,15 +1064,15 @@ public class OptimizeTab {
             case "Collision Count" -> entry.getCollisionCount();
             case "Old Begin" -> assessment != null ? assessment.getBegin() : null;
             case "Old End" -> assessment != null ? assessment.getEnd() : null;
-            case "Optimize Begin", "Optimized Begin" -> assessment != null ? assessment.getOptimizedBegin() : null;
-            case "Optimize End", "Optimized End" -> assessment != null ? assessment.getOptimizedEnd() : null;
+            case "Optimized Begin" -> assessment != null ? assessment.getOptimizedBegin() : null;
+            case "Optimized End" -> assessment != null ? assessment.getOptimizedEnd() : null;
             case "Old Distance" -> {
                 if (!isParentContext) {
                     yield calculateTimeDifference(entry.getParentAssessment(), entry.getChildAssessment());
                 }
                 yield null;
             }
-            case "Optimize Distance", "Optimized Distance" -> {
+            case "Optimized Distance" -> {
                 if (!isParentContext) {
                     yield calculateOptimizedTimeDifference(entry.getParentAssessment(), entry.getChildAssessment());
                 }
@@ -1098,38 +1090,19 @@ public class OptimizeTab {
                 }
                 yield null;
             }
-            case "Optimize Average Distance", "Optimized Average Distance", "Opt Avg. Distance" -> {
+            case "Optimized Average Distance", "Opt Avg. Distance" -> {
                 if (isParentContext && entry.dynamicStats != null) {
                     yield entry.dynamicStats.getAverageOptimizedDistance();
                 }
                 yield null;
             }
-            case "Optimize Min Distance", "Optimized Min Distance", "Opt Min. Distance" -> {
+            case "Optimized Min Distance", "Opt Min. Distance" -> {
                 if (isParentContext && entry.dynamicStats != null) {
                     yield entry.dynamicStats.getMinOptimizedDistance();
                 }
                 yield null;
             }
             default -> null;
-        };
-    }
-    //For synchro
-    private String mapDropdownValueToColumnName(String dropdownValue) {
-        return switch (dropdownValue) {
-            case "Exam 1 Name" -> "Exam 1";
-            case "Exam 2 Name" -> "Exam 2";
-            case "Collision Count" -> "Collision Count";
-            case "Old Begin" -> "Old Begin";
-            case "Old End" -> "Old End";
-            case "Optimize Begin" -> "Opt Begin";
-            case "Optimize End" -> "Opt End";
-            case "Optimize  Avg. Distance" -> "Opt Avg. Distance";
-            case "Optimize Min. Distance" -> "Opt Min. Distance";
-            case "Optimize Distance" -> "Opt Distance";
-            case "Old Avg. Distance" -> "Old Avg. Distance";
-            case "Old Min. Distance" -> "Old Min. Distance";
-            case "Old Distance" -> "Old Distance";
-            default -> dropdownValue;
         };
     }
 
@@ -1270,7 +1243,7 @@ public class OptimizeTab {
                 return new SimpleStringProperty(parentAssessment != null ? parentAssessment.getQualifiedName() : "");
             }
         });
-        exam1Col.setSortable(true);
+        exam1Col.setSortable(false);
 
 
         TreeTableColumn<CollisionEntry, String> exam2Col = new TreeTableColumn<>("Exam 2");
@@ -1292,7 +1265,7 @@ public class OptimizeTab {
                 return new SimpleStringProperty(childAssessment != null ? childAssessment.getQualifiedName() : "");
             }
         });
-        exam2Col.setSortable(true);
+        exam2Col.setSortable(false);
 
 
         TreeTableColumn<CollisionEntry, String> collisionCountCol = new TreeTableColumn<>("Collision Count");
@@ -1301,13 +1274,7 @@ public class OptimizeTab {
             return new SimpleStringProperty(String.valueOf(param.getValue().getValue().getCollisionCount()));
         });
         collisionCountCol.setSortable(false);  // Disable sorting
-        collisionCountCol.setComparator((s1, s2) -> {
-            try {
-                return Integer.compare(Integer.parseInt(s1), Integer.parseInt(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+
 
 
         // Create and configure time-related columns
@@ -1335,74 +1302,32 @@ public class OptimizeTab {
         TreeTableColumn<CollisionEntry, String> oldDistanceCol = new TreeTableColumn<>("Old Distance");
         oldDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOldDistance() : ""));
-        oldDistanceCol.setSortable(true);
-        oldDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        oldDistanceCol.setSortable(false);
 
         TreeTableColumn<CollisionEntry, String> optimizedDistanceCol = new TreeTableColumn<>("Opt Distance");
         optimizedDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOptimizedDistance() : ""));
-        optimizedDistanceCol.setSortable(true);
-        optimizedDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        optimizedDistanceCol.setSortable(false);
 
         TreeTableColumn<CollisionEntry, String> oldAvgDistanceCol = new TreeTableColumn<>("Old Avg. Distance");
         oldAvgDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOldAverageDistance() : ""));
-        oldAvgDistanceCol.setSortable(true);
-        oldAvgDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        oldAvgDistanceCol.setSortable(false);
 
         TreeTableColumn<CollisionEntry, String> optimizedAvgDistanceCol = new TreeTableColumn<>("Opt Avg. Distance");
         optimizedAvgDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOptimizedAverageDistance() : ""));
-        optimizedAvgDistanceCol.setSortable(true);
-        optimizedAvgDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        optimizedAvgDistanceCol.setSortable(false);
 
         TreeTableColumn<CollisionEntry, String> oldMinDistanceCol = new TreeTableColumn<>("Old Min. Distance");
         oldMinDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOldMinDistance() : ""));
-        oldMinDistanceCol.setSortable(true);
-        oldMinDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        oldMinDistanceCol.setSortable(false);
 
         TreeTableColumn<CollisionEntry, String> optimizedMinDistanceCol = new TreeTableColumn<>("Opt Min. Distance");
         optimizedMinDistanceCol.setCellValueFactory(param ->
             new SimpleStringProperty(param.getValue().getValue() != null ? param.getValue().getValue().getOptimizedMinDistance() : ""));
-        optimizedMinDistanceCol.setSortable(true);
-        optimizedMinDistanceCol.setComparator((s1, s2) -> {
-            try {
-                return Double.compare(Double.parseDouble(s1), Double.parseDouble(s2));
-            } catch (NumberFormatException e) {
-                return s1.compareTo(s2);
-            }
-        });
+        optimizedMinDistanceCol.setSortable(false);
 
         // Add all columns to the TreeTableView
         //noinspection unchecked
@@ -1445,9 +1370,6 @@ public class OptimizeTab {
         optimizedAvgDistanceCol.setStyle(columnStyle);
         optimizedMinDistanceCol.setStyle(columnStyle);
 
-        // Implement custom sorting for exam columns
-        exam1Col.setComparator(germanCollator::compare);
-        exam2Col.setComparator(germanCollator::compare);
 
         // Set default sort on Exam 1 column (ascending)
         exam1Col.setSortType(TreeTableColumn.SortType.ASCENDING);
@@ -1462,26 +1384,6 @@ public class OptimizeTab {
             });
         }
 
-        // Add listener to update dropdowns when column sorting changes
-        optimizedTreeTable.getSortOrder().addListener((javafx.collections.ListChangeListener<TreeTableColumn<CollisionEntry, ?>>) change -> {
-            if (isUpdating) return;
-
-            while (change.next()) {
-                if (change.wasAdded() && !change.getAddedSubList().isEmpty()) {
-                    TreeTableColumn<CollisionEntry, ?> column = change.getAddedSubList().get(0);
-                    updateSortDropdownsFromColumnHeader(column);
-                }
-            }
-        });
-
-        // Add listeners to each column's sortType property
-        for (TreeTableColumn<CollisionEntry, ?> column : optimizedTreeTable.getColumns()) {
-            column.sortTypeProperty().addListener((obs, oldValue, newValue) -> {
-                if (!isUpdating && newValue != null) {
-                    updateSortDropdownsFromColumnHeader(column);
-                }
-            });
-        }
 
         return optimizedTreeTable;
 
@@ -1594,18 +1496,11 @@ public class OptimizeTab {
         });
     }
 
-
-    /**
-     * Returns the optimize tab instance.
-     * @return The JavaFX Tab instance
-     */
+    //The JavaFX Tab instance
     public Tab getTab() {
         return tab;
     }
 
-    /**
-     * Helper class to compute distance statistics for parent assessments
-     */
     private static class DistanceStats {
         private final Duration averageOldDistance;
         private final Duration averageOptimizedDistance;
@@ -1625,9 +1520,7 @@ public class OptimizeTab {
         public Duration getMinOptimizedDistance() { return minOptimizedDistance; }
     }
 
-    /**
-     * Calculates distance statistics for a parent assessment based on its children
-     */
+    //Calculates distance statistics for a parent assessment based on its children
     private static DistanceStats calculateDistanceStats(MergedAssessment parent) {
         if (parent == null) return null;
 
@@ -2001,43 +1894,6 @@ public class OptimizeTab {
         updateTable();
     }
 
-    /**
-     * Updates the sort dropdowns based on the current column sort state
-     */
-    private void updateSortDropdownsFromColumnHeader(TreeTableColumn<CollisionEntry, ?> column) {
-        if (column == null) return;
-
-        String columnName = column.getText();
-        TreeTableColumn.SortType sortType = column.getSortType();
-
-        // Convert sort type to direction string
-        String direction = (sortType == TreeTableColumn.SortType.ASCENDING) ? ASCENDING : DESCENDING;
-
-        // Determine which dropdown to update based on column type
-        if (isExam1Column(columnName)) {
-            // Update Exam 1 dropdowns
-            isUpdating = true;
-            try {
-                sortExam1Box.setValue(mapColumnNameToDropdownValue(columnName));
-                sortDirectionExam1Box.setValue(direction);
-            } finally {
-                isUpdating = false;
-            }
-        } else if (isExam2Column(columnName)) {
-            // Update Exam 2 dropdowns
-            isUpdating = true;
-            try {
-                sortExam2Box.setValue(mapColumnNameToDropdownValue(columnName));
-                sortDirectionExam2Box.setValue(direction);
-            } finally {
-                isUpdating = false;
-            }
-        }
-    }
-
-    /**
-     * Finds a column by its name
-     */
     private TreeTableColumn<CollisionEntry, ?> findColumnByName(String name) {
         for (TreeTableColumn<CollisionEntry, ?> column : optimizedTreeTable.getColumns()) {
             if (column.getText().equals(name)) {
@@ -2056,88 +1912,121 @@ public class OptimizeTab {
         }
     }
 
-    /**
-     * Applies sorting to the tree table based on column name and sort type.
-     *
-     * @param treeTable The tree table to sort
-     * @param columnName The name of the column to sort by
-     * @param sortType The sort direction (ascending or descending)
-     */
-    private void applySortToTreeTable(TreeTableView<CollisionEntry> treeTable, String columnName, TreeTableColumn.SortType sortType) {
-        TreeTableColumn<CollisionEntry, ?> column = findColumnByName(columnName);
-        if (column != null) {
-            column.setSortType(sortType);
-            treeTable.getSortOrder().setAll(column);
-            treeTable.sort();
+    private void savePreferences() {
+        if (prefs == null) return;
+
+        // Save Filter and Sort preferences
+        prefs.put("optimized.filter.exam1", filterExam1Field.getText());
+        prefs.put("optimized.filter.exam2", filterExam2Field.getText());
+        prefs.put("optimized.filter.maxDistance", maxDistanceField.getText());
+
+        prefs.put("optimized.sort.exam1", sortExam1Box.getValue() != null ? sortExam1Box.getValue() : "");
+        prefs.put("optimized.sort.exam1.direction", sortDirectionExam1Box.getValue());
+        prefs.put("optimized.sort.exam2", sortExam2Box.getValue() != null ? sortExam2Box.getValue() : "");
+        prefs.put("optimized.sort.exam2.direction", sortDirectionExam2Box.getValue());
+
+        // Save checkbox states
+        prefs.putBoolean("optimized.hideNullTimes", hideNullTimesCheckbox.isSelected());
+        prefs.putBoolean("optimized.showOnlyAssessments", showOnlyAssessmentsCheckbox.isSelected());
+        prefs.putBoolean("optimized.showOnlyCollisions", showOnlyWithCollisionsCheckbox.isSelected());
+
+
+
+    }
+
+    private void loadPreferences() {
+        if (prefs == null) return;
+
+        folderPathField.setText(prefs.get("optimizedSavePath", ""));
+
+        // Load Filter and Sort preferences
+        filterExam1Field.setText(prefs.get("optimized.filter.exam1", ""));
+        filterExam2Field.setText(prefs.get("optimized.filter.exam2", ""));
+        maxDistanceField.setText(prefs.get("optimized.filter.maxDistance", ""));
+
+        String exam1Sort = prefs.get("optimized.sort.exam1", "Exam1 Name");
+        if (!exam1Sort.isEmpty()) {
+            sortExam1Box.setValue(exam1Sort);
+        }
+
+        String exam1Direction = prefs.get("optimized.sort.exam1.direction", ASCENDING);
+        sortDirectionExam1Box.setValue(exam1Direction);
+
+        String exam2Sort = prefs.get("optimized.sort.exam2", "Exam2 Name");
+        if (!exam2Sort.isEmpty()) {
+            sortExam2Box.setValue(exam2Sort);
+        }
+
+        String exam2Direction = prefs.get("optimized.sort.exam2.direction", ASCENDING);
+        sortDirectionExam2Box.setValue(exam2Direction);
+
+        // Load checkbox states
+        hideNullTimesCheckbox.setSelected(prefs.getBoolean("optimized.hideNullTimes", false));
+        showOnlyAssessmentsCheckbox.setSelected(prefs.getBoolean("optimized.showOnlyAssessments", false));
+        showOnlyWithCollisionsCheckbox.setSelected(prefs.getBoolean("optimized.showOnlyCollisions", false));
+
+    }
+    //Wenn man einen Speicherpfad angibt und auf dem Button Save klickt
+    private void saveOptimized() {
+        String optimizedPath = folderPathField .getText();
+
+        // Check if path is null or empty
+        if (optimizedPath == null || optimizedPath.trim().isEmpty()) {
+            examGUI.showAlert("Please specify a file path for saving the optimized list.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        File optimizedFile = new File(optimizedPath);
+
+        // Check if parent directory exists and is accessible
+        File parentDir = optimizedFile.getParentFile();
+        if (parentDir == null) {
+            examGUI.showAlert("Invalid file path. Please specify a valid directory path.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        if (!parentDir.exists()) {
+            examGUI.showAlert("Directory does not exist: " + parentDir.getPath(), Alert.AlertType.ERROR);
+            return;
+        }
+
+        if (!parentDir.canWrite()) {
+            examGUI.showAlert("Cannot write to directory: " + parentDir.getPath() + "\nPlease check directory permissions.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Check if file exists and is writable
+        if (optimizedFile.exists() && !optimizedFile.canWrite()) {
+            examGUI.showAlert("Cannot write to file: " + optimizedFile.getPath() + "\nPlease check file permissions.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Check if we have collision data to save
+        if (optimizedAssessments == null || optimizedAssessments.length == 0) {
+            examGUI.showAlert("No Optimized List  to save! Please start optimization first.", Alert.AlertType.ERROR);
+            return;
+        }
+
+        // Save paths to preferences
+        prefs.put("optimizedSavePath", optimizedPath);
+
+        // Proceed with saving
+        try {
+            SaveManager.saveAssessments(optimizedPath, optimizedAssessments);
+            examGUI.showAlert("Optimized List saved successfully to " + optimizedPath, Alert.AlertType.INFORMATION);
+        } catch (Exception e) {
+            examGUI.showAlert("Error saving Optimized List : " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-    /**
-     * Checks if the given column name is an Exam 1 column.
-     *
-     * @param columnName The column name to check
-     * @return true if the column is an Exam 1 column, false otherwise
-     */
-    private boolean isExam1Column(String columnName) {
-        return columnName.startsWith("Exam1") ||
-               columnName.equals("Collision Count") ||
-               columnName.equals("Old Begin") ||
-               columnName.equals("Old End") ||
-               columnName.equals("Old Average Distance") ||
-               columnName.equals("Old Min. Distance") ||
-               columnName.equals("Optimize Begin") ||
-               columnName.equals("Optimize End") ||
-               columnName.equals("Optimize Average Distance") ||
-               columnName.equals("Optimize Min. Distance");
-    }
-
-    /**
-     * Checks if the given column name is an Exam 2 column.
-     *
-     * @param columnName The column name to check
-     * @return true if the column is an Exam 2 column, false otherwise
-     */
-    private boolean isExam2Column(String columnName) {
-        return columnName.startsWith("Exam2") ||
-               columnName.equals("Collision Count") ||
-               columnName.equals("Old Begin") ||
-               columnName.equals("Old End") ||
-               columnName.equals("Old Distance") ||
-               columnName.equals("Optimize Begin") ||
-               columnName.equals("Optimize End") ||
-               columnName.equals("Optimize Distance");
-    }
-
-    /**
-     * Maps a column name to the corresponding dropdown value.
-     *
-     * @param columnName The column name to map
-     * @return The dropdown value corresponding to the column name
-     */
-    private String mapColumnNameToDropdownValue(String columnName) {
-        // Direct mapping for most column names
-        if (columnName.equals("Exam 1")) return "Exam1 Name";
-        if (columnName.equals("Exam 2")) return "Exam2 Name";
-
-        // For other columns, use the same name as in the dropdown
-        return columnName;
-    }
-
-    /**
-     * Initialize the mapping between dropdown options and their corresponding column names.
-     * This is used to associate dropdown selections with the actual table columns for sorting.
-     */
-    private void initializeSortColumnMappings() {
-        // Map SortExam1 dropdown options to column names
-        sortExam1ColumnMap.put("Exam1 Name", "Exam 1");
-        sortExam1ColumnMap.put("Old Average Distance", "Old Avg. Distance");
-        sortExam1ColumnMap.put("Old Min. Distance", "Old Min. Distance");
-        sortExam1ColumnMap.put("Optimize Average Distance", "Opt Avg. Distance");
-        sortExam1ColumnMap.put("Optimize Min. Distance", "Opt Min. Distance");
-
-        // Map SortExam2 dropdown options to column names
-        sortExam2ColumnMap.put("Exam2 Name", "Exam 2");
-        sortExam2ColumnMap.put("Old Distance", "Old Distance");
-        sortExam2ColumnMap.put("Optimize Distance", "Opt Distance");
+    public void onClose() {
+        savePreferences();
+        // After saving preferences
+        try {
+            prefs.flush();
+        } catch (BackingStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
+
