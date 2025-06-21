@@ -123,7 +123,7 @@ public class ExamGUI extends Application {
         statisticsTab.getTab().setDisable(true);
 
         // Add tabs to tab pane
-        tabPane.getTabs().addAll(inputTab.getTab(), collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab(), createRoomPlansTab());
+        tabPane.getTabs().addAll(inputTab.getTab(), collisionsTab.getTab(), optimizeTab.getTab(), statisticsTab.getTab());
 
         // Set initial tab to input
         tabPane.getSelectionModel().select(INPUT_PAGE);
@@ -317,25 +317,6 @@ public class ExamGUI extends Application {
         alert.getDialogPane().setMinWidth(1000);
 
         alert.showAndWait();
-    }
-
-
-    private Tab createRoomPlansTab() {
-        Tab roomPlansTab = new Tab("Room Occupancy Plans");
-        VBox content = new VBox(20);
-        content.setPadding(new Insets(20));
-        content.setAlignment(Pos.CENTER);
-
-        Label inProgressLabel = new Label("Room Occupancy Plans - In Progress");
-        inProgressLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
-        inProgressLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        Label descriptionLabel = new Label("This feature is currently under development.");
-        descriptionLabel.setTextFill(Color.web(SECONDARY_COLOR));
-
-        content.getChildren().addAll(inProgressLabel, descriptionLabel);
-        roomPlansTab.setContent(content);
-        return roomPlansTab;
     }
 
     private void showAboutDialog() {
