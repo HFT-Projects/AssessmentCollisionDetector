@@ -23,10 +23,12 @@ public class MergedAssessmentEditable extends MergedAssessment {
 
             for (int i = 1; i < assessments.length; i++) {
                 Assessment a = assessments[i];
-                if (!Objects.equals(name, a.getName()) ||
-                        !Objects.equals(begin, a.getBegin()) ||
-                        !Objects.equals(end, a.getEnd()))
-                    throw new AssertionError("Assessments must have same name, begin & end"); // TODO: specify which one is wrong
+                if (!Objects.equals(name, a.getName()))
+                    throw new AssertionError("Assessments must have same name");
+                if (!Objects.equals(begin, a.getBegin()))
+                    throw new AssertionError("Assessments must have same begin ");
+                if (!Objects.equals(end, a.getEnd()))
+                    throw new AssertionError("Assessments must have same end");
             }
         }
 
