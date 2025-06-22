@@ -170,7 +170,10 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter(this::checkStudentsHasMultipleAssessmentsAtOneDay)
-                .penalize(HardMediumSoftLongScore.ONE_SOFT)
+                .penalizeLong(HardMediumSoftLongScore.ONE_SOFT, (assessment1, assessment2) -> {
+                    Integer collisions = assessment1.getAssessment().getCollisionCountByAssessment().get(assessment2.getAssessment());
+                    return 25L * collisions;
+                })
                 .asConstraint("Multiple assessments per day");
     }
 
