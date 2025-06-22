@@ -16,6 +16,8 @@ import java.io.File;
 import java.util.prefs.Preferences;
 
 public class OptimizeTab {
+    private static final String PREFS_OPTIMIZED_ASSESSMENTS_PATH = "optimized_assessments_path";
+
     private final VBox section;
     private final Tab tab;
 
@@ -86,7 +88,7 @@ public class OptimizeTab {
         saveFileLabel.setStyle("-fx-text-fill: #2c3e50;");
 
         TextField folderPathField = new TextField();
-        folderPathField.setText(optimizerPreferences.get("optimizedAssessmentsPath", ""));
+        folderPathField.setText(optimizerPreferences.get(PREFS_OPTIMIZED_ASSESSMENTS_PATH, ""));
         folderPathField.setEditable(false);
         folderPathField.setPromptText("No folder selected");
 
@@ -158,7 +160,7 @@ public class OptimizeTab {
             }
 
             // Save paths to preferences
-            optimizerPreferences.put("optimizedAssessmentsPath", path);
+            optimizerPreferences.put(PREFS_OPTIMIZED_ASSESSMENTS_PATH, path);
 
             mainGUI.saveOptimizedAssessments(path);
         });

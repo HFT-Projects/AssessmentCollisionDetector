@@ -15,6 +15,11 @@ import java.io.File;
 import java.util.prefs.Preferences;
 
 public class InputTab {
+    private static final String PREFS_EXAMS_PATH = "exams_path";
+    private static final String PREFS_REGISTRATIONS_PATH = "registrations_path";
+    private static final String PREFS_COLLISIONS_PATH = "collisions_path";
+    private static final String PREFS_YEAR_INPUT = "year_input";
+
     private final Tab tab;
     private final TextField examsPathField;
     private final TextField registrationsPathField;
@@ -46,9 +51,9 @@ public class InputTab {
         fileGrid.setVgap(15);
 
         // Initialize text fields with saved preferences
-        examsPathField = createStyledTextField(prefs.get("examsPath", ""));
-        registrationsPathField = createStyledTextField(prefs.get("registrationsPath", ""));
-        collisionsPathField = createStyledTextField(prefs.get("collisionsPath", ""));
+        examsPathField = createStyledTextField(prefs.get(PREFS_EXAMS_PATH, ""));
+        registrationsPathField = createStyledTextField(prefs.get(PREFS_REGISTRATIONS_PATH, ""));
+        collisionsPathField = createStyledTextField(prefs.get(PREFS_COLLISIONS_PATH, ""));
 
         // Create browse buttons
         Button examBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
@@ -106,7 +111,7 @@ public class InputTab {
         optionalYearLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
         optionalYearLabel.setTextFill(Color.web(MainGUI.SECONDARY_COLOR));
 
-        optionalYearField = createStyledTextField(prefs.get("yearInput", ""));
+        optionalYearField = createStyledTextField(prefs.get(PREFS_YEAR_INPUT, ""));
         optionalYearField.setPromptText("YYYY");
         optionalYearField.setPrefWidth(100);
 
@@ -149,9 +154,9 @@ public class InputTab {
             }
 
             // save paths to preferences
-            prefs.put("examsPath", examsPath);
-            prefs.put("registrationsPath", registrationsPath);
-            prefs.put("yearInput", year == null ? "" : String.valueOf(year));
+            prefs.put(PREFS_EXAMS_PATH, examsPath);
+            prefs.put(PREFS_REGISTRATIONS_PATH, registrationsPath);
+            prefs.put(PREFS_YEAR_INPUT, year == null ? "" : String.valueOf(year));
 
             mainGUI.detectCollisions(examsPath, registrationsPath, year);
 
@@ -196,7 +201,7 @@ public class InputTab {
             }
 
             // Save paths to preferences
-            prefs.put("collisionsPath", collisionsPath);
+            prefs.put(PREFS_COLLISIONS_PATH, collisionsPath);
 
             mainGUI.saveCollisions(collisionsPath);
         });
