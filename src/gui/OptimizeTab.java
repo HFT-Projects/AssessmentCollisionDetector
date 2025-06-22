@@ -114,6 +114,7 @@ public class OptimizeTab {
             optimizerPreferences.put(PREFS_OPTIMIZATION_TIMEOUT, String.valueOf(optimizerTimeout));
             // activate save optimized button
             saveOptimizedButton.setDisable(false);
+            optimizeButton.setDisable(true);
         });
 
         // === Right side ===
