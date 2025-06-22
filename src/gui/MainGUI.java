@@ -48,8 +48,9 @@ public class MainGUI extends Application {
     };
     private static final String COPYRIGHT_YEAR = "2025";
 
-    private final Preferences preferencesCollisionsTab = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
-    private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
+    private final Preferences preferencesCollisionsTabTable = Preferences.userRoot().node("/assessment_collision_detector/collisions_tab/collisions_table");
+    private final Preferences preferencesOptimizerTab = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab");
+    private final Preferences preferencesOptimizerTabTable = Preferences.userRoot().node("/assessment_collision_detector/optimizer_tab/collisions_table");
     private final Preferences preferencesInputTab = Preferences.userRoot().node("/assessment_collision_detector/input_tab");
 
     private FileChooser fileChooser;
@@ -110,7 +111,7 @@ public class MainGUI extends Application {
         // don't explicitly disable collisionsTab because collisionsTab
         // is disabled by default (internally) because it needs Assessment[] to be enabled.
 
-        optimizeTab = new OptimizeTab(this, preferencesOptimizerTab);
+        optimizeTab = new OptimizeTab(this, preferencesOptimizerTab, preferencesOptimizerTabTable);
         optimizeTab.getTab().setDisable(true);
 
         statisticsTab = new StatisticsTab();
@@ -208,7 +209,7 @@ public class MainGUI extends Application {
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, registrationsPath);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
 
-        collisionsTab.enable_tab(assessments, preferencesCollisionsTab);
+        collisionsTab.enable_tab(assessments, preferencesCollisionsTabTable);
         optimizeTab.getTab().setDisable(false);
         statisticsTab.setAssessments(assessments);
         statisticsTab.getTab().setDisable(false);

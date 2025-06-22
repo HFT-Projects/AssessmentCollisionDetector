@@ -19,7 +19,7 @@ public class OptimizeTab {
     private final VBox section;
     private final Tab tab;
 
-    public OptimizeTab(MainGUI mainGUI, Preferences prefs) {
+    public OptimizeTab(MainGUI mainGUI, Preferences optimizerPreferences, Preferences collisionTablePreferences) {
         tab = new Tab("Optimization");
         tab.setClosable(false);
 
@@ -70,7 +70,7 @@ public class OptimizeTab {
             MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
             if (optimizedAssessments == null)
                 return;
-            setAssessments(optimizedAssessments, prefs);
+            setAssessments(optimizedAssessments, collisionTablePreferences);
             // activate save optimized button
             saveOptimizedButton.setDisable(false);
         });
@@ -86,7 +86,7 @@ public class OptimizeTab {
         saveFileLabel.setStyle("-fx-text-fill: #2c3e50;");
 
         TextField folderPathField = new TextField();
-        folderPathField.setText(prefs.get("optimizedAssessmentsPath", ""));
+        folderPathField.setText(optimizerPreferences.get("optimizedAssessmentsPath", ""));
         folderPathField.setEditable(false);
         folderPathField.setPromptText("No folder selected");
 
@@ -158,7 +158,7 @@ public class OptimizeTab {
             }
 
             // Save paths to preferences
-            prefs.put("optimizedAssessmentsPath", path);
+            optimizerPreferences.put("optimizedAssessmentsPath", path);
 
             mainGUI.saveOptimizedAssessments(path);
         });
