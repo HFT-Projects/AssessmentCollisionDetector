@@ -9,6 +9,7 @@ import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftL
 import java.time.LocalDateTime;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @PlanningSolution
 public class AssessmentSchedulingSolution {
 
@@ -21,7 +22,8 @@ public class AssessmentSchedulingSolution {
     @PlanningScore
     private HardMediumSoftLongScore score;
 
-    public AssessmentSchedulingSolution() {}
+    public AssessmentSchedulingSolution() {
+    }
 
     public AssessmentSchedulingSolution(List<AssessmentScheduleItem> assessments, List<LocalDateTime> timeSlots) {
         this.assessmentList = assessments;

@@ -26,11 +26,13 @@ public class AssessmentOptimizer {
     private static final Set<MergedAssessment> optimizedAssessments = new HashSet<>();
 
     // WARNING: calling this method invalidates all previous created MergesAssessments. Using them afterward can result in unexpected behavior.
+    // merges all Assessments with the same name, begin & end into one together into one MergedAssessment
     public static MergedAssessment[] mergeAssessments(Assessment[] assessments) {
         MergedAssessmentEditable._resetAssessmentToMergedAssessmentMap();
         Map<AssessmentIdentifier, MergedAssessment> mergedAssessments = new HashMap<>();
 
         for (Assessment a : assessments) {
+            // create an AssessmentIdentifier and merge all Assessments which match the same Identifier into one MergedAssessment
             AssessmentIdentifier ai = new AssessmentIdentifier(a.getName(), a.getBegin(), a.getEnd());
 
             if (mergedAssessments.containsKey(ai)) {
@@ -47,15 +49,8 @@ public class AssessmentOptimizer {
         return mergedAssessments.values().toArray(new MergedAssessment[0]);
     }
 
-    private static void getAssessmentGroupsRecursive(MergedAssessment assessment, List<MergedAssessment> assessmentGroup) {
-        assessmentGroup.add(assessment);
-        for (MergedAssessment a : assessment.getCollisionCountByAssessment().keySet()) {
-            if (assessmentGroup.contains(a))
-                continue;
-            getAssessmentGroupsRecursive(a, assessmentGroup);
-        }
-    }
-
+    // puts all MergedAssessments which are related together.
+    // related doesn't necessarily mean that they collide directly because they could collide indirectly (e.g. a - b - c)
     public static MergedAssessment[][] getAssessmentGroups(MergedAssessment[] mergedAssessments) {
         Set<MergedAssessment> alreadyProcessed = new HashSet<>();
         List<List<MergedAssessment>> assessmentGroups = new LinkedList<>();
@@ -74,6 +69,17 @@ public class AssessmentOptimizer {
         return assessmentGroups.stream().map((mal) -> mal.toArray(new MergedAssessment[0])).toArray(MergedAssessment[][]::new);
     }
 
+    private static void getAssessmentGroupsRecursive(MergedAssessment assessment, List<MergedAssessment> assessmentGroup) {
+        assessmentGroup.add(assessment);
+        for (MergedAssessment a : assessment.getCollisionCountByAssessment().keySet()) {
+            if (assessmentGroup.contains(a))
+                continue;
+            getAssessmentGroupsRecursive(a, assessmentGroup);
+        }
+    }
+
+    // ATTENTION: when optimizing via groups, it's impossible to respect rooms / supervisors because they need to be respected
+    // over all groups and not only side one group.
     public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups) {
         AssessmentSchedulingConstraintProvider.respectRooms = false;
         AssessmentSchedulingConstraintProvider.respectSupervisors = false;
@@ -81,18 +87,22 @@ public class AssessmentOptimizer {
         List<MergedAssessment[]> groups = new ArrayList<>();
 
         for (MergedAssessment[] group : assessmentGroups) {
+            // only assessments with times can be optimized.
             MergedAssessment[] validAssessments = Arrays.stream(group)
                     .filter(a -> a.getBegin() != null && a.getEnd() != null)
                     .toArray(MergedAssessment[]::new);
 
-            if (validAssessments.length < 2) {
+            if (validAssessments.length <= 1) {
                 continue;
             }
 
             groups.add(validAssessments);
         }
 
+        // optimize larger groups
         groups.stream().filter(a -> a.length > LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).forEach(a -> optimizeAssessments(a, true));
+
+        // optimize smaller groups in parallel & with smaller time limit
         groups.stream().filter(a -> a.length <= LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).parallel().forEach(a -> optimizeAssessments(a, false));
 
         MergedAssessment[] allAssessments = Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
@@ -105,11 +115,12 @@ public class AssessmentOptimizer {
         AssessmentSchedulingConstraintProvider.respectRooms = respectRooms;
         AssessmentSchedulingConstraintProvider.respectSupervisors = respectSupervisors;
 
+        // only assessments with times can be optimized.
         MergedAssessment[] validAssessments = Arrays.stream(assessments)
                 .filter(a -> a.getBegin() != null && a.getEnd() != null)
                 .toArray(MergedAssessment[]::new);
 
-        if (validAssessments.length < 2) {
+        if (validAssessments.length <= 1) {
             return assessments;
         }
 
@@ -121,7 +132,10 @@ public class AssessmentOptimizer {
     }
 
     private static void optimizeAssessments(MergedAssessment[] assessments, boolean isLargeGroup) {
+        // get all possible time slots
         List<LocalDateTime> timeSlots = generateTimeSlots(assessments);
+
+        // create AssessmentScheduleItems for all assessments
         List<AssessmentScheduleItem> wrappers = Arrays.stream(assessments)
                 .map(AssessmentScheduleItem::new)
                 .toList();
@@ -135,6 +149,7 @@ public class AssessmentOptimizer {
 
         if (isLargeGroup) {
             config.withTerminationSpentLimit(LARGE_GROUP_TIMEOUT)
+                    // use multiple threads
                     .withMoveThreadCount(MOVE_THREAD_COUNT);
         } else {
             config.withTerminationSpentLimit(SMALL_GROUP_TIMEOUT);

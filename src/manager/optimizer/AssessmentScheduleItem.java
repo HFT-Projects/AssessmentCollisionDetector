@@ -44,12 +44,11 @@ public class AssessmentScheduleItem {
 
     @PlanningVariable(valueRangeProviderRefs = "timeSlotRange")
     public LocalDateTime getScheduledTime() {
-        if (assessment.getOptimizedBegin() == null) {
-            if (assessment.getBegin() == null)
-                throw new AssertionError();
+        if (assessment.getOptimizedBegin() != null)
+            return assessment.getOptimizedBegin();
+        if (assessment.getBegin() != null)
             return assessment.getBegin();
-        }
-        return assessment.getOptimizedBegin();
+        throw new AssertionError("assessments without times cannot be optimized");
     }
 
     public void setScheduledTime(LocalDateTime scheduledTime) {
@@ -63,12 +62,11 @@ public class AssessmentScheduleItem {
     }
 
     public LocalDateTime getScheduledEndTime() {
-        if (assessment.getOptimizedEnd() == null) {
-            if (assessment.getEnd() == null)
-                throw new AssertionError();
+        if (assessment.getOptimizedEnd() != null)
+            return assessment.getOptimizedEnd();
+        if (assessment.getEnd() != null)
             return assessment.getEnd();
-        }
-        return assessment.getOptimizedEnd();
+        throw new AssertionError("assessments without times cannot be optimized");
     }
 
     @Override

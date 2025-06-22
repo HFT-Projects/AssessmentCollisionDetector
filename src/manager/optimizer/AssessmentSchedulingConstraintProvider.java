@@ -1,8 +1,7 @@
 package manager.optimizer;
 
-import data.AssessmentBase;
 import data.Assessment;
-
+import data.AssessmentBase;
 import org.optaplanner.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintFactory;
@@ -10,7 +9,9 @@ import org.optaplanner.core.api.score.stream.ConstraintProvider;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public class AssessmentSchedulingConstraintProvider implements ConstraintProvider {
     public static boolean respectRooms;
@@ -18,7 +19,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
 
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
-        return new Constraint[] {
+        return new Constraint[]{
                 studentAtTwoAssessmentsConflict(factory), // hard constraint (100000)
                 roomConflict(factory),  // hard constraint (500)
                 supervisorConflict(factory), // hard constraint (500)
@@ -29,6 +30,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
         };
     }
 
+    // hard-constraint that one student cannot be at two assessments at the same time.
     Constraint studentAtTwoAssessmentsConflict(ConstraintFactory factory) {
         return factory
                 .forEach(AssessmentScheduleItem.class)
@@ -38,6 +40,8 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .asConstraint("Student at two assessments conflict");
     }
 
+    // hard-constraint that one room cannot have two assessments at the same time.
+    @SuppressWarnings("DuplicatedCode")
     Constraint roomConflict(ConstraintFactory factory) {
         if (!respectRooms)
             return factory
@@ -49,34 +53,36 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .forEach(AssessmentScheduleItem.class)
                 .join(AssessmentScheduleItem.class)
                 .filter((assessment1, assessment2) -> {
-                            if (assessment1 == assessment2)
-                                return false;
+                    if (assessment1 == assessment2)
+                        return false;
 
-                            Duration distance = getDistance(assessment1, assessment2);
-                            if (distance == null || distance.toMinutes() >= 0)
-                                return false;
+                    Duration distance = getDistance(assessment1, assessment2);
+                    if (distance == null || distance.toMinutes() >= 0)
+                        return false;
 
-                            Set<String> rooms1 = new HashSet<>();
-                            Set<String> rooms2 = new HashSet<>();
+                    Set<String> rooms1 = new HashSet<>();
+                    Set<String> rooms2 = new HashSet<>();
 
-                            for (Assessment a : assessment1.getAssessment().getAssessments()) {
-                                for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
-                                    rooms1.add(ae.room());
-                                }
-                            }
+                    for (Assessment a : assessment1.getAssessment().getAssessments()) {
+                        for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
+                            rooms1.add(ae.room());
+                        }
+                    }
 
-                            for (Assessment a : assessment2.getAssessment().getAssessments()) {
-                                for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
-                                    rooms2.add(ae.room());
-                                }
-                            }
+                    for (Assessment a : assessment2.getAssessment().getAssessments()) {
+                        for (AssessmentBase.AssessmentEntry ae : a.getAssessmentEntries()) {
+                            rooms2.add(ae.room());
+                        }
+                    }
 
-                            return rooms1.stream().anyMatch(rooms2::contains);
-                        })
+                    return rooms1.stream().anyMatch(rooms2::contains);
+                })
                 .penalize(HardMediumSoftLongScore.ofHard(500))
                 .asConstraint("room conflict");
     }
 
+    // hard-constraint that one supervisor cannot be at two assessments at the same time
+    @SuppressWarnings("DuplicatedCode")
     Constraint supervisorConflict(ConstraintFactory factory) {
         if (!respectRooms)
             return factory
@@ -116,6 +122,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .asConstraint("supervisor conflict");
     }
 
+    // hard-constraint that a student has at least one hour between assessments.
     Constraint wayTooLittleTimeConflict(ConstraintFactory factory) {
         return factory
                 .forEach(AssessmentScheduleItem.class)
@@ -136,6 +143,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .asConstraint("way too little time conflict");
     }
 
+    // medium-constraint that a student has at least three hours between assessments.
     Constraint tooLittleTimeConflict(ConstraintFactory factory) {
         return factory
                 .forEach(AssessmentScheduleItem.class)
@@ -156,6 +164,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .asConstraint("too little time conflict");
     }
 
+    // soft-constraint to minimize assessments per one day (per student).
     Constraint minimizeAssessmentsPerDay(ConstraintFactory factory) {
         return factory
                 .forEach(AssessmentScheduleItem.class)
@@ -165,6 +174,7 @@ public class AssessmentSchedulingConstraintProvider implements ConstraintProvide
                 .asConstraint("Multiple assessments per day");
     }
 
+    // soft-constraint to maximize time between assessments.
     Constraint maximizeTimeBetweenAssessments(ConstraintFactory factory) {
         return factory
                 .forEach(AssessmentScheduleItem.class)
