@@ -149,6 +149,7 @@ public class AssessmentOptimizer {
                 .withSolutionClass(AssessmentSchedulingSolution.class)
                 .withEntityClasses(AssessmentScheduleItem.class)
                 .withConstraintProviderClass(AssessmentSchedulingConstraintProvider.class);
+        //.withEnvironmentMode(EnvironmentMode.FAST_ASSERT);
 
         if (isLargeGroup) {
             config.withTerminationSpentLimit(Duration.ofSeconds(timeoutSeconds))
@@ -162,6 +163,11 @@ public class AssessmentOptimizer {
         Solver<AssessmentSchedulingSolution> solver = solverFactory.buildSolver();
         @SuppressWarnings("unused")
         AssessmentSchedulingSolution solution = solver.solve(problem);
+
+        solution.getAssessmentList().forEach(a -> {
+            ((MergedAssessmentEditable) a.getAssessment()).setOptimizedBegin(a.getScheduledTime());
+            ((MergedAssessmentEditable) a.getAssessment()).setOptimizedEnd(a.getScheduledEndTime());
+        });
 
         if (solution.getScore().hardScore() > 0)
             hardConstraintViolatedCallback.run();

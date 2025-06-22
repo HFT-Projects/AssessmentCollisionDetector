@@ -1,7 +1,6 @@
 package manager.optimizer;
 
 import data.MergedAssessment;
-import data.MergedAssessmentEditable;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
@@ -20,6 +19,9 @@ public class AssessmentScheduleItem {
 
     private MergedAssessment assessment;
 
+    @PlanningVariable(valueRangeProviderRefs = "timeSlotRange")
+    LocalDateTime scheduledTime;
+
     public AssessmentScheduleItem() {
         this.id = nextId;
         nextId++;
@@ -28,6 +30,7 @@ public class AssessmentScheduleItem {
     public AssessmentScheduleItem(MergedAssessment assessment) {
         this();
         this.assessment = assessment;
+        scheduledTime = assessment.getBegin();
     }
 
     public int getId() {
@@ -42,27 +45,21 @@ public class AssessmentScheduleItem {
         this.assessment = assessment;
     }
 
-    @PlanningVariable(valueRangeProviderRefs = "timeSlotRange")
     public LocalDateTime getScheduledTime() {
-        if (assessment.getOptimizedBegin() != null)
-            return assessment.getOptimizedBegin();
-        throw new AssertionError("assessments without times cannot be optimized");
+        return this.scheduledTime;
     }
 
     public void setScheduledTime(LocalDateTime scheduledTime) {
+        this.scheduledTime = scheduledTime;
+    }
+
+    public LocalDateTime getScheduledEndTime() {
         LocalDateTime originalBegin = assessment.getBegin();
         LocalDateTime originalEnd = assessment.getEnd();
 
         Duration length = Duration.between(originalBegin, originalEnd);
 
-        ((MergedAssessmentEditable) assessment).setOptimizedBegin(scheduledTime);
-        ((MergedAssessmentEditable) assessment).setOptimizedEnd(scheduledTime.plus(length));
-    }
-
-    public LocalDateTime getScheduledEndTime() {
-        if (assessment.getOptimizedEnd() != null)
-            return assessment.getOptimizedEnd();
-        throw new AssertionError("assessments without times cannot be optimized");
+        return scheduledTime.plus(length);
     }
 
     @Override
