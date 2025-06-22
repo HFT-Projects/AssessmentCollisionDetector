@@ -46,8 +46,6 @@ public class AssessmentScheduleItem {
     public LocalDateTime getScheduledTime() {
         if (assessment.getOptimizedBegin() != null)
             return assessment.getOptimizedBegin();
-        if (assessment.getBegin() != null)
-            return assessment.getBegin();
         throw new AssertionError("assessments without times cannot be optimized");
     }
 
@@ -64,8 +62,6 @@ public class AssessmentScheduleItem {
     public LocalDateTime getScheduledEndTime() {
         if (assessment.getOptimizedEnd() != null)
             return assessment.getOptimizedEnd();
-        if (assessment.getEnd() != null)
-            return assessment.getEnd();
         throw new AssertionError("assessments without times cannot be optimized");
     }
 

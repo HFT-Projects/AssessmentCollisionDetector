@@ -23,8 +23,6 @@ public class AssessmentOptimizer {
     private static final int DEFAULT_END_HOUR = 18;
     private static final int MAX_WEEKDAY = 5;
 
-    private static final Set<MergedAssessment> optimizedAssessments = new HashSet<>();
-
     // WARNING: calling this method invalidates all previous created MergesAssessments. Using them afterward can result in unexpected behavior.
     // merges all Assessments with the same name, begin & end into one together into one MergedAssessment
     public static MergedAssessment[] mergeAssessments(Assessment[] assessments) {
@@ -87,6 +85,12 @@ public class AssessmentOptimizer {
         List<MergedAssessment[]> groups = new ArrayList<>();
 
         for (MergedAssessment[] group : assessmentGroups) {
+            //noinspection DuplicatedCode
+            Arrays.stream(group).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable)ma).forEach(ma -> {
+                    ma.setOptimizedBegin(ma.getBegin());
+                    ma.setOptimizedEnd(ma.getEnd());
+            });
+
             // only assessments with times can be optimized.
             MergedAssessment[] validAssessments = Arrays.stream(group)
                     .filter(a -> a.getBegin() != null && a.getEnd() != null)
@@ -105,15 +109,18 @@ public class AssessmentOptimizer {
         // optimize smaller groups in parallel & with smaller time limit
         groups.stream().filter(a -> a.length <= LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).parallel().forEach(a -> optimizeAssessments(a, false));
 
-        MergedAssessment[] allAssessments = Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
-        fillMissingOptimizedTimes(allAssessments);
-
-        return allAssessments;
+        return Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
     }
 
     public static MergedAssessment[] optimizeAssessments(MergedAssessment[] assessments, boolean respectRooms, boolean respectSupervisors) {
         AssessmentSchedulingConstraintProvider.respectRooms = respectRooms;
         AssessmentSchedulingConstraintProvider.respectSupervisors = respectSupervisors;
+
+        //noinspection DuplicatedCode
+        Arrays.stream(assessments).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable)ma).forEach(ma -> {
+            ma.setOptimizedBegin(ma.getBegin());
+            ma.setOptimizedEnd(ma.getEnd());
+        });
 
         // only assessments with times can be optimized.
         MergedAssessment[] validAssessments = Arrays.stream(assessments)
@@ -125,8 +132,6 @@ public class AssessmentOptimizer {
         }
 
         optimizeAssessments(validAssessments, true);
-
-        fillMissingOptimizedTimes(assessments);
 
         return assessments;
     }
@@ -157,11 +162,8 @@ public class AssessmentOptimizer {
 
         SolverFactory<AssessmentSchedulingSolution> solverFactory = SolverFactory.create(config);
         Solver<AssessmentSchedulingSolution> solver = solverFactory.buildSolver();
+        @SuppressWarnings("unused")
         AssessmentSchedulingSolution solution = solver.solve(problem);
-
-        for (AssessmentScheduleItem item : solution.getAssessmentList()) {
-            optimizedAssessments.add(item.getAssessment());
-        }
 
         // System.out.println(assessments.length + "; " + solution.getScore().toString());
     }
@@ -230,19 +232,6 @@ public class AssessmentOptimizer {
         }
 
         return timeSlots;
-    }
-
-    private static void fillMissingOptimizedTimes(MergedAssessment[] assessments) {
-        for (MergedAssessment ma : assessments) {
-            if (!optimizedAssessments.contains(ma) &&
-                    ma.getOptimizedBegin() == null &&
-                    ma.getBegin() != null) {
-
-                ((MergedAssessmentEditable) ma).setOptimizedBegin(ma.getBegin());
-                ((MergedAssessmentEditable) ma).setOptimizedEnd(ma.getEnd());
-            }
-        }
-        optimizedAssessments.clear();
     }
 
     // Helper Records
