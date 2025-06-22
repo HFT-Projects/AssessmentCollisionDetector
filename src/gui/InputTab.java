@@ -108,18 +108,18 @@ public class InputTab {
 
         optionalYearField = createStyledTextField(prefs.get("yearInput", ""));
         optionalYearField.setPromptText("YYYY");
-        //optionalYearField.setPadding(new Insets(0,1,0,0));
         optionalYearField.setPrefWidth(100);
 
         optionalYearBox.getChildren().addAll(optionalYearLabel, optionalYearField);
 
-        // Action buttons
+        // buttons
         HBox actionBox = new HBox(15);
         actionBox.setAlignment(Pos.CENTER);
         actionBox.setPadding(new Insets(20, 0, 0, 0));
 
         Button detectButton = createStyledButton("Detect Collisions", MainGUI.SUCCESS_COLOR);
         Button saveButton = createStyledButton("Save Collisions", MainGUI.PRIMARY_COLOR);
+        // only active after collision detection
         saveButton.setDisable(true);
 
         detectButton.setOnAction(e -> {
@@ -138,13 +138,13 @@ public class InputTab {
             }
 
             Integer year;
+            // validate year
             if (yearInput == null || yearInput.isEmpty()) {
                 year = null;
             } else if (!(yearInput.matches("\\d{4}"))) {
                 MainGUI.showAlert("Invalid year!", Alert.AlertType.ERROR);
                 return;
             } else {
-                // Parse year, store it and update table
                 year = Integer.parseInt(yearInput.trim());
             }
 
@@ -155,7 +155,9 @@ public class InputTab {
 
             mainGUI.detectCollisions(examsPath, registrationsPath, year);
 
+            // disable collision detection (because it can only run once)
             detectButton.setDisable(true);
+            // enable save collisions button
             saveButton.setDisable(false);
         });
 

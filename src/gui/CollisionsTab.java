@@ -1,10 +1,13 @@
 package gui;
 
 import data.Assessment;
-
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -51,8 +54,6 @@ public class CollisionsTab {
         // Separator
         Separator separator = new Separator();
         separator.setPadding(new Insets(5, 0, 10, 0));
-
-
 
         // Add components to section
         section.getChildren().addAll(

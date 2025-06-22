@@ -33,13 +33,16 @@ public class OptimizeTab {
         scrollPane.setPannable(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
 
-        // Create control section with left and right sides in an HBox
+        // Create control section (perform optimization & save to file)
         HBox controlSection = new HBox(20);
         controlSection.setPadding(new Insets(0, 0, 20, 0));
         controlSection.setAlignment(Pos.CENTER_LEFT);
         controlSection.setPrefWidth(Double.MAX_VALUE);
 
 
+        // === Left side ===
+        // button created already here because it is needed for event handlers below
+        // other properties are set further down
         Button saveOptimizedButton = new Button("Save Optimized");
 
         VBox leftSide = new VBox(10);
@@ -68,8 +71,8 @@ public class OptimizeTab {
             if (optimizedAssessments == null)
                 return;
             setAssessments(optimizedAssessments, prefs);
+            // activate save optimized button
             saveOptimizedButton.setDisable(false);
-            optimizeButton.setDisable(true);
         });
 
         // === Right side ===
@@ -109,6 +112,7 @@ public class OptimizeTab {
 
         browseButton.setOnAction(e -> mainGUI.selectFile(folderPathField, true));
 
+        // only active after optimization
         saveOptimizedButton.setDisable(true);
         saveOptimizedButton.setStyle(
                 "-fx-background-color: " + MainGUI.PRIMARY_COLOR + ";" +
@@ -120,7 +124,7 @@ public class OptimizeTab {
         );
 
         saveOptimizedButton.setOnAction(e -> {
-            String path  = folderPathField.getText();
+            String path = folderPathField.getText();
 
             // Check if path is null or empty
             if (path == null || path.trim().isEmpty()) {

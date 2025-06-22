@@ -169,7 +169,6 @@ public class StatisticsTab {
             Node pieChartOptimized = optimizedAssessments == null ? new VBox() : CollisionPieChartView.createOptimizedCollisionPieChartByCourseOfStudy(selectedCourse, optimizedAssessments);
 
             chartBox.getChildren().addAll(pieChart, pieChartOptimized);
-
         }
     }
 

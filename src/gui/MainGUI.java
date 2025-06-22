@@ -39,6 +39,7 @@ public class MainGUI extends Application {
 
     private static final String APP_NAME = "Exam Collision Detector";
     private static final String APP_VERSION = "1.0";
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String[] APP_AUTHORS = {
             "Johannes Wilhelm Hermann Kerger",
             "Azat Özden",
@@ -106,7 +107,8 @@ public class MainGUI extends Application {
         inputTab = new InputTab(this, preferencesInputTab);
 
         collisionsTab = new CollisionsTab();
-        // collisionsTab is disabled by default because it needs Assessment[] to be enabled.
+        // don't explicitly disable collisionsTab because collisionsTab
+        // is disabled by default (internally) because it needs Assessment[] to be enabled.
 
         optimizeTab = new OptimizeTab(this, preferencesOptimizerTab);
         optimizeTab.getTab().setDisable(true);
@@ -167,10 +169,9 @@ public class MainGUI extends Application {
         footer.setPadding(new Insets(15));
         footer.setStyle("-fx-background-color: " + DARK_COLOR + ";");
 
+        // create author string with the format   A, A, ..., A & A
         List<String> authors = Arrays.asList(APP_AUTHORS);
         String authorString = "";
-
-
         //noinspection ConstantValue
         if (!authors.isEmpty()) {
             authorString = authors.get(authors.size() - 1);
@@ -227,7 +228,6 @@ public class MainGUI extends Application {
             return;
         }
 
-        // Proceed with saving
         try {
             SaveManager.saveCollisions(collisionsPath, assessments);
             showAlert("Collisions saved successfully to " + collisionsPath, Alert.AlertType.INFORMATION);
@@ -263,7 +263,6 @@ public class MainGUI extends Application {
             return;
         }
 
-        // Proceed with saving
         try {
             SaveManager.saveAssessments(path, optimizedAssessments);
             showAlert("Optimized assessments saved successfully to " + path, Alert.AlertType.INFORMATION);
