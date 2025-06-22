@@ -1,7 +1,7 @@
 package manager;
 
-import data.AssessmentBase;
 import data.Assessment;
+import data.AssessmentBase;
 import data.MergedAssessment;
 
 import java.io.*;
@@ -16,6 +16,7 @@ import java.util.*;
 public class SaveManager {
     private static String getDurationString(Assessment p) {
         if (p.getBegin() == null)
+            //noinspection SpellCheckingInspection
             return "Kein Datum gef";
         DateTimeFormatter formatterDay = DateTimeFormatter.ofPattern("dd");
         DateTimeFormatter formatterTime = DateTimeFormatter.ofPattern("H:mm");
@@ -26,6 +27,7 @@ public class SaveManager {
         List<String> lines = new LinkedList<>();
 
         // add header line
+        //noinspection SpellCheckingInspection
         lines.add("Fach 1;Lfd. Nr.;Fach 1;Fach 2;Datum / Uhrzeit;Kollisionen;Abstand");
 
         Assessment[] assessmentsSorted = Arrays.stream(assessments).sorted(Comparator.comparing(Assessment::getQualifiedName)).toArray(Assessment[]::new);
@@ -46,11 +48,13 @@ public class SaveManager {
                 Duration distance = p.getDistance(k);
                 if (distance == null) {
                     distanceStr = "";
-                } else {
+                } else //noinspection SpellCheckingInspection
+                {
                     distanceStr = String.format("%03d", distance.toHours()); //TODO: remove workaround (currently we truncate -> round (to 0,25? or at least 1) instead)
 
                     // replace distance with string "Überschneidung" if assessments overlap
                     if (distance.toHours() < 0)
+                        //noinspection SpellCheckingInspection
                         distanceStr = "Überschneidung";
                 }
 
@@ -121,6 +125,7 @@ public class SaveManager {
         }
 
         // add the header line with the date columns
+        //noinspection SpellCheckingInspection
         lines.add("Fak;stg;pversion;vert;pnr;pltxt1;prüfer1;prüfer2;Anzahl;pdauer;Beginn;Ende;" +
                 dynamicDates + "Gruppe;Raum;Aufsicht;;Studiengang;Prüfung;ID;WiSe");
 

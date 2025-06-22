@@ -11,6 +11,7 @@ public class CollisionDetector {
     public record ReturnTuple(int collisionSum, Map<Assessment, Integer> collisionCountByAssessment) {
     }
 
+    @SuppressWarnings("ExtractMethodRecommender")
     static Map<Assessment, ReturnTuple> detectCollisions(Assessment[] assessments) {
         Map<Assessment, ReturnTuple> collisions = new HashMap<>();
 

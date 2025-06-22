@@ -12,9 +12,12 @@ import java.util.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AssessmentCollisionDetectorTest {
+    @SuppressWarnings("SpellCheckingInspection")
     private final static String PATH_INPUT_EXAMS = "resources/pruefungen.csv";
+    @SuppressWarnings("SpellCheckingInspection")
     private final static String PATH_INPUT_REGISTRATIONS = "resources/anmeldungen.csv";
     public final static String PATH_OUTPUT_COLLISIONS = "target/collisions.csv";
+    @SuppressWarnings("SpellCheckingInspection")
     private final static String PATH_INPUT_COLLISIONS_SAMPLE = "resources/kollisionen_v2.csv";
     private final static String PATH_OUTPUT_ASSESSMENTS = "target/assessments.csv";
 
@@ -64,7 +67,7 @@ class AssessmentCollisionDetectorTest {
 
     @Test
     @Order(3)
-    void testMergingAssessments() throws Exception {
+    void testMergingAssessments() {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
@@ -87,7 +90,7 @@ class AssessmentCollisionDetectorTest {
 
     @Test
     @Order(4)
-    void testAssessmentToMergedAssessmentMap() throws Exception {
+    void testAssessmentToMergedAssessmentMap() {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
@@ -109,7 +112,7 @@ class AssessmentCollisionDetectorTest {
 
     @Test
     @Order(5)
-    void testMergedAssessmentsFromAssessments2() throws Exception {
+    void testMergedAssessmentsFromAssessments2() {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);
@@ -123,7 +126,7 @@ class AssessmentCollisionDetectorTest {
 
     @Test
     @Order(6)
-    void testAssessmentGroups() throws Exception {
+    void testAssessmentGroups() {
         Assessment[] assessments = AssessmentsManager.loadAllAssessments(PATH_INPUT_EXAMS, PATH_INPUT_REGISTRATIONS, null);
         AssessmentsManager.loadRegistrationsIntoAssessments(assessments, PATH_INPUT_REGISTRATIONS);
         AssessmentsManager.loadCollisionsIntoAssessments(assessments);

@@ -1,7 +1,7 @@
 package manager;
 
-import data.AssessmentBase;
 import data.Assessment;
+import data.AssessmentBase;
 import data.AssessmentEditable;
 
 import java.io.IOException;
@@ -116,6 +116,7 @@ public class LoadManager {
         return dates;
     }
 
+    @SuppressWarnings({"ExtractMethodRecommender", "DuplicatedCode"})
     public static Assessment[] loadExams(String path, Integer year) throws UncheckedIOException {
         List<Assessment> exams = new LinkedList<>();
         Map<String, AssessmentEditable> existingExams = new HashMap<>(); // qualifiedName -> existingExams
@@ -136,8 +137,9 @@ public class LoadManager {
         LocalDateTime[] days;
 
         // parse header line to extract the possible dates of the exams
-        List<String> headerColumns = Arrays.asList(rows.get(0).split(";"));
+        List<String> headerColumns = Arrays.asList(rows.getFirst().split(";"));
         indexDaysBegin = headerColumns.indexOf("Ende") + 1;
+        //noinspection SpellCheckingInspection
         indexDaysEnd = headerColumns.indexOf("Gruppe") - 1;
         DateInfo[] dates = new DateInfo[indexDaysEnd - indexDaysBegin + 1];
         // create array to map the exam days to the actual date
@@ -168,6 +170,7 @@ public class LoadManager {
             if (columns[1].isBlank())
                 throw new AssertionError("missing data in exams file in column stg (2) in line " + (i + 1));
             else if (columns[5].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in exams file in column pltext1 (6) in line " + (i + 1));
             else if (columns[10].isBlank() || !columns[10].strip().matches("[0-9]{1,2}:[0-9]{2}"))
                 throw new AssertionError("missing or invalid data in exams file in column Begin (11) in line " + (i + 1));
@@ -228,6 +231,7 @@ public class LoadManager {
         return exams.toArray(new Assessment[0]);
     }
 
+    @SuppressWarnings({"DuplicatedCode", "ExtractMethodRecommender"})
     public static Assessment[] loadMissingAssessments(String path, Assessment[] assessments) throws UncheckedIOException {
         List<Assessment> additionalAssessments = new LinkedList<>();
         Set<String> existingAssessments = new HashSet<>(); // check existingAssessments by qualifiedName
@@ -261,10 +265,12 @@ public class LoadManager {
             if (columns[2].isBlank())
                 throw new AssertionError("missing data in registration file in column stg (3) in line " + (i + 1));
             else if (columns[3].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in registration file in column pversion (4) in line " + (i + 1));
             else if (columns[5].isBlank() || !columns[5].strip().matches("[0-9]*"))
                 throw new AssertionError("missing or invalid data in registration file in column pnr (6) in line " + (i + 1));
             else if (columns[6].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in registration file in column pltxt1 (7) in line " + (i + 1));
 
             long assessmentNo = Long.parseLong(columns[5]);
@@ -284,6 +290,7 @@ public class LoadManager {
         return additionalAssessments.toArray(new Assessment[0]);
     }
 
+    @SuppressWarnings({"DuplicatedCode", "ExtractMethodRecommender"})
     public static Map<String, Set<String>> loadRegistrations(String path, Assessment[] assessments) throws UncheckedIOException {
         Map<String, Set<String>> registrationsByAssessmentsQualifiedName = new HashMap<>(); // Assessment.qualifiedName -> StudentNo
 
@@ -315,14 +322,17 @@ public class LoadManager {
 
             // check that data is complete
             if (columns[0].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in exams file in column mtknr (1) in line " + (i + 1));
             else if (columns[2].isBlank())
                 throw new AssertionError("missing data in registration file in column stg (3) in line " + (i + 1));
             else if (columns[3].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in registration file in column pversion (4) in line " + (i + 1));
             else if (columns[5].isBlank() || !columns[5].strip().matches("[0-9]*"))
                 throw new AssertionError("missing or invalid data in registration file in column pnr (6) in line " + (i + 1));
             else if (columns[6].isBlank())
+                //noinspection SpellCheckingInspection
                 throw new AssertionError("missing data in registration file in column pltxt1 (7) in line " + (i + 1));
 
             String studentNo = columns[0];
