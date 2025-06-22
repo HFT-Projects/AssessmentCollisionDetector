@@ -27,3 +27,8 @@ The [features document](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1
 
 - ### [optimizer-manual-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/optimizer-manual-poc)
    This branch contains an incomplete attempt of a manual optimizer for the assessments without solving libraries.
+
+
+### Attribution
+
+[Icon by zero_wing](https://www.freepik.com/icon/data-visualization_10397166)
