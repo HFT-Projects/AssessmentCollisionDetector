@@ -252,6 +252,7 @@ public class OptimizeTab {
     public void setAssessments(MergedAssessment[] assessments, Preferences prefs) {
         AssessmentTable assessmentTable = new AssessmentTable(assessments, prefs, true);
         VBox.setVgrow(assessmentTable, Priority.ALWAYS);
+        section.getChildren().stream().filter(c -> c instanceof AssessmentTable).forEach(section.getChildren()::remove);
         section.getChildren().add(assessmentTable);
     }
 
