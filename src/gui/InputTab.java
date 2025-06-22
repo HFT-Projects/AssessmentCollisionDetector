@@ -55,9 +55,9 @@ public class InputTab {
         Button registrationBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
         Button collisionBrowseButton = createStyledButton("Browse", MainGUI.PRIMARY_COLOR);
 
-        examBrowseButton.setOnAction(e -> mainGUI.selectFile(examsPathField, false));
-        registrationBrowseButton.setOnAction(e -> mainGUI.selectFile(registrationsPathField, false));
-        collisionBrowseButton.setOnAction(e -> mainGUI.selectFile(collisionsPathField, true));
+        examBrowseButton.setOnAction(_ -> mainGUI.selectFile(examsPathField, false));
+        registrationBrowseButton.setOnAction(_ -> mainGUI.selectFile(registrationsPathField, false));
+        collisionBrowseButton.setOnAction(_ -> mainGUI.selectFile(collisionsPathField, true));
 
         // Create and style field labels with dark text color for visibility
         Label examLabel = new Label("Exam File");
@@ -122,7 +122,7 @@ public class InputTab {
         // only active after collision detection
         saveButton.setDisable(true);
 
-        detectButton.setOnAction(e -> {
+        detectButton.setOnAction(_ -> {
             String examsPath = examsPathField.getText();
             String registrationsPath = registrationsPathField.getText();
             String yearInput = optionalYearField.getText();
@@ -161,7 +161,7 @@ public class InputTab {
             saveButton.setDisable(false);
         });
 
-        saveButton.setOnAction(e -> {
+        saveButton.setOnAction(_ -> {
             String collisionsPath = collisionsPathField.getText();
 
             // Check if path is null or empty
@@ -240,7 +240,7 @@ public class InputTab {
         );
 
         // Hover effect
-        button.setOnMouseEntered(e ->
+        button.setOnMouseEntered(_ ->
                 button.setStyle(
                         "-fx-background-color: derive(" + bgColor + ", -20%);" +
                                 "-fx-text-fill: white;" +
@@ -251,7 +251,7 @@ public class InputTab {
                 )
         );
 
-        button.setOnMouseExited(e ->
+        button.setOnMouseExited(_ ->
                 button.setStyle(
                         "-fx-background-color: " + bgColor + ";" +
                                 "-fx-text-fill: white;" +

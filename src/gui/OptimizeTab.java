@@ -66,7 +66,7 @@ public class OptimizeTab {
         considerSupervisorCheckbox.setStyle("-fx-text-fill: #2c3e50;");
 
         leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox);
-        optimizeButton.setOnAction(e -> {
+        optimizeButton.setOnAction(_ -> {
             MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
             if (optimizedAssessments == null)
                 return;
@@ -110,7 +110,7 @@ public class OptimizeTab {
                         "-fx-border-radius: 4px;"
         );
 
-        browseButton.setOnAction(e -> mainGUI.selectFile(folderPathField, true));
+        browseButton.setOnAction(_ -> mainGUI.selectFile(folderPathField, true));
 
         // only active after optimization
         saveOptimizedButton.setDisable(true);
@@ -123,7 +123,7 @@ public class OptimizeTab {
                         "-fx-border-radius: 4px;"
         );
 
-        saveOptimizedButton.setOnAction(e -> {
+        saveOptimizedButton.setOnAction(_ -> {
             String path = folderPathField.getText();
 
             // Check if path is null or empty

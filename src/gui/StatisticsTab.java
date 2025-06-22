@@ -45,7 +45,7 @@ public class StatisticsTab {
         // Create the statistics selector
         selectStatistic = new ComboBox<>();
         selectStatistic.getItems().addAll(STR_OVERVIEW_STATS, STR_BY_COURSE_OF_STUDY_STATS, STR_BY_FACULTY_STATS);
-        selectStatistic.valueProperty().setValue(selectStatistic.getItems().get(0));
+        selectStatistic.valueProperty().setValue(selectStatistic.getItems().getFirst());
 
         selectorContainer.getChildren().add(selectStatistic);
         mainContainer.setTop(selectorContainer);
@@ -73,7 +73,7 @@ public class StatisticsTab {
         chartBox.setMinHeight(400);
 
         // When a course is selected, create and display the pie chart
-        courseComboBox.valueProperty().addListener((o, oldVal, newVal) -> loadCollisionByAssessmentContent());
+        courseComboBox.valueProperty().addListener((_, _, _) -> loadCollisionByAssessmentContent());
 
         // Add components to the course chart container
         Label courseHeading = new Label("Collisions by course of study");
@@ -92,7 +92,7 @@ public class StatisticsTab {
 
 
         // Action handler for the statistics selector
-        selectStatistic.setOnAction(event -> loadMainContent());
+        selectStatistic.setOnAction(_ -> loadMainContent());
 
         tab.setContent(mainContainer);
     }
@@ -145,7 +145,7 @@ public class StatisticsTab {
                 courseComboBox.getItems().clear();
                 courseComboBox.getItems().addAll(courses);
                 if (!courseComboBox.getItems().isEmpty())
-                    courseComboBox.valueProperty().setValue(courseComboBox.getItems().get(0));
+                    courseComboBox.valueProperty().setValue(courseComboBox.getItems().getFirst());
 
                 // Show the course selection and chart container
                 courseChartContainer.setVisible(true);

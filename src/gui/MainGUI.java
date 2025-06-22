@@ -75,7 +75,7 @@ public class MainGUI extends Application {
         primaryStage.getIcons().add(new Image("file:resources/icon.png"));
 
         // add handler to create an alert box if an unexpected exception is thrown.
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+        Thread.setDefaultUncaughtExceptionHandler((_, throwable) -> {
             final StringWriter sw = new StringWriter();
             final PrintWriter pw = new PrintWriter(sw, true);
             throwable.printStackTrace(pw);
@@ -174,11 +174,9 @@ public class MainGUI extends Application {
         String authorString = "";
         //noinspection ConstantValue
         if (!authors.isEmpty()) {
-            authorString = authors.get(authors.size() - 1);
-            //noinspection ConstantValue
+            authorString = authors.getLast();
             if (authors.size() >= 2) {
                 authorString = authors.get(authors.size() - 2) + " & " + authorString;
-                //noinspection ConstantValue
                 if (authors.size() >= 3)
                     authorString = String.join(", ", authors.subList(0, authors.size() - 2)) + ", " + authorString;
             }
