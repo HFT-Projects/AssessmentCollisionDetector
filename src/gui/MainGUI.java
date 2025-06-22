@@ -235,7 +235,7 @@ public class MainGUI extends Application {
         }
     }
 
-    MergedAssessment[] optimizeStart(boolean room, Boolean supervisor) {
+    MergedAssessment[] optimizeStart(boolean room, Boolean supervisor, double timeout) {
         if (assessments == null || assessments.length == 0) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Assessments");
@@ -247,11 +247,13 @@ public class MainGUI extends Application {
 
         MergedAssessment[] mergedAssessments = AssessmentOptimizer.mergeAssessments(assessments);
 
+        Runnable hardConstraintViolatedCallback = () -> showAlert("Optimization Warning:\n\nAt least one of the following hard constrains are still violated:\n- (at least) one student has (at least) two assessments at the same time\n- (at leat) one room has (at least) two assessments at the same time.\n- (at least) one supervisor has (at least) to assessments at the same time.\n- (at least) one student has less then 1h break between two assessments.", Alert.AlertType.WARNING);
+
         if (!supervisor && !room) {
             MergedAssessment[][] assessmentGroups = AssessmentOptimizer.getAssessmentGroups(mergedAssessments);
-            optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups);
+            optimizedAssessments = AssessmentOptimizer.optimizeAssessmentGroups(assessmentGroups, timeout, hardConstraintViolatedCallback);
         } else {
-            optimizedAssessments = AssessmentOptimizer.optimizeAssessments(mergedAssessments, room, supervisor);
+            optimizedAssessments = AssessmentOptimizer.optimizeAssessments(mergedAssessments, room, supervisor, timeout, hardConstraintViolatedCallback);
         }
 
         statisticsTab.setOptimizedAssessments(optimizedAssessments);

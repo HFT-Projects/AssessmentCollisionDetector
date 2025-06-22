@@ -17,9 +17,14 @@ import java.util.prefs.Preferences;
 
 public class OptimizeTab {
     private static final String PREFS_OPTIMIZED_ASSESSMENTS_PATH = "optimized_assessments_path";
+    private static final String PREFS_CONSIDER_ROOMS = "consider_rooms";
+    private static final String PREFS_CONSIDER_SUPERVISORS = "consider_supervisors";
+    private static final String PREFS_OPTIMIZATION_TIMEOUT = "optimization_timeout";
 
     private final VBox section;
     private final Tab tab;
+
+    private double optimizerTimeout;
 
     public OptimizeTab(MainGUI mainGUI, Preferences optimizerPreferences, Preferences collisionTablePreferences) {
         tab = new Tab("Optimization");
@@ -61,18 +66,52 @@ public class OptimizeTab {
         );
 
         // CheckBoxes for optimization options
-        CheckBox considerRoomCheckbox = new CheckBox("Consider Rooms in Optimization");
+        CheckBox considerRoomCheckbox = new CheckBox("Consider Rooms in Optimization (not recommended)");
+        CheckBox considerSupervisorCheckbox = new CheckBox("Consider Supervisors in Optimization (not recommended)");
+
+        considerRoomCheckbox.setSelected(optimizerPreferences.getBoolean(PREFS_CONSIDER_ROOMS, false));
         considerRoomCheckbox.setStyle("-fx-text-fill: #2c3e50;");
+        considerRoomCheckbox.selectedProperty().addListener((_, _, newValue) -> {
+            if (newValue && !considerSupervisorCheckbox.isSelected())
+                MainGUI.showAlert("The optimization with rooms / supervisors respected is not recommended.\nResults are much worse then without respecting rooms / supervisors!\n\nMinimal recommended timeout duration: 10 minutes\nRecommended timeout duration: 30-60 minutes", Alert.AlertType.WARNING);
+        });
 
-        CheckBox considerSupervisorCheckbox = new CheckBox("Consider Supervisors in Optimization");
+        considerSupervisorCheckbox.setSelected(optimizerPreferences.getBoolean(PREFS_CONSIDER_SUPERVISORS, false));
         considerSupervisorCheckbox.setStyle("-fx-text-fill: #2c3e50;");
+        considerSupervisorCheckbox.selectedProperty().addListener((_, _, newValue) -> {
+            if (newValue && !considerRoomCheckbox.isSelected())
+                MainGUI.showAlert("The optimization with supervisors / rooms respected is not recommended.\nResults are much worse then without respecting supervisors / rooms!\n\nMinimal recommended timeout duration: 10 minutes\nRecommended timeout duration: 30-60 minutes", Alert.AlertType.WARNING);
+        });
 
-        leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox);
+        TextField timeoutInput = new TextField();
+        optimizerTimeout = Double.parseDouble(optimizerPreferences.get(PREFS_OPTIMIZATION_TIMEOUT, "3"));
+        timeoutInput.setText(String.valueOf(optimizerTimeout));
+        Label timeoutInputLabel = new Label("Timeout (minutes)");
+        timeoutInputLabel.setLabelFor(timeoutInput);
+        timeoutInput.textProperty().addListener((_, oldValue, newValue) -> {
+            newValue = newValue.strip().replace(",", ".");
+            // check if number is valid
+            double value;
+            try {
+                value = Double.parseDouble(newValue);
+                if (value <= 0)
+                    throw new NumberFormatException("must be greater than 0");
+            } catch (NumberFormatException e) {
+                timeoutInput.setText(oldValue);
+                return;
+            }
+            optimizerTimeout = value;
+        });
+
+        leftSide.getChildren().addAll(optimizeButton, considerRoomCheckbox, considerSupervisorCheckbox, new VBox(timeoutInputLabel, timeoutInput));
         optimizeButton.setOnAction(_ -> {
-            MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected());
+            MergedAssessment[] optimizedAssessments = mainGUI.optimizeStart(considerRoomCheckbox.isSelected(), considerSupervisorCheckbox.isSelected(), optimizerTimeout);
             if (optimizedAssessments == null)
                 return;
             setAssessments(optimizedAssessments, collisionTablePreferences);
+            optimizerPreferences.putBoolean(PREFS_CONSIDER_ROOMS, considerRoomCheckbox.isSelected());
+            optimizerPreferences.putBoolean(PREFS_CONSIDER_SUPERVISORS, considerSupervisorCheckbox.isSelected());
+            optimizerPreferences.put(PREFS_OPTIMIZATION_TIMEOUT, String.valueOf(optimizerTimeout));
             // activate save optimized button
             saveOptimizedButton.setDisable(false);
         });

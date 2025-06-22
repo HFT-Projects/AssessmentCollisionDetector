@@ -15,8 +15,6 @@ import java.util.*;
 
 public class AssessmentOptimizer {
     // Optimization timeouts
-    private static final Duration SMALL_GROUP_TIMEOUT = Duration.ofSeconds(30);
-    private static final Duration LARGE_GROUP_TIMEOUT = Duration.ofMinutes(1);
     private static final int LARGE_GROUP_THRESHOLD = 36;
     private static final String MOVE_THREAD_COUNT = "1";
     private static final int DEFAULT_START_HOUR = 8;
@@ -78,7 +76,7 @@ public class AssessmentOptimizer {
 
     // ATTENTION: when optimizing via groups, it's impossible to respect rooms / supervisors because they need to be respected
     // over all groups and not only side one group.
-    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups) {
+    public static MergedAssessment[] optimizeAssessmentGroups(MergedAssessment[][] assessmentGroups, double timeout, Runnable hardConstraintViolatedCallback) {
         AssessmentSchedulingConstraintProvider.respectRooms = false;
         AssessmentSchedulingConstraintProvider.respectSupervisors = false;
 
@@ -86,9 +84,9 @@ public class AssessmentOptimizer {
 
         for (MergedAssessment[] group : assessmentGroups) {
             //noinspection DuplicatedCode
-            Arrays.stream(group).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable)ma).forEach(ma -> {
-                    ma.setOptimizedBegin(ma.getBegin());
-                    ma.setOptimizedEnd(ma.getEnd());
+            Arrays.stream(group).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable) ma).forEach(ma -> {
+                ma.setOptimizedBegin(ma.getBegin());
+                ma.setOptimizedEnd(ma.getEnd());
             });
 
             // only assessments with times can be optimized.
@@ -104,20 +102,20 @@ public class AssessmentOptimizer {
         }
 
         // optimize larger groups
-        groups.stream().filter(a -> a.length > LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).forEach(a -> optimizeAssessments(a, true));
+        groups.stream().filter(a -> a.length > LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).forEach(a -> optimizeAssessments(a, true, Math.round(timeout * ((double) 2 / 3) * 60), hardConstraintViolatedCallback));
 
         // optimize smaller groups in parallel & with smaller time limit
-        groups.stream().filter(a -> a.length <= LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).parallel().forEach(a -> optimizeAssessments(a, false));
+        groups.stream().filter(a -> a.length <= LARGE_GROUP_THRESHOLD).sorted(Comparator.comparing(a -> a.length, Comparator.reverseOrder())).parallel().forEach(a -> optimizeAssessments(a, false, Math.round(timeout * ((double) 1 / 3) * 60), hardConstraintViolatedCallback));
 
         return Arrays.stream(assessmentGroups).flatMap(Arrays::stream).toArray(MergedAssessment[]::new);
     }
 
-    public static MergedAssessment[] optimizeAssessments(MergedAssessment[] assessments, boolean respectRooms, boolean respectSupervisors) {
+    public static MergedAssessment[] optimizeAssessments(MergedAssessment[] assessments, boolean respectRooms, boolean respectSupervisors, double timeout, Runnable hardConstraintViolatedCallback) {
         AssessmentSchedulingConstraintProvider.respectRooms = respectRooms;
         AssessmentSchedulingConstraintProvider.respectSupervisors = respectSupervisors;
 
         //noinspection DuplicatedCode
-        Arrays.stream(assessments).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable)ma).forEach(ma -> {
+        Arrays.stream(assessments).filter(ma -> ma.getBegin() != null && ma.getEnd() != null).map(ma -> (MergedAssessmentEditable) ma).forEach(ma -> {
             ma.setOptimizedBegin(ma.getBegin());
             ma.setOptimizedEnd(ma.getEnd());
         });
@@ -131,12 +129,12 @@ public class AssessmentOptimizer {
             return assessments;
         }
 
-        optimizeAssessments(validAssessments, true);
+        optimizeAssessments(validAssessments, true, Math.round(timeout * 60), hardConstraintViolatedCallback);
 
         return assessments;
     }
 
-    private static void optimizeAssessments(MergedAssessment[] assessments, boolean isLargeGroup) {
+    private static void optimizeAssessments(MergedAssessment[] assessments, boolean isLargeGroup, long timeoutSeconds, Runnable hardConstraintViolatedCallback) {
         // get all possible time slots
         List<LocalDateTime> timeSlots = generateTimeSlots(assessments);
 
@@ -153,17 +151,20 @@ public class AssessmentOptimizer {
                 .withConstraintProviderClass(AssessmentSchedulingConstraintProvider.class);
 
         if (isLargeGroup) {
-            config.withTerminationSpentLimit(LARGE_GROUP_TIMEOUT)
+            config.withTerminationSpentLimit(Duration.ofSeconds(timeoutSeconds))
                     // use multiple threads
                     .withMoveThreadCount(MOVE_THREAD_COUNT);
         } else {
-            config.withTerminationSpentLimit(SMALL_GROUP_TIMEOUT);
+            config.withTerminationSpentLimit(Duration.ofSeconds(timeoutSeconds));
         }
 
         SolverFactory<AssessmentSchedulingSolution> solverFactory = SolverFactory.create(config);
         Solver<AssessmentSchedulingSolution> solver = solverFactory.buildSolver();
         @SuppressWarnings("unused")
         AssessmentSchedulingSolution solution = solver.solve(problem);
+
+        if (solution.getScore().hardScore() > 0)
+            hardConstraintViolatedCallback.run();
 
         // System.out.println(assessments.length + "; " + solution.getScore().toString());
     }
