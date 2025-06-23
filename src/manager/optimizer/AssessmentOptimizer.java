@@ -169,7 +169,7 @@ public class AssessmentOptimizer {
             ((MergedAssessmentEditable) a.getAssessment()).setOptimizedEnd(a.getScheduledEndTime());
         });
 
-        if (solution.getScore().hardScore() > 0)
+        if (solution.getScore().hardScore() != 0)
             hardConstraintViolatedCallback.run();
 
         // System.out.println(assessments.length + "; " + solution.getScore().toString());
