@@ -42,11 +42,11 @@
 ## Additional Branches
 
 - ### [gui-basic-swing-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/gui-basic-swing-poc)
-  by @42grra1bif \
+  by @42oeaz1bif \
   This branch contains the initial Swing GUI, developed before we switched to JavaFX.
 
 - ### [optimizer-manual-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/optimizer-manual-poc)
-  by @42oeaz1bif \
+  by @42grra1bif \
   This branch contains an incomplete attempt of a manual optimizer for the assessments without solving libraries.
 
 - ### [old-gui-before-refactoring](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/old-gui-before-refactoring)
