@@ -1,59 +1,57 @@
 # AssessmentCollisionDetector
 
-## Setting up the development environment
+## Overview
 
-1. use **Java 24 (V. 24.0.1)**
+The AssessmentCollisionDetector is a software tool developed as part of an academic assignment at [HFT Stuttgart](https://hft-stuttgart.com/). It is designed to manage and optimize assessment schedules while detecting and resolving potential collisions. The project provides a graphical user interface (GUI) for input, collision detection, optimization, and statistical analysis. The software is built using Java 24 and JavaFX 24.0.1, ensuring a modern and responsive user experience.
 
-2. Download JavaFX sdk (V. 24.0.1) [here](https://gluonhq.com/products/javafx/)
+### Key Features
 
-3. Create run configuration
+- **Input Parsing**: Reads and parses input files to extract assessment data.
+- **Collision Detection**: Identifies scheduling conflicts between assessments.
+- **Optimization**: Utilizes OptaPlanner to optimize assessment schedules.
+- **Output Generation**: Creates CSV files summarizing detected collisions.
+- **Graphical User Interface**: Provides an intuitive GUI for managing input, viewing collisions, optimizing schedules, and analyzing statistics.
 
-   1. Create a new run configuration
-   
-   2. Add the following to the VM-options: \
-      `--module-path "%javafx-sdk%/lib" --add-modules javafx.controls,javafx.fxml --enable-native-access=javafx.graphics` \
-      replace `%javafx-sdk%` with the path of the unarchived javafx sdk.
+## Project Details
 
+### Input Files
 
-## Work Distribution
+- **pruefungen.csv**: Contains data about planned assessments.
+- **anmeldungen.csv**: Contains student registrations for the respective assessments.
 
-### Features
+### Output Files
 
-- read & parse input files: @42kejo1bif, @42bejo1bif, @42oeaz1bif & @42grra1bif
-    - adjust to new specifications: @42kejo1bif
-- detect collisions: @42kejo1bif, @42bejo1bif, @42oeaz1bif & @42grra1bif
-- create collisions output file (csv): @42kejo1bif, @42bejo1bif, @42oeaz1bif & @42grra1bif
-- add basic tests: @42kejo1bif
-- GUI: @42oeaz1bif, @42bejo1bif (& @42kejo1bif)
-  - GUI setup, Input, Collisions & Optimization view: @42oeaz1bif
-  - Statistics: @42bejo1bif
-  - Refactoring: @42kejo1bif
-- Optimization: @42grra1bif & @42kejo1bif
-  - basic optimization & optaplanner setup: @42grra1bif
-  - bug fixing & further features: @42kejo1bif
-  
-### Other Tasks
-- project management, planning, etc.: @42kejo1bif (~3h)
-- bug-fixing & technical support: @42kejo1bif (>7h)
-- refactoring: @42kejo1bif (>13h)
-- git merge conflict resolving: @42kejo1bif (~2.5h (but felt like an eternity))
+- **kollisionen.csv**: Provides an overview of all pairs of assessments where at least one student is registered for both.
 
+## Setting up the Development Environment
+
+1. **Use Java 24 (V. 24.0.1)**
+
+2. **Download JavaFX SDK (V. 24.0.1)**
+   - [Download JavaFX SDK](https://gluonhq.com/products/javafx/)
+
+3. **Create Run Configuration**
+   - Create a new run configuration in your IDE.
+   - Add the following to the VM options:
+     ```
+     --module-path "%javafx-sdk%/lib" --add-modules javafx.controls,javafx.fxml --enable-native-access=javafx.graphics
+     ```
+     Replace `%javafx-sdk%` with the path to the unarchived JavaFX SDK.
 
 ## Additional Branches
 
-- ### [gui-basic-swing-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/gui-basic-swing-poc)
-  by @42oeaz1bif \
-  This branch contains the initial Swing GUI, developed before we switched to JavaFX.
+- **[gui-basic-swing-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/gui-basic-swing-poc)**
+  - By @42oeaz1bif
+  - This branch contains the initial Swing GUI, developed before we switched to JavaFX.
 
-- ### [optimizer-manual-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/optimizer-manual-poc)
-  by @42grra1bif \
-  This branch contains an incomplete attempt of a manual optimizer for the assessments without solving libraries.
+- **[optimizer-manual-poc](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/optimizer-manual-poc)**
+  - By @42grra1bif
+  - This branch contains an incomplete attempt of a manual optimizer for the assessments without solving libraries.
 
-- ### [old-gui-before-refactoring](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/old-gui-before-refactoring)
-  by @42oeaz1bif \
-  This branch contains the gui before the refactoring (by @42kejo1bif).
+- **[old-gui-before-refactoring](https://gitlab.rz.hft-stuttgart.de/Abschlussprojekt_SWP1_Gruppe_02/Abschlussprojekt_SWP1_Gruppe_02/-/tree/old-gui-before-refactoring)**
+  - By @42oeaz1bif
+  - This branch contains the GUI before the refactoring (by @42kejo1bif).
 
+## Attribution
 
-### Attribution
-
-[Icon by zero_wing](https://www.freepik.com/icon/data-visualization_10397166)
+- **Icon**: [Icon by zero_wing](https://www.freepik.com/icon/data-visualization_10397166)
