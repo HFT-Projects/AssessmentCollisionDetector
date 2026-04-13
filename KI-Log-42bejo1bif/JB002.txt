@@ -1,9 +1,0 @@
-Prompt:
-I'd like to create a pie chart, that shows the collisions by course of study. Within that pie chart the collisions should be shown based on the distance between the assessments. If the distance is more than 48 hours they should be in a green section, if it's more than 24 hours it should be in a yellow section and anything else should be in a red section.
-Model: Claude Sonnet 3.7
-
-Prompt:
-I want the pie chart to be shown within the statistics Tab. When you select "Studiengänge" in the dropdown box it should show the new dropdownbox to select the course of study and once you select one of the courses it should show the corresponding pie chart.
-Also place the select statistic dropdown box at the top right of the statistics Tab.
-Model: Claude Sonnet 3.7
-

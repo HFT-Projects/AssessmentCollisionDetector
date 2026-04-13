@@ -1,3 +1,0 @@
-Claude 3.7 Sonnet:
-
-1.Prompt: can you change the checkbox "show only assessment" so that you can collapse the assessments and expand it by unchecking the checkbox ? Further more should the checkbox "hide entries with no time" be also adjusted, so that by checking the checkBox "show only assessment" it does not have an effect on the collapse state of the collapsed the assesments ?
